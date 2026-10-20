@@ -1,0 +1,1 @@
+- data for each of the 7 possible cases
