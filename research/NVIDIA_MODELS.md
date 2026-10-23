@@ -77,3 +77,16 @@ Source: HackOS Resources > Participant Setup Guide, section 03 Power (21 Oct), u
 - Judge machines: "No local GPU required; NVIDIA models are reached through Nightshift's hosted endpoints"
   (Disqualification Checklist).
 
+
+## Live test (2026-10-23, direct to NVIDIA, our key)
+
+`POST https://integrate.api.nvidia.com/v1/chat/completions` with model `nvidia/nemotron-3.5-lightning-30b-a3b`,
+`max_tokens: 20`, prompt "Reply with the single word: ready". Observed response:
+- `"content": null`, `"finish_reason": "length"`, `"reasoning_tokens": 20`. The model reasons by default and spent
+  the whole budget on reasoning.
+- The reasoning comes back in a separate field: `message.reasoning_content` ("Here's a thinking process: ...").
+- Both models we plan to use are marked "Free Endpoint" on build.nvidia.com. One `nvapi-` key works across models.
+
+Build implications (INFERRED): use generous `max_tokens`; treat `content == null` / `finish_reason == "length"` as a
+retryable failure; log `reasoning_content` in JSONL traces. Re-check whether Nightshift passes `reasoning_content`
+through.

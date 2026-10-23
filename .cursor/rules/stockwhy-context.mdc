@@ -42,6 +42,12 @@ Track: **"The Agent That Can Explain Why"**. Every answer must trace back to evi
 4. **NVIDIA through Nightshift only.** The NVIDIA key lives in Nightshift's Providers tab, **never** in our code or
    `.env`. Pin a Nemotron lane (e.g. `nvidia/nemotron-3.5-lightning-30b-a3b`, `nvidia/nemotron-3.5-super-vl-120b-a12b`)
    and **log which model handled each request**. This is also what the DGX Spark award needs.
+   Nemotron reasons before answering: with a small `max_tokens` it returns `content: null` and
+   `finish_reason: "length"`, with the reasoning in `message.reasoning_content`. Use generous `max_tokens`, treat
+   null content as a retryable failure, and log `reasoning_content` in the traces. The free endpoints are rate-limited
+   (about 40 requests/min per unofficial reports), so cap calls per run and back off on 429.
+   **Nightshift doesn't run on Intel Macs** (Mac editions need Apple Silicon), so the live Nightshift path runs on a
+   teammate's M1+ Mac or Windows PC.
 5. **Cursor:** HackOS says optional; the event page says required (unresolved). Build in Cursor and keep the
    `.cursor/` folder as evidence.
 
