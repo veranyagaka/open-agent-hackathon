@@ -1,26 +1,44 @@
-# Open questions for organisers (Discord / HackOS / hackathons@genai.works)
+# Open questions for organisers
 
-Ordered by impact on our build.
+Where to ask: HackOS #help desk (general), Help Zetaris / Help Meterless / Help Cursor / Help NVIDIA Tools (sponsor),
+general-admin (programme and logistics), hackathons@genai.works (rules, per the onboarding deck). Ordered by impact.
+
+Answered by the logged-in pass (2026-10-23), so removed: Zetaris instance (local Docker for everyone), Meterless
+integration bar (one Engine in a working feature + Nightshift as primary provider), submission form fields, in-kind
+prize breakdown, Build/Power workshop dates and recordings.
 
 ## Blocking
 
-1. **Bright Data bounty:** does a Bright Data bounty exist for this event? It isn't on the event page, in Rules 1–10 or on the academy page. If it exists, what are the criteria, the prize and the credits?
-2. **Zetaris instance:** do teams get a shared event instance (the getting-started repo's plan mentions "Shared event instance: confirmed. Require an assigned team prefix"), or must each team run its own local/AWS install? If shared, what are the URL, org ID and our team prefix?
-3. **Meterless integration bar:** what counts as "integrate Meterless"? (a) running a Node reference engine as-is, (b) a Python implementation of an engine spec (H-MEM / World Model / Scout Intent), or (c) routing model calls through the Nightshift runtime (`http://127.0.0.1:8088/v1`)? Is a Python port without a passing TS conformance run acceptable?
-4. **Pre-existing code:** our repo has commits dated 14 Oct and 20 Oct 2026 (before the 22 Oct window). Is declaring them in the submission form enough, and where in the form?
-5. **Submission form:** what fields does it have, with what limits (video host, deck format, max length), and is a metadata.json required? (Not visible without login.)
+1. **Cursor: required or optional?** Event page Rule 5 says "teams must use Cursor for development" and the Help
+   Cursor channel says it is "the required development environment". HackOS FAQ and the 22 Oct announcement say
+   "Cursor is now optional". Which one is binding? If optional, can we leave Cursor out of the sponsor explanation?
+2. **Pre-existing work:** our repo has commits from 14 Oct and 20 Oct (before 22 Oct 00:00 UTC), and our synthetic
+   datapack was prepared around 22 Oct. Is it enough to declare both in the form's "pre-existing components" field?
+   Should we date the datapack's creation?
+3. **Bright Data:** the 22 Oct announcement mentions a "Help Bright Data" channel, but no such channel or document
+   exists. Is there a Bright Data bounty, prize or credits?
+4. **metadata.json:** sponsor overviews say to describe sponsor use in "`metadata.json`", but the form has no such
+   field and there's no template. Is it required? Is there a schema?
 
 ## Important
 
-6. **NVIDIA:** are there hackathon credits or raised rate limits for build.nvidia.com, and how do we claim them? What are the judging criteria for "Best use of NVIDIA Nemotron"?
-7. **Rubric:** the Meterless repo's hackathon guide shows a different rubric (Meterless engine usage 25%) and dates (Oct 15–20). Confirm the event page rubric (Impact 30 / Technical 20 / Innovation 15 / Demo 15 / Product & UX 10 / Sponsor tech 10) is the only one that applies.
-8. **Cursor evidence:** what proof of "teams must use Cursor for development" do judges expect?
-9. **In-kind prizes:** Rule 8 says "$7,000 in in-kind rewards" but itemises only the $4,699 DGX Spark. What is the rest?
-10. **Zetaris MCP:** zetaris.com mentions "MCP / REST" and a Cursor connection guide. Is there a Zetaris MCP server URL/config for agents?
+5. **Sponsor credits:** the FAQ says credits are "On the HackOS task board, once you have created your team". Our
+   board's "Get sponsor credits" task is empty. How do we claim NVIDIA (and Meterless) credits?
+6. **Nightshift on judges' machines:** judges run with `SAMPLE_MODE=true` if Nightshift isn't available. Will judges
+   run Nightshift at all, or is the demo video the only evidence of the Nightshift path?
+7. **Meterless Engine in Python:** is a Python implementation of an engine spec, tested against the engine's JSON
+   conformance vectors (not the TypeScript runner), accepted as "conformance suite, evaluation or a reproducible
+   feature test"?
+8. **Zetaris data from files:** "Zetaris can't read a file sitting on your laptop". For a local Docker install, is
+   a Postgres container on the same Docker network the recommended path for CSVs, or is there a local file store?
+9. **Rubric:** the Meterless repo's hackathon guide shows a different rubric (Meterless engine usage 25%) and dates
+   (Oct 15–20). Confirm the HackOS/event page rubric (Impact 30 / Technical 20 / Innovation 15 / Demo 15 / Product &
+   UX 10 / Sponsor Tech 10) is the only one.
 
 ## Nice to know
 
-11. Is there a recording of "Data Day with Zetaris" (Oct 12, 22:00 UTC)?
-12. What are the dates and times of the "Build Day" and "Power Day" workshops and the mentor office hours?
-13. Can we upload CSV files into Zetaris "platform storage" (listed in command reference §5), or must data sit in Postgres/S3?
-14. Does the Zetaris direct REST `/sql-editor/sqls/run` response include column names? (The repo only shows `data` as rows of strings.) Answer by fetching `/redoc/docs.yaml` once we have an instance.
+10. Exact time of the POWER workshop (19 Oct) and any fixed office-hour slots.
+11. Does the Zetaris REST `/sql-editor/sqls/run` response include column names? (Answer from
+    `http://localhost:8888/redoc/index.html` once our instance runs.)
+12. Is there a Zetaris MCP server for agents? (zetaris.com mentions "MCP / REST"; HackOS docs only describe REST and JDBC.)
+13. Registration closed at 23:45 or 23:59 UTC on 22 Oct? (Sources differ; doesn't affect us.)

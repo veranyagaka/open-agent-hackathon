@@ -53,3 +53,27 @@ could earn both the Meterless and the NVIDIA credit, but no rule says so.
 ## Before building
 
 Call `GET /v1/models` with our key, because the ID list changes. Then test `tools` and `response_format` on the chosen model with one request each.
+
+## HackOS: how NVIDIA must be wired (logged-in pass)
+
+Source: HackOS Resources > Participant Setup Guide, section 03 Power (21 Oct), unless marked.
+
+- NVIDIA is reached **through Meterless Nightshift**, not called directly by the app: "The NVIDIA key goes in
+  Providers, not in the Console and not in your app's .env file." "Your app only needs the Meterless URL and the
+  Nightshift API key; Nightshift handles the NVIDIA call." Key location: `<present in build.nvidia.com; entered in Nightshift Setup > Providers>`.
+- Suggested lanes (exact model names, "examples, not guaranteed entitlements"): "Lane 1: Fast worker
+  nvidia/nemotron-3.5-lightning-30b-a3b" and "Lane 2: Deep worker nvidia/nemotron-3.5-super-vl-120b-a12b", plus an
+  "Optional judge / verification lane". Both IDs appear in the live `/v1/models` list above.
+- Model routing: "meterless/auto is a routing mode, not an NVIDIA model ID." "meterless/auto may route to a non-NVIDIA
+  model if several are eligible, so pin a Nemotron-backed lane or demonstrate an explicit Nemotron task". HackOS FAQ:
+  "log which model handled each request".
+- NVIDIA award (Hackathon Overview): "must use at least one Nemotron model through Meterless Nightshift in a working
+  feature, and show which model handled the request." Prize: "NVIDIA DGX Spark (Founder's Edition) | $4,699".
+- Credits: NVIDIA sponsor overview says "Credits for NVIDIA Nemotron models, used through API keys" but "Getting
+  access" is still "[TBC ...]". HackOS FAQ: "Where do I get sponsor credits? On the HackOS task board, once you have
+  created your team." Our team board (read 23 Oct) has a "Get sponsor credits" task with an empty description, so
+  **how to claim credits: NOT FOUND**.
+- Rate limits: HackOS Escalation Path §7.2 mentions "NVIDIA rate limits" but gives no number. Still **NOT FOUND** officially.
+- Judge machines: "No local GPU required; NVIDIA models are reached through Nightshift's hosted endpoints"
+  (Disqualification Checklist).
+

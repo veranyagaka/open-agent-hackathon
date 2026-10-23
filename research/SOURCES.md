@@ -1,6 +1,19 @@
 # Sources read (all accessed 2026-10-23)
 
-## Read
+## HackOS (logged in with Claude in Chrome, read only)
+
+| Source | Used for |
+|---|---|
+| https://hackathon.genai.works/dashboard | Countdown, submission status (NOT STARTED), announcements |
+| Team page `/team/019fd164-82b9-7382-a536-d9093c576ed2/01a1507b-b900-7d63-be3c-1a53af395abd` and task board `/board?hackathon_id=019fd164-...` | Team NexusForge, 3 members, no track set, empty "Get sponsor credits" task |
+| https://hackathon.genai.works/messages, Announcement channel (1–23 Oct posts) and channel list | Cursor-optional update, workshop times, opening ceremony, channel names |
+| https://hackathon.genai.works/resources: 68 items. Documents downloaded as Markdown/PDF with user approval: Official Rules (draft), Submission Requirements, Submission Form Preview, Disqualification Checklist, Technical Execution Requirements, Team Formation Rules, Event Calendar, Welcome Guide, Participant Journey Map, Hackathon Overview, How APPROACH Solutioning For Your Use Case, Vibe Coding Starter Guide, Winner Next Steps, AI Usage Policy, Code of Conduct, FAQ, Channel Directory, Escalation Path, Help Desk Instructions, Troubleshooting Guide, Mentor Office Hours Guide, Weak/Strong Submission Examples, Demo Video Guide, NVIDIA / Zetaris / Cursor / Meterless sponsor overviews, Zetaris getting-started prompt, Meterless Agent Engines Index, Participant Setup Guide (PDF, 21 Oct), Onboarding Call deck (PDF), Day 4 Check-in deck (PDF) | RULES.md, SPONSORS.md, ZETARIS_API.md §11, NVIDIA_MODELS.md (HackOS section), SCHEDULE.md, OPEN_QUESTIONS.md |
+
+Not opened: the submission "Open" button (creating a submission locks the team), team settings, and the challenge
+statement pages (`/hackathons/<id>` redirected to the dashboard). Workshop videos were not watched.
+
+## Public
+
 | Source | Used for |
 |---|---|
 | https://hackathon.genai.works/event/open-agent-hackathon-2026 (public HTML + embedded page data for collapsed rules/FAQ) | Rules 1–10, rubric, tracks, prizes, dates, FAQ, judges |
@@ -16,8 +29,3 @@
 | https://docs.brightdata.com/scraping-automation/web-unlocker/introduction | Web Unlocker API |
 | https://docs.brightdata.com/scraping-automation/serp-api/introduction | SERP API |
 | Local: docs/datapack/README_FIRST.md, DATA_DICTIONARY.md, PUBLIC_DATA_SOURCES.md, 01_demo_county_30/zetaris_register.sql | Checked our Zetaris SQL against the command reference |
-
-## Not read (login required; Claude in Chrome not connected)
-- https://hackathon.genai.works/dashboard and the team workspace
-- https://hackathon.genai.works/resources (redirects to /sign-in?next=%2Fresources) and every sponsor folder in it
-- The submission form

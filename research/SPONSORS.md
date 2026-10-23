@@ -1,113 +1,124 @@
 # Sponsors
 
-> HackOS resource folders (https://hackathon.genai.works/resources) redirect to sign-in and were **not read**
-> (Claude in Chrome was not connected). Everything below is from public primary sources. A logged-in pass must still
-> list each HackOS folder's documents.
+Logged-in pass done 2026-10-23. HackOS Resources holds 68 items: Zetaris folder 24, Meterless 6, NVIDIA 1, Cursor 1
+(mostly links into the Zetaris getting-started repo and the Meterless engine guides). HackOS paths below are document
+titles in https://hackathon.genai.works/resources.
 
-Sponsors on the event page: NVIDIA, Zetaris, SpaceX AI, Meterless (logos linking to nvidia.com, zetaris.com, x.ai,
-meterless.ai). The academy page lists "Sponsor technologies: Zetaris, Cursor, Meterless and NVIDIA Nemotron". Only a
-university news post (NCSA) lists "NVIDIA, Space XAI (with Cursor), Bright Data, Zetaris and Meterless".
+Sponsor lists disagree:
+- HackOS FAQ / Hackathon Overview / Official Rules draft: "Space XAI (with Cursor), NVIDIA, Zetaris and Meterless".
+- Event page logos: NVIDIA, Zetaris, SpaceX AI, Meterless.
+- NCSA news post (secondary): "NVIDIA, Space XAI (with Cursor), Bright Data, Zetaris and Meterless".
+
+Requirement summary (HackOS Hackathon Overview, exact):
+| Sponsor | Requirement |
+|---|---|
+| Zetaris | "Required: every submission must use Zetaris as its data layer" |
+| Meterless | "Required: every submission must implement at least one Meterless Engine (H-MEM, Markovian, World Model or Scout Intent) in a working feature, and use Meterless Nightshift as its primary AI provider" |
+| Cursor (with Space XAI) | "Optional: recommended AI coding tool. Teams can build with any coding tool" |
+| NVIDIA | "Integrate wherever it contributes. NVIDIA models are connected through Nightshift" |
+
+"Mentioning a sponsor technology, copying a prompt or adding an unused dependency does not meet these requirements.
+The integration must work in the submitted project." Sponsor Tech is 10 of 100 rubric points.
 
 ---
 
-## Zetaris (required)
+## Zetaris (required: data layer)
 
 **What it is:** a federated SQL / data-fabric platform ("Lightning" SQL on Spark). It registers databases, files and
-REST APIs as sources and queries them together. Full client detail: ZETARIS_API.md.
+REST APIs as sources and queries them together. Full client detail: ZETARIS_API.md (§11 has the HackOS setup).
 
-**Setup:** your own instance, either local Docker (~20–30 min, 8 GB RAM for Docker, amd64 images emulated on Apple
-Silicon) or a managed AWS Mini cluster (~30 min, from new-account Free Tier credits). Source: https://github.com/zetaris/getting-started START-HERE.md.
+**Setup (HackOS Participant Setup Guide):** "For this hackathon, everyone runs Zetaris locally in Docker." Register at
+Zetaris Cloud, download `zetaris-platform.zip`, `docker login zetarishackathon.azurecr.io`, then `docker compose up -d`.
+Needs 8 GB RAM / 4 CPUs for Docker and 15 GB disk; 30–45 min first start. AWS managed cluster if under 16 GB RAM.
 
-**How to call:** direct REST `POST {base}/api/v1.0/sql-editor/sqls/run` with a Bearer API key + `X-Org-ID` +
-`X-Request-ID`; or JDBC `jdbc:zetaris:lightning@host:10000`; or the SQL Editor UI.
+**How to call:** REST `POST http://localhost:8888/api/v1.0/sql-editor/sqls/run` with Bearer API key + `X-Org-ID: 1` +
+`X-Request-ID` (UUID); JDBC `jdbc:zetaris:lightning@localhost:10000`; SQL Editor at `http://localhost:3000`.
 
-**Limits:** one statement per call; admin-only CREATE; REST values come back as strings; local laptop files can't be
-read (use Postgres or S3); external REST sources are re-called on every query unless cached.
+**Limits:** one statement per call; REST values come back as strings; "Zetaris can't read a file sitting on your
+laptop" (use Postgres or S3); external REST sources are re-called on every query unless cached.
 
-**What judges want:** Rule 6: "how Zetaris and Meterless are integrated" in the video; "how Zetaris and Meterless were
-used, what was unique about your use" in the deck. A Zetaris CTO (Michael Hay) is on the judging panel. Zetaris's START-HERE
-says to use the demo template "to save your SQL, results and steps someone else can reproduce" (template at `docs/guides/demo-template.md`).
-INFERRED: show a real cross-source join in Zetaris (for example Postgres stock/orders + S3/REST notices), not Zetaris
-used as a single-table proxy.
+**What judges want:** demo video must show "how Zetaris and Meterless are integrated" (Submission Requirements).
+Setup Guide pattern for our track: "Your agent queries Zetaris first for the facts, and uses web data only to add
+context." Disqualification Checklist: "Data setup is automated, including any sources registered in Zetaris".
+INFERRED: show a real cross-source join (for example Postgres stock/orders + S3 notices), not Zetaris as a
+single-table proxy.
 
-**Open questions:** shared event instance or our own? Is there an MCP server? Recording of Data Day? (OPEN_QUESTIONS.md)
-
----
-
-## Meterless (required)
-
-**What it is** (https://github.com/meterless/meterless, commit `1742dec`, 2026-10-19): two parts.
-1. **Nightshift**, the paid local runtime ("Turn your computer into an AI hotspot."). Editions: Web (free, browser,
-   no hotspot), Windows 1.2.1 ("Out now", dedicated GPU), Mac M5+ (preorder, $199, "delivery Q4 2026"), Mac M1+
-   ("Free download", "A local endpoint"), DGX ("On request").
-2. **Four open "engines"**, which are specs, not packages: "An engine here is an implementation spec for coding agents,
-   not an npm package. Each folder has a full `AGENTS.md` contract, runnable examples, workshops, and a conformance
-   suite".
-   - **H-MEM**: hierarchical memory with provenance and an append-only trust ledger (reference + conformance)
-   - **World Model**: event-sourced entity/state graph (reference + conformance)
-   - **Markovian**: bounded-context long runs (reference + conformance)
-   - **Scout Intent**: intent, risk guard, tool routing, "signed execution contracts" (spec + eval harness only)
-
-**Node as-is vs a Python port vs Nightshift?** This is the question we need answered. What the sources say:
-- The references are TypeScript (`npx tsx`, `npm test`). The repo contains **no Python files**.
-- A Python port is explicitly allowed: engines/hmem/README.md says "H-MEM is a reference architecture. ... Implement it
-  in TypeScript, Python, Rust, or whatever stack you ship. The contracts do not change."
-- The conformance runner loads a TS module: `HMEM_IMPL=/abs/path/to/your/index.ts npx tsx conformance/runner.ts`
-  ("Set HMEM_IMPL to an absolute path exporting an HMEM class."). INFERRED: a Python port can't be checked by the
-  runner without a TS shim, but the `conformance/vectors/vectors.json` test vectors are plain JSON and reusable.
-- Starter template: `npx degit meterless/meterless/templates/agentathon-starter my-agent` (a TS CLI with real H-MEM).
-- Nightshift as a model provider (`docs/agent-ready/add-meterless-provider.md`, "Meterless Runtime 0.90.0"):
-  OpenAI-compatible, "default base URL http://127.0.0.1:8088/v1", "Send Authorization: Bearer <token> on every call.
-  The runtime writes the token to <stateDir>/proxy-token. ... The placeholder rt-local is rejected.", headers
-  `meterless-app: <stable lowercase id>` and `meterless-scope: user` on chat; model IDs are routing modes
-  `meterless/auto|fast|deep|cheap|local|fusion`; "Use a 180 s timeout".
-- Which of these the judges expect: **NOT FOUND**. The event rules only say "must integrate ... Meterless".
-
-**Mapping to StockWhy (INFERRED):** H-MEM trust ledger and provenance fit "explain why" well ("Why did the agent say
-March 14?" is answered by a "five-line ledger trace", engines/README.md). World Model fits facilities/medicines/orders
-as entities. Scout Intent fits the "pharmacist approves the action" guard.
-
-**What judges want (Meterless's own view, from an older/different rubric):** agentathon-starter README: "The rubric
-weights 'Meterless engine usage' at 25%. Every command routes through a named H-MEM service; nothing is faked" and
-"Where the engine is used (judges look here)". So: map each feature to a named engine service in the README.
-
-**Limits:** Nightshift hotspot latency on a DGX Spark, "median latency was 36.8 s and p95 was 5 minutes 7 seconds"; "When
-someone is waiting, rent latency from the cloud." (docs/products/nightshift/hotspot.md). Mac M5 edition not shipping yet.
+**Still open:** the Zetaris sponsor overview "Getting access" section is still "[TBC ...]".
 
 ---
 
-## NVIDIA (where it contributes; prize: DGX Spark for "Best use of NVIDIA Nemotron")
+## Meterless (required: one Engine in a feature + Nightshift as primary AI provider)
 
-See NVIDIA_MODELS.md. Base URL `https://integrate.api.nvidia.com/v1` (OpenAI-compatible). Hackathon credit process:
-**NOT FOUND** publicly. Judging criteria for the Nemotron prize beyond its title: **NOT FOUND**. Rule 6 requires
-explaining "where NVIDIA technology contributes".
+Two separate requirements (Setup Guide):
+1. **Build rule:** "you must implement at least one Meterless Engine in a working feature of your product."
+   Engines: H-MEM (memory), Markovian (bounded long tasks), World Model (shared state), Scout Intent (routing and risk).
+   Evidence wanted: "The engine's conformance suite, evaluation or a reproducible feature test passes, and you can
+   show the evidence." "For your submission: name the engine(s), explain what each one does in your project, and show
+   the working feature and test result."
+2. **Power rule:** "your app must support Meterless Nightshift as a primary AI provider." The Add-Meterless-as-provider
+   prompt "On its own, ... doesn't meet the Build requirement".
+
+**Nightshift Runtime (Setup Guide 4.5–4.6, exact):** `.env` keys `METERLESS_BASE_URL=http://127.0.0.1:8088/v1`,
+`METERLESS_RUNTIME_TOKEN=<present in Nightshift: Console>`, `METERLESS_MODEL=meterless/auto`. Contract:
+"Authorization: Bearer <token>, the meterless-app header, meterless-scope: user for chat, GET /v1/models for discovery
+and OpenAI-compatible POST /v1/chat/completions." "A working /healthz response isn't proof that a real model is
+connected." Install: meterless.ai install cards (Windows, Mac M1+, Mac M5+, DGX); email verification gate.
+"The free browser experience ... don't assume a browser demo exposes the local Runtime your app needs."
+
+**Engines are specs, not packages** (https://github.com/meterless/meterless, commit `1742dec`): "An engine here is an
+implementation spec for coding agents, not an npm package." The reference code is TypeScript; the repo has no Python.
+engines/hmem/README.md: "Implement it in TypeScript, Python, Rust, or whatever stack you ship. The contracts do not
+change." HackOS Meterless Agent Engines Index: "all model usage goes through an injected generator" and the engines
+should include "a sample mode that runs with no credentials". All three emit "JSONL audit/telemetry/provenance
+designed to be shipped to a run's `logs/` directory as evidence for judges".
+
+**Track fit (Agent Engines Index, exact; its track names differ from this event's tracks):** "Autonomous Intelligence | Markovian for the long investigation, World
+Model for the evidence trail". INFERRED for StockWhy: World Model for facilities/medicines/orders with provenance;
+H-MEM for remembered facility history; Scout Intent as the "pharmacist approves" risk guard.
+
+**Limits:** Nightshift hotspot latency on DGX Spark, "median latency was 36.8 s and p95 was 5 minutes 7 seconds"
+(docs/products/nightshift/hotspot.md). The provider doc says "Use a 180 s timeout".
 
 ---
 
-## Cursor (required for development)
+## NVIDIA (where it contributes; through Nightshift)
 
-Rule 5: "teams must use Cursor for development." Rule 6 asks for "how Cursor was used during development". Credits,
-setup docs or any proof format (screenshots, `.cursor/rules`, commit trailers): **NOT FOUND** publicly. Both Zetaris
-(`docs/connections/cursor-connection.md`) and Meterless (`docs/agent-ready/using-with-cursor.md`) have Cursor guides.
-INFERRED: commit `.cursor/rules` or AGENTS.md and keep screenshots of Cursor sessions as evidence.
-
----
-
-## Bright Data (bounty?)
-
-- Not on the event page, the academy page or the official rules. **No Bright Data bounty found in any primary source.**
-  The only mention is the NCSA news post sponsor list. Treat the bounty as unconfirmed (OPEN_QUESTIONS.md).
-- Product fit for public news/tender pages (KEMSA notices, county budget pages):
-  - **Web Unlocker**: "unlocks any public web page in a single API call with a 98% success rate and returns clean HTML
-    or JSON." `POST https://api.brightdata.com/request`, `Authorization: Bearer YOUR_API_KEY`, body
-    `{"zone":"YOUR_ZONE_NAME","url":"https://example.com","format":"raw"}` (https://docs.brightdata.com/scraping-automation/web-unlocker/introduction). This fits fetching known notice pages.
-  - **SERP API**: the same endpoint with a SERP zone; `url` is a search URL; optional `data_format`
-    (`parsed_light` = top 10 organic results, `markdown`) (https://docs.brightdata.com/scraping-automation/serp-api/introduction). This fits *finding* new notices ("KEMSA stock-out oxytocin 2026").
-  - INFERRED: SERP API to discover, Web Unlocker to fetch.
-- Free credits: **NOT FOUND**. Both pages say only "Pay only for successful" requests/delivery.
+See NVIDIA_MODELS.md. The NVIDIA key goes in Nightshift's Providers tab, never in our app. Award: DGX Spark ($4,699)
+for using "at least one Nemotron model through Meterless Nightshift in a working feature, and show which model
+handled the request." Credits: "On the HackOS task board" (FAQ), but our board task has no details, so **NOT FOUND**.
 
 ---
 
-## SpaceX AI
+## Cursor (optional per HackOS; "must use" per the event page)
 
-Listed as a sponsor; Michael Armentano (SpaceXAI) is a judge. No technology requirement in the rules. Nothing further found.
+- HackOS FAQ: "No. Cursor is optional and recommended." 22 Oct announcement: "Cursor is now optional" and "No free
+  Cursor credits are included with this event".
+- Event page Rule 5 still says "teams must use Cursor for development", and the HackOS "Help Cursor" channel says
+  "Cursor is the required development environment for every submission".
+- Award: "Best Cursor-built product | Cursor API credits | $2,301" (Hackathon Overview).
+- The submission form still asks how Cursor was used (Submission Form Preview).
+- INFERRED: since the binding rules are on the event page, use Cursor for at least part of the build and keep evidence
+  (for example `.cursor/rules` and screenshots) until organisers confirm (OPEN_QUESTIONS.md).
+
+---
+
+## Bright Data (bounty unconfirmed)
+
+- No HackOS document mentions Bright Data (grep over every downloaded doc: 0 matches). The event page, academy page
+  and rules don't mention it either.
+- The only HackOS trace is the 22 Oct announcement listing "Help Bright Data" among sponsor channels. There is no
+  such channel in the Messages list (read 23 Oct).
+- If we use it anyway (public-source notes): **Web Unlocker** `POST https://api.brightdata.com/request`,
+  `Authorization: Bearer <present in Bright Data account>`, body `{"zone":"...","url":"...","format":"raw"}`
+  (https://docs.brightdata.com/scraping-automation/web-unlocker/introduction). **SERP API**: same endpoint with a SERP
+  zone and optional `data_format` `parsed_light` / `markdown`
+  (https://docs.brightdata.com/scraping-automation/serp-api/introduction). Free credits: **NOT FOUND**.
+- INFERRED: any web data should feed *into* Zetaris (for example as a registered table), because the Setup Guide
+  says web data should "only ... add context".
+
+---
+
+## Space XAI (with Cursor)
+
+Listed as a sponsor "with Cursor". No technology requirement of its own. The judge list includes Michael Armentano
+(SpaceXAI) (event page).

@@ -4,9 +4,63 @@ All quotes are from the official event page unless marked otherwise:
 https://hackathon.genai.works/event/open-agent-hackathon-2026 (accessed 2026-10-23, read without login; the
 collapsed rule sections were read from the page's embedded data, which is the same text the "Expand all" button shows).
 
-> **Not covered (needs a logged-in pass):** the HackOS dashboard, our team workspace, the submission form fields
-> and limits, and any metadata.json template. Claude in Chrome was not connected, so nothing behind the login was
-> read. Everything below is from public pages only.
+> **Logged-in pass done 2026-10-23.** HackOS documents (Resources tab) and announcements were read with Claude in
+> Chrome. Their findings are in the section "HackOS requirements" below. Where HackOS and the event page disagree,
+> both are quoted. HackOS's own Official Rules copy says: "Draft status. The binding Official Rules are published on
+> the event page".
+
+## HackOS requirements (logged-in pass)
+
+Source paths are HackOS Resources document titles (https://hackathon.genai.works/resources) unless marked otherwise.
+
+**Mandatory technology (Disqualification Checklist):**
+| Requirement | Rule (exact) |
+|---|---|
+| Zetaris | "Must be your project's data layer." |
+| Meterless | "At least one Meterless Engine (H-MEM, Markovian, World Model or Scout Intent) working in a feature, and Meterless Nightshift as your primary AI provider." |
+| Required components | "Demo video (1–4 minutes), slide deck, public GitHub repository with README, sponsor technology explanation." |
+| Pre-existing work | "Work committed before 22 October, 00:00 UTC is not eligible unless declared in the submission form." |
+| One track | "Each submission selects exactly one primary track." |
+
+- Event Calendar and Hackathon Overview: "The project must use Zetaris as its data layer, implement at least one
+  Meterless Engine in a working feature, use Meterless Nightshift as its primary AI provider, and use NVIDIA
+  technology wherever it contributes. Cursor is optional."
+- Participant Setup Guide (last updated 21 Oct): "Zetaris and Meterless must be running on your machine to be
+  eligible for this hackathon." "For this hackathon, everyone runs Zetaris locally in Docker."
+- Setup Guide, Build: "A working integration is required. Simply mentioning an engine in your submission, copying a
+  prompt or adding an unused dependency does not satisfy the Build rule." And: the "POWER → Add Meterless as a
+  provider prompt ... On its own, it doesn't meet the Build requirement to implement at least one Meterless Engine."
+- Setup Guide, Power: "The Power rule: your app must support Meterless Nightshift as a primary AI provider."
+  "Meterless is a working primary AI provider in your app, not just a dependency in your README."
+- HackOS Official Rules (draft) §16 disqualification list includes "Does not integrate Zetaris, at least one
+  Meterless Engine and Meterless Nightshift", "Includes undeclared pre-existing work" and "Shows no evidence of how
+  the agent reached its output". §18 asks for disclaimers on medical use cases and human review.
+
+**Cursor conflict (unresolved, see OPEN_QUESTIONS.md):**
+- Event page Rule 5: "teams must use Cursor for development."
+- HackOS FAQ: "Do I have to use Cursor? No. Cursor is optional and recommended."
+- Announcement (HackOS Messages > Announcement, 22 Oct, Isreal Hosana): "1. Cursor is now optional" and "2. No free
+  Cursor credits are included with this event".
+- The HackOS "Help Cursor" channel description still says "Cursor is the required development environment for every
+  submission". The onboarding deck (21 Oct) also labels Cursor "REQUIRED".
+
+**Submission form (Submission Form Preview; Submission Requirements):** project name and description, track, team
+members (full name, HackOS email, GitHub username, role, primary contact), public GitHub URL, demo video 1–4 min,
+slide deck ("covering all eight points"), sponsor technology explanation (Zetaris, Meterless, Cursor, NVIDIA, what
+was unique), pre-existing components, Colab links. "Data prepared before the build window must be declared as a
+pre-existing component." "Your team locks at first submission" (onboarding deck).
+
+**What judges must be able to run (Disqualification Checklist):** "Repository is **public** by the deadline";
+"`.env.example` exists, placeholders only"; "Sample inputs and matching outputs are included"; "`logs/` exists or is
+created at runtime"; "There's a programmatic way in, not just a UI"; "It needs no interactive input"; "`SAMPLE_MODE=true`
+runs the whole thing without Zetaris, Nightshift or live credentials"; "It still runs real agent logic on cached data,
+rather than replaying a saved output"; "Output isn't read from `output_examples/`"; "No local GPU required; NVIDIA
+models are reached through Nightshift's hosted endpoints". Submission Requirements: "At least three sample inputs and
+their outputs".
+
+**metadata.json:** each sponsor overview says "Say where ... sits in your build in your README and `metadata.json`".
+No template or schema was found in any HackOS document, and the submission form preview has no metadata field
+(see metadata.template.json).
 
 ## Key dates (all UTC)
 
@@ -24,7 +78,9 @@ Rule 4: "Building starts 22 October 2026 at 00:00 UTC and ends 27 October 2026 a
 "Time zones do not extend the window; all deadlines are UTC."
 
 Nairobi equivalent of the deadline: **28 Oct 2026, 02:45 EAT** (UTC+3). Note that "Judging opens" (27 Oct 00:00 UTC)
-comes *before* the submission deadline.
+comes *before* the submission deadline. HackOS (Event Calendar, Official Rules draft, onboarding deck) instead says
+"**28 October** | Judging opens | Judges | Judging begins immediately after submissions close." HackOS also gives
+mid-sprint call 24 Oct 14:00 UTC; see SCHEDULE.md.
 
 **Conflicting source:** the Meterless repo's hackathon guide says "Dates | October 15 to 20, 2026"
 (https://github.com/meterless/meterless/blob/main/docs/community/hackathon-guide.md, commit 1742dec). The event page
@@ -80,8 +136,8 @@ Bright Data is **not mentioned** anywhere on the event page (see SPONSORS.md).
 3. "A GitHub repository with all source code and a README covering setup, usage and dependencies. If your agents run in Google Colab, include the Colab links."
 4. "A clear explanation of how Zetaris and Meterless were integrated, how Cursor was used during development, where NVIDIA technology contributes, and what was unique about your use of the sponsor technologies."
 
-Submission form fields and character/file limits: **NOT FOUND** (behind login).
-metadata.json template: **NOT FOUND** (see metadata.template.json).
+Submission form fields: see "HackOS requirements" above. Character/file limits: **NOT FOUND**.
+metadata.json template: **NOT FOUND** in HackOS either (see metadata.template.json).
 
 ## Disqualification checklist
 
@@ -104,12 +160,12 @@ The event page has no checklist titled "disqualification". Every rule that can d
 - "Up to $20,000 in total prize value: $13,000 in cash prizes and $7,000 in in-kind rewards for selected winners."
 - "Cash prizes per track (1st / 2nd / 3rd): Solving Fragmented Intelligence $1,600 / $1,200 / $900; The Agent That Can Explain Why $1,600 / $1,200 / $900; Reasoning Architecture $1,500 / $1,200 / $900; Wildcard [Tinkerer] $1,000 / $600 / $400."
 - "In-kind rewards: Best use of NVIDIA Nemotron - NVIDIA DGX Spark AI Supercomputer (Founder's Edition), $4,699."
-- Only $4,699 of the stated "$7,000 in in-kind rewards" is itemised. The rest is **NOT FOUND**.
-- Bright Data bounty: **NOT FOUND** on the event page or the GenAI.Works academy page.
+- HackOS Hackathon Overview itemises the in-kind rewards: "Best use of NVIDIA Nemotron | NVIDIA DGX Spark (Founder's Edition) | $4,699" and "Best Cursor-built product | Cursor API credits | $2,301" ($7,000 total).
+- Bright Data bounty: **NOT FOUND** on the event page, the academy page or any HackOS document. The only HackOS mention is a "Help Bright Data" channel named in the 22 Oct "build window is open" announcement; no such channel appears in the Messages channel list.
 - Cash prizes: "paid by bank transfer within 30 days", "split equally among team members unless the team submits a different split in writing", "Taxes and any local charges are the recipient's responsibility."
 - 1.2: "Employees of the organizer and of judging sponsors may participate but are not eligible for cash prizes."
 
-The criteria for "Best use of NVIDIA Nemotron" are **NOT FOUND** beyond its title.
+NVIDIA award criteria (Hackathon Overview): "a submission must use at least one Nemotron model through Meterless Nightshift in a working feature, and show which model handled the request." Setup Guide: "Suggested judging criteria: technical depth, usefulness and polish."
 
 ## Intellectual property (Rule 9)
 

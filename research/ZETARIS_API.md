@@ -205,3 +205,42 @@ def zetaris_sql(sql: str, limit: int = 100):
 
 - "Workshop: Data Day with Zetaris", Oct 12, "3 PM PT (22:00 UTC)" (academy page, see SCHEDULE.md). Already passed. Recording: **NOT FOUND**.
 - Support: Zetaris Discord https://discord.gg/GTmaNZyJnH (zetaris.com), Knowledge base https://kbase.zetaris.com/knowledge/sql-guide.
+
+## 11. HackOS Participant Setup Guide (logged-in pass; overrides §1 where they differ)
+
+Source: HackOS Resources > Participant Setup Guide (PDF, "Last updated 21 October 2026"), section 01 Data.
+
+- Instance: "For this hackathon, everyone runs Zetaris locally in Docker." No shared event instance is mentioned.
+  "Register at cloud.enterprise.zetaris.com/register, then open the Run locally page at
+  cloud.enterprise.zetaris.com/dashboard/download to download zetaris-platform.zip and copy the registry sign-in
+  command." Registry: `docker login zetarishackathon.azurecr.io`. Credentials: `<present in Zetaris Cloud: Run locally page>`.
+- Hardware: "Zetaris needs 8 GB of memory and 4 CPUs given to Docker, plus at least 15 GB of free disk space."
+  Under 16 GB RAM: managed AWS cluster on a new AWS Free plan account ("up to US$200 in credits").
+- Steps: `./preflight.sh` → set `ZETARIS_ADMIN_EMAIL`, `ZETARIS_ADMIN_PASSWORD`, `ZETARIS_ADMIN_ORG` in the platform
+  `.env` before first start → `docker compose pull && docker compose up -d` → `./verify.sh` ("9 / 9 passed") →
+  SQL Editor at `http://localhost:3000`, `SELECT 1 AS one;`. "The first download and startup take 30 to 45 minutes."
+  Apple Silicon: "turn on Use Rosetta in Docker Desktop's settings".
+- Routes on a local install (exact): web UI `http://localhost:3000`; REST API `http://localhost:8888/api/v1.0`;
+  JDBC `jdbc:zetaris:lightning@localhost:10000`. API docs at `http://localhost:8888/redoc/index.html`.
+  "Don't use port 8889: it's internal to Zetaris."
+- App `.env` (exact keys): `ZETARIS_REST_URL=http://localhost:8888/api/v1.0`, `ZETARIS_ORG_ID=1`,
+  `ZETARIS_API_KEY`, `ZETARIS_USERNAME`, `ZETARIS_PASSWORD`. "1 is the organisation ID on a local install. The
+  username and password are only needed to download the API's specification."
+- Every REST request: `POST /sql-editor/sqls/run` with `Authorization: Bearer <API key>`, `X-Org-ID`, `X-Request-ID`
+  ("a fresh UUID"). The smoke test body is `{"queryId": <uuid>, "sql": "SELECT 1", "source": "SqlEditor", "limit": 1}`
+  and it reads `response.json().get("data")`, which matches §4.
+- API key: "create an API key for your user and copy it straight away (it may be shown only once). Create the key
+  yourself; don't ask an AI agent to create or fetch it."
+- Errors (Troubleshooting table): 401 = "The Zetaris API key is missing, wrong or expired"; 400 = "Wrong X-Org-ID, or
+  X-Request-ID isn't a UUID"; "A file on your laptop won't query: Zetaris can't read files on your laptop. Put the
+  file in storage Zetaris can reach, such as an S3 bucket, then register it."
+- Suggested pattern for our track ("Putting it together"): "Your agent queries Zetaris first for the facts, and uses
+  web data only to add context. Judges and users can trust answers that trace back to governed data, which is what
+  The Agent That Can Explain Why track asks for."
+- Data rule for judges (Disqualification Checklist): "Data setup is automated, including any sources registered in
+  Zetaris". HackOS FAQ: "include a sample mode so your solution still runs without Zetaris, Nightshift or live credentials".
+- HackOS Resources > Zetaris getting-started prompt pins the repo at commit
+  `44668b267ad7ee0fae25ce7588e9620121d47cae` and runs `python3 scripts/preflight.py --jdbc`.
+- The Zetaris sponsor overview still says "[TBC: instance access and the Zetaris documentation will be added to
+  this folder before the build window opens on 22 October.]" (unchanged on 23 Oct).
+
