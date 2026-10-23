@@ -1,0 +1,17 @@
+dataset,facility_id,commodity,month,true_primary_cause,also_contributing,noise_level
+data/cases/normal/case_01,FAC-011,ORS sachet,2026-03,demand_surge,,1.0
+data/cases/normal/case_02,FAC-020,magnesium sulphate inj,2026-03,supplier_underfill,,1.0
+data/cases/normal/case_03,FAC-016,oxytocin 10IU inj,2026-03,expiry,supplier_underfill,1.0
+data/cases/normal/case_04,FAC-020,zinc 20mg tab,2026-03,record_error,,1.0
+data/cases/normal/case_05,FAC-030,magnesium sulphate inj,2026-03,national_disruption,,1.0
+data/cases/normal/case_06,FAC-022,iron-folate tab,2026-03,late_order,,1.0
+data/cases/normal/case_07,FAC-001,zinc 20mg tab,2026-03,late_order,demand_surge,1.0
+data/cases/normal/case_08,FAC-027,iron-folate tab,2026-03,payment_arrears,,1.0
+data/cases/noisy/case_01,FAC-019,iron-folate tab,2026-03,late_order,,2.5
+data/cases/noisy/case_02,FAC-015,iron-folate tab,2026-03,payment_arrears,,2.5
+data/cases/noisy/case_03,FAC-008,iron-folate tab,2026-03,record_error,,2.5
+data/cases/noisy/case_04,FAC-006,zinc 20mg tab,2026-03,expiry,supplier_underfill,2.5
+data/cases/noisy/case_05,FAC-013,magnesium sulphate inj,2026-03,supplier_underfill,,2.5
+data/cases/noisy/case_06,FAC-026,amoxicillin dispersible tab,2026-03,late_order,demand_surge,2.5
+data/cases/noisy/case_07,FAC-006,zinc 20mg tab,2026-03,demand_surge,,2.5
+data/cases/noisy/case_08,FAC-027,zinc 20mg tab,2026-03,national_disruption,,2.5
