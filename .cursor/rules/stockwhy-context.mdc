@@ -1,0 +1,96 @@
+---
+description: StockWhy project context, hackathon rules and current state (Open Agent Hackathon 2026, team NexusForge)
+alwaysApply: true
+---
+
+# StockWhy: project context for the coding agent
+
+Last updated: 2026-10-23. Sources and exact quotes live in `research/` (RULES.md, SPONSORS.md, ZETARIS_API.md,
+NVIDIA_MODELS.md, SCHEDULE.md, OPEN_QUESTIONS.md, SOURCES.md). Read the relevant file before making a decision
+that touches a rule. If something isn't in `research/`, say so instead of guessing.
+
+## What we are building
+
+StockWhy is an agent that explains **why** a Kenyan health facility ran out of an essential medicine and drafts a
+corrective action for a pharmacist to approve. Hackathon: Open Agent Hackathon 2026 (GenAI.Works / HackOS).
+Track: **"The Agent That Can Explain Why"**. Every answer must trace back to evidence in our data.
+
+## Deadlines (UTC; Nairobi = UTC+3)
+
+- Submissions close **27 Oct 2026, 23:45 UTC** (Wed 28 Oct, 02:45 Nairobi). Hard deadline. Aim to finish 26 Oct.
+- Mid-Sprint Community Call: 24 Oct, 14:00 UTC. By then: end-to-end loop working, Zetaris and Nightshift connected,
+  one Meterless Engine in progress, agent activity logged.
+
+## Hard requirements (missing any one can disqualify us)
+
+1. **Zetaris is the data layer.** It runs locally in Docker. The app reads data by sending SQL to
+   `POST {ZETARIS_REST_URL}/sql-editor/sqls/run` with headers `Authorization: Bearer`, `X-Org-ID`, `X-Request-ID`
+   (a fresh UUID) and body `{"queryId","sql","source":"SqlEditor","limit"}`. One statement per call. Values come
+   back as strings. Zetaris **cannot read local files**: data must sit in Postgres (or S3/Azure/GCS), registered
+   with `CREATE DATASOURCE` + `REGISTER DATASOURCE TABLES`. See `docs/datapack/01_demo_county_30/zetaris_register.sql`.
+2. **Meterless Nightshift is the primary AI provider.** It's OpenAI-compatible at `METERLESS_BASE_URL`
+   (default `http://127.0.0.1:8088/v1`), with `Authorization: Bearer $METERLESS_RUNTIME_TOKEN`, headers
+   `meterless-app: stockwhy` and `meterless-scope: user`, model `meterless/auto` or a pinned `meterless/*` route.
+   Use `GET /v1/models` for discovery and a 180 s timeout. **Replace the current Groq client (`llm_client.py`).**
+   Groq may stay only as a non-default fallback.
+3. **At least one Meterless Engine (H-MEM, Markovian, World Model or Scout Intent) in a working, user-facing
+   feature, with a passing test.** Mentioning an engine or adding an unused dependency does not count. The
+   "Add Meterless as a provider" prompt does not count as the Engine. Specs: https://github.com/meterless/meterless
+   (TypeScript reference; a Python implementation of the contract is allowed). Best fit for us: World Model (facility,
+   medicine and order entities with provenance as the evidence trail) and/or Scout Intent (risk guard so actions
+   need pharmacist approval).
+4. **NVIDIA through Nightshift only.** The NVIDIA key lives in Nightshift's Providers tab, **never** in our code or
+   `.env`. Pin a Nemotron lane (e.g. `nvidia/nemotron-3.5-lightning-30b-a3b`, `nvidia/nemotron-3.5-super-vl-120b-a12b`)
+   and **log which model handled each request**. This is also what the DGX Spark award needs.
+   Nemotron reasons before answering: with a small `max_tokens` it returns `content: null` and
+   `finish_reason: "length"`, with the reasoning in `message.reasoning_content`. Use generous `max_tokens`, treat
+   null content as a retryable failure, and log `reasoning_content` in the traces. The free endpoints are rate-limited
+   (about 40 requests/min per unofficial reports), so cap calls per run and back off on 429.
+   **Nightshift doesn't run on Intel Macs** (Mac editions need Apple Silicon), so the live Nightshift path runs on a
+   teammate's M1+ Mac or Windows PC.
+5. **Cursor:** HackOS says optional; the event page says required (unresolved). Build in Cursor and keep the
+   `.cursor/` folder as evidence.
+
+## What judges must be able to do (Disqualification Checklist)
+
+- Run from a fresh clone, with no manual edits and no interactive input. The README has every command.
+- `SAMPLE_MODE=true` runs the **whole** agent with no Zetaris, no Nightshift and no credentials, using cached data
+  in `data/sample/`. It must still run real agent logic, never replay saved outputs, and never read
+  `output_examples/` at runtime.
+- A programmatic entry point (CLI `run.py` and/or HTTP `/run`) with structured JSON in and out. Failures return a
+  useful message, not a stack trace or a hang.
+- JSONL traces in `logs/`: timestamp, run_id, agent_name, action, input_summary, output_summary, target_agent,
+  model, confidence, retry_count, status.
+- At least 3 sample inputs with their matching outputs committed.
+- `.env.example` with placeholders only. Public repo, kept light.
+- Medical use: show a disclaimer and keep a human (pharmacist) approval step before any action.
+- README must disclose the models used via Nightshift, frameworks, the AI coding tool used (Cursor, Claude), data
+  sources (**our data is synthetic, say so**), adapted code, limitations and sample-mode behaviour.
+
+## Current repo state (23 Oct)
+
+- `run.py`: argparse CLI stub (`--input`, `--dataset`, `--facility`, `--commodity`, `--month`, ...). No logic yet.
+- `agents/`: four LLM-prompt agents (data_analyst, theory_generator, evidence_investigator, action_strategist), all
+  calling `llm_client.ask_agent()`. They are a fixed A→B→C→D chain. Judges reward critique, retries, branching
+  and shared state over fixed chains, so add an evaluator/critic loop and retries.
+- `llm_client.py`: Groq (`GROQ_API_KEY`, `GROQ_MODEL`). Must move to Meterless (requirement 2).
+- `tools/file_reader.py`: reads local files. Data access must go through Zetaris (sample mode excepted).
+- `data/` (synthetic, see `data/README.md`): `sample/` is the demo county (30 facilities, 6 medicines, 24 months:
+  facilities, stock, orders, payments, web_notes, plus `postgres_load.sql` and `zetaris_register.sql`).
+  `cases/normal/` and `cases/noisy/` hold 8 cases each. `cases/questions.csv` lists each case's facility, medicine
+  and month (the agent's input).
+- `eval/answer_key.csv`: true causes, for scoring only.
+- `docs/` is local only and gitignored (the full datapack and a reference PDF).
+- Commits from 14 and 20 Oct predate the build window. They and the datapack (prepared around 22 Oct) must be
+  declared as pre-existing components in the submission form.
+
+## Guardrails for you (the coding agent)
+
+- **Never let the agent, its tools or its prompts read `eval/answer_key.csv`.** It's for scoring our accuracy
+  only, from a separate evaluation script.
+- Never put API keys, tokens or passwords in code, prompts, logs, commits or chat. Use `.env` (gitignored).
+- Don't fabricate data provenance, benchmark numbers or logs. Every claim the agent makes must cite a row/table it
+  actually queried.
+- Don't add AI co-author trailers (e.g. `Co-Authored-By: ...`) to commit messages.
+- Keep changes small and runnable. After each change, make sure `SAMPLE_MODE=true python run.py ...` still works.
+- If a rule is unclear, check `research/OPEN_QUESTIONS.md` and tell me, rather than guessing.

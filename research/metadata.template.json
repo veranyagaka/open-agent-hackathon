@@ -1,0 +1,13 @@
+{
+  "status": "NOT FOUND",
+  "note": "No metadata.json template or schema exists in any HackOS document, the event page or the academy page (checked 2026-10-23). The HackOS Submission Form Preview has no metadata field. The only mentions are the four sponsor overviews in HackOS Resources, e.g. 'Say where Zetaris sits in your build in your README and `metadata.json`, so judges can score it under Sponsor Tech.' Those overviews still contain [TBC] sections, so they may be older than the form. Ask organisers before inventing a schema (OPEN_QUESTIONS.md).",
+  "sources_checked": [
+    "HackOS Resources: Submission Requirements",
+    "HackOS Resources: Submission Form Preview",
+    "HackOS Resources: Disqualification Checklist",
+    "HackOS Resources: Technical Execution Requirements",
+    "HackOS Resources: Zetaris / Meterless / NVIDIA / Cursor sponsor overviews",
+    "https://hackathon.genai.works/event/open-agent-hackathon-2026",
+    "https://academy.genai.works/courses/open-agent-hackathon-2026/details"
+  ]
+}

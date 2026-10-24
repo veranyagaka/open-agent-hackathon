@@ -1,0 +1,18 @@
+[
+ {
+  "month": "2025-06",
+  "commodity": "ORS sachet",
+  "source": "KEMSA notice (synthetic)",
+  "title": "Routine delivery schedule update",
+  "url": "https://example.org/synthetic/1",
+  "synthetic": true
+ },
+ {
+  "month": "2025-11",
+  "commodity": "zinc 20mg tab",
+  "source": "Tender notice (synthetic)",
+  "title": "Framework tender opened",
+  "url": "https://example.org/synthetic/2",
+  "synthetic": true
+ }
+]
