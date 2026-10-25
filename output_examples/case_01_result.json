@@ -1,0 +1,1498 @@
+{
+  "run_id": "52739c1b",
+  "facility_id": "FAC-011",
+  "commodity": "ORS sachet",
+  "month": "2026-03",
+  "question": "Why did facility FAC-011 report a stockout of ORS sachet in 2026-03?",
+  "dataset_dir": "data/cases/normal/case_01",
+  "log_file": "case_01_run5.jsonl",
+  "steps": {
+    "data_reader": {
+      "facility_id": "FAC-011",
+      "commodity": "ORS sachet",
+      "month": "2026-03",
+      "evidence": {
+        "dataset_summary": {
+          "stock_rows": 1,
+          "order_rows": 1,
+          "history_months_available": 6,
+          "has_payment_records": true,
+          "has_web_notes": true
+        },
+        "relevant_records": {
+          "stock_ids": [
+            "1506"
+          ],
+          "order_ids": [
+            "1506"
+          ],
+          "payment_months": [
+            "2024-10",
+            "2024-11",
+            "2024-12",
+            "2025-01",
+            "2025-02",
+            "2025-03",
+            "2025-04",
+            "2025-05",
+            "2025-06",
+            "2025-07",
+            "2025-08",
+            "2025-09",
+            "2025-10",
+            "2025-11",
+            "2025-12",
+            "2026-01",
+            "2026-02",
+            "2026-03",
+            "2026-04",
+            "2026-05",
+            "2026-06",
+            "2026-07",
+            "2026-08",
+            "2026-09"
+          ]
+        },
+        "data_quality_flags": [],
+        "evidence_for_hypotheses": {
+          "h1_late_order": "Order was placed on 2026-02-05, five days before the cutoff of 2026-02-10, so it is not late; delivery month matches expectation and no slip occurred.",
+          "h2_supplier_underfill": "Facility fill rate (0.959) exceeds county average (0.910); relative shortfall is negative, indicating no under\u2011fill by the supplier.",
+          "h3_payment_arrears": "County shows arrears in 2026-02 (3,000,000 KES) but not flagged as major; a slight drop in fill rate (-0.0105) is observed versus the prior month.",
+          "h4_demand_surge": "Consumption this month (536) is 72.2% higher than the 3\u2011month average (311.33), indicating a demand surge.",
+          "h5_record_error": "Computed closing stock (0) matches reported closing (0); identity holds and reported 8 stock\u2011out days are plausible\u2014no record error detected.",
+          "h6_expiry": "Wastage this month is 0 and average wastage over three months is 0; no expiry\u2011related loss detected.",
+          "h7_national_disruption": "County fill rate dropped slightly (-0.0105) and no synthetic web notice related to a national disruption was found."
+        },
+        "missing_data_warnings": []
+      },
+      "computed_evidence": {
+        "h1_late_order": {
+          "order_date": "2026-02-05",
+          "cutoff_date": "2026-02-10",
+          "days_late": -5,
+          "late": false,
+          "delivery_month": "2026-03",
+          "expected_delivery_month": "2026-03",
+          "delivery_slipped": false,
+          "order_id": "orders#1505",
+          "order_month": "2026-02"
+        },
+        "h2_supplier_underfill": {
+          "facility_fill_rate": 0.9591,
+          "county_avg_fill_rate": 0.9096,
+          "relative_shortfall": -0.0494,
+          "underfill": false,
+          "n_facilities_in_cycle": 30,
+          "order_id": "orders#1505"
+        },
+        "h3_payment_arrears": {
+          "arrears_in_month": true,
+          "amount_owed_kes": 3000000.0,
+          "major_arrears": false,
+          "fill_drop_vs_prev": -0.0105,
+          "county_fill_this_month": 0.9201753096326637,
+          "county_fill_prev_month": 0.9096405272604537
+        },
+        "h4_demand_surge": {
+          "consumed_this_month": 536.0,
+          "avg_consumed_3m": 311.33,
+          "pct_change": 72.16,
+          "surge": true,
+          "stock_id": "stock#1506"
+        },
+        "h5_record_error": {
+          "computed_closing": 0.0,
+          "reported_closing": 0.0,
+          "discrepancy": 0.0,
+          "identity_holds": true,
+          "stockout_days_plausible": true,
+          "reported_stockout_days": 8.0,
+          "stock_id": "stock#1506"
+        },
+        "h6_expiry": {
+          "wastage_this_month": 0.0,
+          "avg_wastage_3m": 0.0,
+          "avg_consumed_3m": 311.33,
+          "high_wastage": false,
+          "stock_id": "stock#1506"
+        },
+        "h7_national_disruption": {
+          "county_fill_drop": -0.0105,
+          "county_fill_this_month": 0.9201753096326637,
+          "county_fill_prev_month": 0.9096405272604537,
+          "web_notice_found": false,
+          "notice_details": null
+        }
+      },
+      "data_quality": [],
+      "missing_data_warnings": [],
+      "_profile": {
+        "facility_id": "FAC-011",
+        "commodity": "ORS sachet",
+        "month": "2026-03",
+        "stock_record": [
+          {
+            "id": "1506",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-03",
+            "opening": 208,
+            "received": 328,
+            "wastage": 0,
+            "consumed": 536,
+            "closing": 0,
+            "reported_stockout_days": 8
+          }
+        ],
+        "order_record": [
+          {
+            "id": "1506",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-06 00:00:00",
+            "qty_requested": 301,
+            "qty_delivered": 292,
+            "delivery_month": "2026-04"
+          }
+        ],
+        "prev_order_record": [
+          {
+            "id": "1505",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 342,
+            "qty_delivered": 328,
+            "delivery_month": "2026-03"
+          }
+        ],
+        "all_orders": [
+          {
+            "id": "65",
+            "facility_id": "FAC-001",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 387,
+            "qty_delivered": 355,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "209",
+            "facility_id": "FAC-002",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 198,
+            "qty_delivered": 184,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "353",
+            "facility_id": "FAC-003",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-04 00:00:00",
+            "qty_requested": 320,
+            "qty_delivered": 297,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "497",
+            "facility_id": "FAC-004",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 222,
+            "qty_delivered": 219,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "641",
+            "facility_id": "FAC-005",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 285,
+            "qty_delivered": 284,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "785",
+            "facility_id": "FAC-006",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 173,
+            "qty_delivered": 159,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "929",
+            "facility_id": "FAC-007",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 120,
+            "qty_delivered": 101,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1073",
+            "facility_id": "FAC-008",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 181,
+            "qty_delivered": 168,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1217",
+            "facility_id": "FAC-009",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 396,
+            "qty_delivered": 342,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1361",
+            "facility_id": "FAC-010",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 411,
+            "qty_delivered": 382,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1505",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 342,
+            "qty_delivered": 328,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1649",
+            "facility_id": "FAC-012",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 442,
+            "qty_delivered": 395,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1793",
+            "facility_id": "FAC-013",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 337,
+            "qty_delivered": 272,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1937",
+            "facility_id": "FAC-014",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 154,
+            "qty_delivered": 140,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2081",
+            "facility_id": "FAC-015",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 320,
+            "qty_delivered": 292,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2225",
+            "facility_id": "FAC-016",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 129,
+            "qty_delivered": 121,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2369",
+            "facility_id": "FAC-017",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 257,
+            "qty_delivered": 257,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2513",
+            "facility_id": "FAC-018",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-04 00:00:00",
+            "qty_requested": 192,
+            "qty_delivered": 172,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2657",
+            "facility_id": "FAC-019",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 189,
+            "qty_delivered": 173,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2801",
+            "facility_id": "FAC-020",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-04 00:00:00",
+            "qty_requested": 286,
+            "qty_delivered": 263,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2945",
+            "facility_id": "FAC-021",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 254,
+            "qty_delivered": 226,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3089",
+            "facility_id": "FAC-022",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 177,
+            "qty_delivered": 150,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3233",
+            "facility_id": "FAC-023",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 366,
+            "qty_delivered": 339,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3377",
+            "facility_id": "FAC-024",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 424,
+            "qty_delivered": 380,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3521",
+            "facility_id": "FAC-025",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 90,
+            "qty_delivered": 82,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3665",
+            "facility_id": "FAC-026",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 137,
+            "qty_delivered": 121,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3809",
+            "facility_id": "FAC-027",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 411,
+            "qty_delivered": 330,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3953",
+            "facility_id": "FAC-028",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 363,
+            "qty_delivered": 363,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "4097",
+            "facility_id": "FAC-029",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 358,
+            "qty_delivered": 302,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "4241",
+            "facility_id": "FAC-030",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 257,
+            "qty_delivered": 231,
+            "delivery_month": "2026-03"
+          }
+        ],
+        "payments_history": [
+          {
+            "id": "1",
+            "month": "2024-10",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "2",
+            "month": "2024-11",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "3",
+            "month": "2024-12",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "4",
+            "month": "2025-01",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "5",
+            "month": "2025-02",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "6",
+            "month": "2025-03",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "7",
+            "month": "2025-04",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "8",
+            "month": "2025-05",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "9",
+            "month": "2025-06",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 8000000
+          },
+          {
+            "id": "10",
+            "month": "2025-07",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "11",
+            "month": "2025-08",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "12",
+            "month": "2025-09",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "13",
+            "month": "2025-10",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "14",
+            "month": "2025-11",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "15",
+            "month": "2025-12",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "16",
+            "month": "2026-01",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "17",
+            "month": "2026-02",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 3000000
+          },
+          {
+            "id": "18",
+            "month": "2026-03",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "19",
+            "month": "2026-04",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "20",
+            "month": "2026-05",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "21",
+            "month": "2026-06",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "22",
+            "month": "2026-07",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "23",
+            "month": "2026-08",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "24",
+            "month": "2026-09",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          }
+        ],
+        "stock_history": [
+          {
+            "id": "1500",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2025-09",
+            "opening": 163,
+            "received": 321,
+            "wastage": 0,
+            "consumed": 484,
+            "closing": 0,
+            "reported_stockout_days": 8
+          },
+          {
+            "id": "1501",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2025-10",
+            "opening": 0,
+            "received": 356,
+            "wastage": 0,
+            "consumed": 333,
+            "closing": 23,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1502",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2025-11",
+            "opening": 23,
+            "received": 473,
+            "wastage": 0,
+            "consumed": 339,
+            "closing": 157,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1503",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2025-12",
+            "opening": 157,
+            "received": 312,
+            "wastage": 0,
+            "consumed": 340,
+            "closing": 129,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1504",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-01",
+            "opening": 129,
+            "received": 335,
+            "wastage": 0,
+            "consumed": 304,
+            "closing": 160,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1505",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "opening": 160,
+            "received": 338,
+            "wastage": 0,
+            "consumed": 290,
+            "closing": 208,
+            "reported_stockout_days": 0
+          }
+        ],
+        "facilities": [
+          {
+            "facility_id": "FAC-001",
+            "lat": -1.4778,
+            "lon": 36.7697
+          },
+          {
+            "facility_id": "FAC-002",
+            "lat": -1.4234,
+            "lon": 36.5885
+          },
+          {
+            "facility_id": "FAC-003",
+            "lat": -1.4853,
+            "lon": 36.979
+          },
+          {
+            "facility_id": "FAC-004",
+            "lat": -0.9048,
+            "lon": 36.7983
+          },
+          {
+            "facility_id": "FAC-005",
+            "lat": -0.8856,
+            "lon": 37.1892
+          },
+          {
+            "facility_id": "FAC-006",
+            "lat": -1.1974,
+            "lon": 36.702
+          },
+          {
+            "facility_id": "FAC-007",
+            "lat": -0.9643,
+            "lon": 37.2228
+          },
+          {
+            "facility_id": "FAC-008",
+            "lat": -1.1552,
+            "lon": 36.396
+          },
+          {
+            "facility_id": "FAC-009",
+            "lat": -1.1225,
+            "lon": 36.3912
+          },
+          {
+            "facility_id": "FAC-010",
+            "lat": -1.3413,
+            "lon": 37.2617
+          },
+          {
+            "facility_id": "FAC-011",
+            "lat": -0.8793,
+            "lon": 36.5316
+          },
+          {
+            "facility_id": "FAC-012",
+            "lat": -1.3708,
+            "lon": 37.2135
+          },
+          {
+            "facility_id": "FAC-013",
+            "lat": -1.3341,
+            "lon": 36.3838
+          },
+          {
+            "facility_id": "FAC-014",
+            "lat": -0.9299,
+            "lon": 36.8114
+          },
+          {
+            "facility_id": "FAC-015",
+            "lat": -1.4391,
+            "lon": 37.1574
+          },
+          {
+            "facility_id": "FAC-016",
+            "lat": -1.0743,
+            "lon": 37.1365
+          },
+          {
+            "facility_id": "FAC-017",
+            "lat": -1.591,
+            "lon": 36.7505
+          },
+          {
+            "facility_id": "FAC-018",
+            "lat": -1.6497,
+            "lon": 36.4463
+          },
+          {
+            "facility_id": "FAC-019",
+            "lat": -1.4748,
+            "lon": 37.0282
+          },
+          {
+            "facility_id": "FAC-020",
+            "lat": -0.8662,
+            "lon": 37.0632
+          },
+          {
+            "facility_id": "FAC-021",
+            "lat": -1.0622,
+            "lon": 36.7235
+          },
+          {
+            "facility_id": "FAC-022",
+            "lat": -0.8695,
+            "lon": 36.6118
+          },
+          {
+            "facility_id": "FAC-023",
+            "lat": -1.1804,
+            "lon": 37.0649
+          },
+          {
+            "facility_id": "FAC-024",
+            "lat": -0.9941,
+            "lon": 36.5001
+          },
+          {
+            "facility_id": "FAC-025",
+            "lat": -1.203,
+            "lon": 36.5252
+          },
+          {
+            "facility_id": "FAC-026",
+            "lat": -1.1125,
+            "lon": 36.7041
+          },
+          {
+            "facility_id": "FAC-027",
+            "lat": -1.1962,
+            "lon": 36.8691
+          },
+          {
+            "facility_id": "FAC-028",
+            "lat": -1.5924,
+            "lon": 36.544
+          },
+          {
+            "facility_id": "FAC-029",
+            "lat": -1.7143,
+            "lon": 36.691
+          },
+          {
+            "facility_id": "FAC-030",
+            "lat": -1.1844,
+            "lon": 36.5615
+          }
+        ],
+        "web_notes": [
+          {
+            "month": "2025-06",
+            "commodity": "ORS sachet",
+            "source": "KEMSA notice (synthetic)",
+            "title": "Routine delivery schedule update",
+            "url": "https://example.org/synthetic/1",
+            "synthetic": true
+          }
+        ],
+        "computed_evidence": {
+          "h1_late_order": {
+            "order_date": "2026-02-05",
+            "cutoff_date": "2026-02-10",
+            "days_late": -5,
+            "late": false,
+            "delivery_month": "2026-03",
+            "expected_delivery_month": "2026-03",
+            "delivery_slipped": false,
+            "order_id": "orders#1505",
+            "order_month": "2026-02"
+          },
+          "h2_supplier_underfill": {
+            "facility_fill_rate": 0.9591,
+            "county_avg_fill_rate": 0.9096,
+            "relative_shortfall": -0.0494,
+            "underfill": false,
+            "n_facilities_in_cycle": 30,
+            "order_id": "orders#1505"
+          },
+          "h3_payment_arrears": {
+            "arrears_in_month": true,
+            "amount_owed_kes": 3000000.0,
+            "major_arrears": false,
+            "fill_drop_vs_prev": -0.0105,
+            "county_fill_this_month": 0.9201753096326637,
+            "county_fill_prev_month": 0.9096405272604537
+          },
+          "h4_demand_surge": {
+            "consumed_this_month": 536.0,
+            "avg_consumed_3m": 311.33,
+            "pct_change": 72.16,
+            "surge": true,
+            "stock_id": "stock#1506"
+          },
+          "h5_record_error": {
+            "computed_closing": 0.0,
+            "reported_closing": 0.0,
+            "discrepancy": 0.0,
+            "identity_holds": true,
+            "stockout_days_plausible": true,
+            "reported_stockout_days": 8.0,
+            "stock_id": "stock#1506"
+          },
+          "h6_expiry": {
+            "wastage_this_month": 0.0,
+            "avg_wastage_3m": 0.0,
+            "avg_consumed_3m": 311.33,
+            "high_wastage": false,
+            "stock_id": "stock#1506"
+          },
+          "h7_national_disruption": {
+            "county_fill_drop": -0.0105,
+            "county_fill_this_month": 0.9201753096326637,
+            "county_fill_prev_month": 0.9096405272604537,
+            "web_notice_found": false,
+            "notice_details": null
+          }
+        }
+      }
+    },
+    "data_analyst": {
+      "analysis_summary": "The evidence shows that the only notable anomaly for FAC-011 in March 2026 is a sharp increase in ORS sachet consumption (72% above the 3\u2011month average), indicating a demand surge. All other examined factors\u2014order timing, supplier fill rates, payment arrears magnitude, record integrity, wastage, and national disruption signals\u2014show no supporting evidence for the stockout.",
+      "hypothesis_signals": {
+        "H1": {
+          "signal": "none",
+          "reasoning": "Order placed 5 days before the cutoff (orders#1505) and delivery occurred as scheduled; no late order or delivery slip."
+        },
+        "H2": {
+          "signal": "none",
+          "reasoning": "Facility fill rate (0.9591) exceeds county average (0.9096); underfill flag is false (orders#1505)."
+        },
+        "H3": {
+          "signal": "none",
+          "reasoning": "Arrears exist but amount owed (3M KES) is far below the 30M threshold; county fill drop is minimal and major arrears flag is false."
+        },
+        "H4": {
+          "signal": "strong",
+          "reasoning": "Consumption this month (536) is 72.16% higher than the 3\u2011month average (311.33), surpassing the 25% surge threshold (stock#1506)."
+        },
+        "H5": {
+          "signal": "none",
+          "reasoning": "Closing balance matches, identity holds, and reported stockout days (8) are plausible; no discrepancy detected (stock#1506)."
+        },
+        "H6": {
+          "signal": "none",
+          "reasoning": "Wastage this month is zero, matching the 3\u2011month average; high wastage condition not met (stock#1506)."
+        },
+        "H7": {
+          "signal": "none",
+          "reasoning": "County fill dropped slightly but no public web notice of disruption was found."
+        }
+      },
+      "primary_leads": [
+        "H4 demand_surge"
+      ],
+      "data_limitations": [
+        "Analysis limited to a single month (2026-03) and one facility.",
+        "Computed evidence does not include qualitative factors (e.g., local disease outbreaks) that could explain demand spikes.",
+        "Payment arrears data lacks county\u2011wide financial context beyond the 30M threshold.",
+        "Web notice search may miss non\u2011indexed or offline announcements."
+      ]
+    },
+    "theory_generator": {
+      "theories": [
+        {
+          "id": "H1",
+          "hypothesis_name": "late_order",
+          "title": "Order placed after cutoff causing delivery delay",
+          "mechanism": "If the facility submits its order after the monthly cutoff, the supplier\u2019s schedule pushes the shipment to the following month, leaving a period with no inbound stock and creating a gap that can lead to a stockout.",
+          "evidence_needed": [
+            "Order timestamp recorded after the official cutoff date",
+            "Delivery receipt date falling in the month after the order",
+            "Inventory log showing zero on\u2011hand balance between order cutoff and next delivery"
+          ],
+          "disconfirming_evidence": [
+            "Order placed before the cutoff",
+            "Delivery received in the same month as the order",
+            "Continuous positive on\u2011hand balance throughout the month"
+          ],
+          "predictions": [
+            "Stockout days coincide with the interval between cutoff and next delivery",
+            "The following month shows a receipt of the delayed order and a rebound in stock levels",
+            "Consumption patterns remain unchanged during the gap"
+          ]
+        },
+        {
+          "id": "H2",
+          "hypothesis_name": "supplier_underfill",
+          "title": "Supplier delivered less than requested relative to peers",
+          "mechanism": "When the supplier ships a quantity that is materially lower than the facility\u2019s request\u2014especially compared with peer facilities in the same supply cycle\u2014the facility\u2019s inventory depletes faster than anticipated, potentially reaching zero before the next replenishment.",
+          "evidence_needed": [
+            "Delivery quantity for FAC\u2011011 lower than the ordered quantity",
+            "Fill rate for FAC\u2011011 noticeably below the county average for the same cycle",
+            "Peer facilities receiving a higher proportion of their orders in the same period"
+          ],
+          "disconfirming_evidence": [
+            "FAC\u2011011 fill rate equal to or higher than peers",
+            "Delivery quantity matches the order amount",
+            "No discrepancy between ordered and received units"
+          ],
+          "predictions": [
+            "Post\u2011delivery inventory shows a shortfall relative to forecast",
+            "Complaints or notes in supplier communication flag an under\u2011fill for this facility",
+            "Other facilities in the county maintain adequate stock while FAC\u2011011 experiences a stockout"
+          ]
+        },
+        {
+          "id": "H3",
+          "hypothesis_name": "payment_arrears",
+          "title": "County arrears trigger supplier delivery reduction",
+          "mechanism": "If the county owes the supplier >=30\u202fM KES, the supplier may curtail or delay shipments county\u2011wide as a credit control measure, reducing the volume that reaches each facility and increasing the risk of stockouts.",
+          "evidence_needed": [
+            "Financial records confirming county\u2011wide arrears of at least 30\u202fM KES at the time of the stockout",
+            "Correspondence from the supplier indicating reduced deliveries due to non\u2011payment",
+            "A measurable drop in county\u2011wide fill rates during the period in question"
+          ],
+          "disconfirming_evidence": [
+            "Arrears amount well below the 30\u202fM KES threshold",
+            "Supplier statements confirming normal delivery schedules",
+            "County fill rates remain stable or improve despite arrears"
+          ],
+          "predictions": [
+            "Multiple facilities within the county report simultaneous stockouts",
+            "Delivery logs show reduced quantities for all facilities compared with previous cycles",
+            "Media or internal memos reference payment\u2011related supply constraints"
+          ]
+        },
+        {
+          "id": "H4",
+          "hypothesis_name": "demand_surge",
+          "title": "Unexpected demand spike exhausts stock",
+          "mechanism": "A sudden increase in consumption\u2014exceeding 25\u202f% above the three\u2011month average\u2014drains the existing inventory faster than the scheduled replenishment can replace it, leading to a stockout before the next order arrives.",
+          "evidence_needed": [
+            "Consumption data for March 2026 showing >25\u202f% increase over the 3\u2011month average (e.g., 72\u202f% rise)",
+            "Stock cards indicating rapid depletion of on\u2011hand balance during the month",
+            "No corresponding increase in order quantity for the same period"
+          ],
+          "disconfirming_evidence": [
+            "Consumption figures within normal variance",
+            "Inventory levels remaining stable despite reported usage",
+            "An order placed that matches the surge in consumption"
+          ],
+          "predictions": [
+            "High daily issue counts for ORS sachets early in the month",
+            "Stockout days clustered after the peak consumption period",
+            "Subsequent ordering patterns show a larger quantity to replenish the unexpected drawdown"
+          ]
+        },
+        {
+          "id": "H5",
+          "hypothesis_name": "record_error",
+          "title": "Data recording error mislabels stockout",
+          "mechanism": "If the stockout days were entered incorrectly\u2014due to transcription mistakes or misapplied formulas\u2014the system may flag a stockout even though physical stock never reached zero, creating a false alarm.",
+          "evidence_needed": [
+            "Audit of the original stock\u2011card entries revealing a positive balance on the days marked as stockout",
+            "Reconciliation of the stock identity equation that shows no zero\u2011balance condition",
+            "Independent physical count confirming stock was on hand"
+          ],
+          "disconfirming_evidence": [
+            "Verified stock cards and electronic records both show zero balance on the reported days",
+            "Third\u2011party verification (e.g., supervisory visit) confirms the stockout"
+          ],
+          "predictions": [
+            "A re\u2011audit corrects the stockout count to zero days",
+            "No surge in consumption or ordering activity associated with the alleged stockout",
+            "Facility staff report no experience of stock shortage during the period"
+          ]
+        },
+        {
+          "id": "H6",
+          "hypothesis_name": "expiry",
+          "title": "Large expiry or damage write\u2011off depletes usable stock",
+          "mechanism": "When a substantial portion of the inventory is written off due to expiry, damage, or other loss, the usable stock quantity drops sharply, potentially leaving the facility without any usable units even if total stock appears sufficient on paper.",
+          "evidence_needed": [
+            "Wastage logs showing a spike in expiry or damage entries for ORS sachets in the month preceding the stockout",
+            "Disposal records confirming the quantity removed from usable stock",
+            "A decline in the usable\u2011balance column of the stock register despite stable total balance"
+          ],
+          "disconfirming_evidence": [
+            "Wastage entries remain at baseline levels (e.g., zero or negligible)",
+            "No recorded expiries or damages for ORS sachets in the relevant period"
+          ],
+          "predictions": [
+            "A sudden drop in the usable\u2011on\u2011hand figure immediately before the stockout",
+            "Corresponding increase in waste\u2011related paperwork or disposal receipts",
+            "No change in consumption patterns; the shortage is driven by loss rather than demand"
+          ]
+        },
+        {
+          "id": "H7",
+          "hypothesis_name": "national_disruption",
+          "title": "Nationwide supply chain disruption limits deliveries",
+          "mechanism": "A country\u2011wide event\u2014such as a tender failure, major logistics breakdown, or a public notice of supply interruption\u2014reduces the volume of commodities dispatched to all counties, causing simultaneous stockouts at facilities that rely on the central distribution system.",
+          "evidence_needed": [
+            "Official public notice, media report, or supplier announcement of a national supply disruption during the relevant timeframe",
+            "County\u2011wide data showing a uniform drop in fill rates or delivery volumes",
+            "Multiple facilities across the county reporting stockouts for the same product in the same month"
+          ],
+          "disconfirming_evidence": [
+            "Absence of any national\u2011level announcement or media coverage of disruption",
+            "Other counties or facilities continuing to receive normal deliveries",
+            "County fill rates remaining consistent with historical levels"
+          ],
+          "predictions": [
+            "Synchronized stockout reports from several facilities within the county",
+            "Supplier shipment manifests indicating reduced total quantities dispatched nationally",
+            "Logistics records showing delays or cancellations of transport trips for the period"
+          ]
+        }
+      ]
+    },
+    "evidence_investigator": {
+      "evaluations": [
+        {
+          "theory_id": "H1",
+          "hypothesis_name": "late_order",
+          "verdict": "weakened",
+          "verdict_source": "deterministic",
+          "supporting_evidence_ids": [],
+          "contradicting_evidence_ids": [],
+          "reasoning": "Deterministic verdict: weakened. LLM explanation unavailable: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m5ced73rez2stbndh5hnetn1` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 7486, Requested 4034. Please try again in 26.4s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+          "limitations": [
+            "Agent call error"
+          ],
+          "additional_analysis_needed": []
+        },
+        {
+          "theory_id": "H2",
+          "hypothesis_name": "supplier_underfill",
+          "verdict": "weakened",
+          "supporting_evidence_ids": [],
+          "contradicting_evidence_ids": [
+            "orders#1505"
+          ],
+          "reasoning": "The deterministic computation reports underfill=false, which is the primary flag for hypothesis H2. The facility's fill rate (0.9591) exceeds the county average (0.9096) and the relative shortfall is negative (-0.0494), indicating that the supplier delivered at least as much as ordered, if not more. Because the core condition for supplier under\u2011fill is not met, the hypothesis is weakened.",
+          "limitations": [
+            "Only aggregate fill\u2011rate metrics are available; the exact ordered vs delivered unit counts are not provided.",
+            "Peer\u2011facility comparisons are limited to a single county\u2011average figure rather than facility\u2011by\u2011facility data.",
+            "No qualitative supplier communications or complaint logs were examined."
+          ],
+          "additional_analysis_needed": [
+            "Obtain the ordered quantity and actual delivered quantity for orders#1505 to confirm the fill rate calculation.",
+            "Compare FAC\u2011011's fill rate to individual peer facilities in the same supply cycle.",
+            "Review supplier correspondence or incident reports for any mention of under\u2011fill at FAC\u2011011."
+          ],
+          "verdict_source": "deterministic"
+        },
+        {
+          "theory_id": "H3",
+          "hypothesis_name": "payment_arrears",
+          "verdict": "weakened",
+          "verdict_source": "deterministic",
+          "supporting_evidence_ids": [],
+          "contradicting_evidence_ids": [],
+          "reasoning": "Deterministic verdict: weakened. LLM explanation unavailable: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m5ced73rez2stbndh5hnetn1` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 6398, Requested 4063. Please try again in 18.4575s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+          "limitations": [
+            "Agent call error"
+          ],
+          "additional_analysis_needed": []
+        },
+        {
+          "theory_id": "H4",
+          "hypothesis_name": "demand_surge",
+          "verdict": "supported",
+          "supporting_evidence_ids": [
+            "stock#1506"
+          ],
+          "contradicting_evidence_ids": [],
+          "reasoning": "The computed evidence shows a 72.16% increase in ORS sachet consumption for March 2026 (536 units) compared with the three\u2011month average of 311.33 units. This exceeds the 25% threshold defined for a demand surge, and the flag \"surge\" is true. Such a rapid rise in usage would deplete on\u2011hand inventory faster than scheduled replenishment, explaining the reported stockout at facility FAC\u2011011. No counter\u2011evidence was provided.",
+          "limitations": [
+            "Analysis relies solely on the deterministic consumption figures and the surge flag; it does not incorporate order quantities, delivery dates, or other potential supply\u2011side factors."
+          ],
+          "additional_analysis_needed": [
+            "Review order records for the period to confirm that replenishment did not match the consumption spike",
+            "Examine stock\u2011card transactions to verify the timing of depletion",
+            "Check for any concurrent supply disruptions that could have compounded the stockout"
+          ],
+          "verdict_source": "deterministic"
+        },
+        {
+          "theory_id": "H5",
+          "hypothesis_name": "record_error",
+          "verdict": "weakened",
+          "supporting_evidence_ids": [],
+          "contradicting_evidence_ids": [
+            "stock#1506"
+          ],
+          "reasoning": "The deterministic evidence shows that the stock identity equation holds (identity_holds==true) for stock#1506, meaning the recorded opening, receipts, issues, and closing balances are internally consistent. Because the primary flag for a record_error hypothesis requires identity_holds to be false, the true flag directly contradicts the hypothesis, leading to a weakened verdict. No data is missing, so the verdict remains weakened.",
+          "limitations": [
+            "Analysis relies solely on the computed identity check; it does not include a manual audit of the original stock\u2011card entries or independent physical counts."
+          ],
+          "additional_analysis_needed": [
+            "Conduct an audit of the original stock\u2011card entries for the reported stockout period",
+            "Perform a physical inventory count to confirm on\u2011hand balances",
+            "Review supervisory visit reports for any third\u2011party verification of stock status"
+          ],
+          "verdict_source": "deterministic"
+        },
+        {
+          "theory_id": "H6",
+          "hypothesis_name": "expiry",
+          "verdict": "weakened",
+          "verdict_source": "deterministic",
+          "supporting_evidence_ids": [],
+          "contradicting_evidence_ids": [],
+          "reasoning": "Deterministic verdict: weakened. LLM explanation unavailable: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m5ced73rez2stbndh5hnetn1` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 7212, Requested 1867. Please try again in 8.092499999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+          "limitations": [
+            "Agent call error"
+          ],
+          "additional_analysis_needed": []
+        },
+        {
+          "theory_id": "H7",
+          "hypothesis_name": "national_disruption",
+          "verdict": "weakened",
+          "verdict_source": "deterministic",
+          "supporting_evidence_ids": [],
+          "contradicting_evidence_ids": [],
+          "reasoning": "Deterministic verdict: weakened. LLM explanation unavailable: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m5ced73rez2stbndh5hnetn1` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 7185, Requested 3246. Please try again in 18.2325s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+          "limitations": [
+            "Agent call error"
+          ],
+          "additional_analysis_needed": []
+        }
+      ],
+      "analysis_requests": []
+    },
+    "action_strategist": {
+      "medical_disclaimer": "This system provides decision-support information only. It does not constitute medical advice, clinical guidance, or authorisation to act. All proposed actions must be reviewed and approved by a qualified pharmacist or supply-chain officer before implementation.",
+      "ranked_hypotheses": [
+        {
+          "hypothesis_id": "H4",
+          "hypothesis_name": "demand_surge",
+          "likelihood": "high",
+          "verdict": "supported",
+          "summary": "Consumption of ORS sachets rose 72.16% in March 2026 (536 units) versus the three\u2011month average (311.33 units), exceeding the 25% surge threshold and likely depleting on\u2011hand inventory faster than scheduled replenishment."
+        },
+        {
+          "hypothesis_id": "H1",
+          "hypothesis_name": "late_order",
+          "likelihood": "low",
+          "verdict": "weakened",
+          "summary": "Deterministic analysis weakened this hypothesis; no specific evidence of delayed ordering was identified."
+        },
+        {
+          "hypothesis_id": "H2",
+          "hypothesis_name": "supplier_underfill",
+          "likelihood": "low",
+          "verdict": "weakened",
+          "summary": "Fill rate (0.9591) exceeds county average; supplier delivered at least the ordered quantity for orders#1505."
+        },
+        {
+          "hypothesis_id": "H3",
+          "hypothesis_name": "payment_arrears",
+          "likelihood": "low",
+          "verdict": "weakened",
+          "summary": "Deterministic analysis weakened this hypothesis; no payment\u2011related evidence found."
+        },
+        {
+          "hypothesis_id": "H5",
+          "hypothesis_name": "record_error",
+          "likelihood": "low",
+          "verdict": "weakened",
+          "summary": "Stock identity check for stock#1506 holds true, contradicting a record\u2011error cause."
+        },
+        {
+          "hypothesis_id": "H6",
+          "hypothesis_name": "expiry",
+          "likelihood": "low",
+          "verdict": "weakened",
+          "summary": "Deterministic analysis weakened this hypothesis; no expiry\u2011related evidence presented."
+        },
+        {
+          "hypothesis_id": "H7",
+          "hypothesis_name": "national_disruption",
+          "likelihood": "low",
+          "verdict": "weakened",
+          "summary": "Deterministic analysis weakened this hypothesis; no national\u2011level disruption evidence identified."
+        }
+      ],
+      "most_likely_cause": "Demand surge (H4) \u2013 a rapid increase in ORS sachet consumption in March 2026 depleted on\u2011hand stock faster than replenishment could keep pace.",
+      "actions": [
+        {
+          "action_id": "A1",
+          "action": "Submit an emergency requisition for ORS sachets to replenish on\u2011hand stock and restore service continuity.",
+          "linked_hypothesis_ids": [
+            "H4"
+          ],
+          "evidence_basis": "stock#1506 (consumption surge), demand surge analysis",
+          "priority": "critical",
+          "proposed_owner": "Pharmacy Supply Manager",
+          "timeframe": "within 24 hours",
+          "expected_outcome": "Facility FAC-011 receives enough ORS sachets to meet projected demand for the next 30 days and avoids further stockouts.",
+          "success_measure": "On\u2011hand ORS sachet balance \u2265 safety stock level (e.g., 1,500 units) within 48 hours of request.",
+          "risks_and_caveats": "Potential delays in central warehouse processing; expedited shipping may incur higher logistics cost.",
+          "pharmacist_review_required": true
+        },
+        {
+          "action_id": "A2",
+          "action": "Adjust the buffer stock policy for ORS sachets at FAC-011 to increase safety stock by 30% for the next ordering cycle.",
+          "linked_hypothesis_ids": [
+            "H4"
+          ],
+          "evidence_basis": "stock#1506 (historical average consumption), demand surge magnitude",
+          "priority": "high",
+          "proposed_owner": "Regional Pharmacy Coordinator",
+          "timeframe": "next ordering cycle (within 2 weeks)",
+          "expected_outcome": "Revised safety stock reduces risk of stockout if future consumption spikes occur.",
+          "success_measure": "No reported ORS stockouts for the next three months post\u2011implementation.",
+          "risks_and_caveats": "Higher inventory holding costs; need to ensure storage capacity.",
+          "pharmacist_review_required": true
+        },
+        {
+          "action_id": "A3",
+          "action": "Conduct a rapid audit of ORS sachet consumption for March 2026 to confirm the surge and identify any atypical usage patterns.",
+          "linked_hypothesis_ids": [
+            "H4"
+          ],
+          "evidence_basis": "stock#1506 consumption data, surge flag",
+          "priority": "medium",
+          "proposed_owner": "Facility Pharmacist",
+          "timeframe": "within 5 business days",
+          "expected_outcome": "Validated consumption figures and understanding of drivers (e.g., outbreak, program rollout).",
+          "success_measure": "Audit report completed and shared with regional supply team.",
+          "risks_and_caveats": "Audit may uncover data quality issues requiring further investigation.",
+          "pharmacist_review_required": true
+        },
+        {
+          "action_id": "A4",
+          "action": "Review upcoming order schedules for ORS sachets to align delivery dates with the observed consumption peak.",
+          "linked_hypothesis_ids": [
+            "H4"
+          ],
+          "evidence_basis": "stock#1506 surge evidence, pending order timelines (to be obtained)",
+          "priority": "high",
+          "proposed_owner": "Central Procurement Officer",
+          "timeframe": "by the end of the current ordering cycle",
+          "expected_outcome": "Adjusted delivery dates ensure stock arrives before projected depletion.",
+          "success_measure": "Revised order schedule documented and confirmed with supplier.",
+          "risks_and_caveats": "Supplier capacity constraints may limit ability to expedite.",
+          "pharmacist_review_required": true
+        }
+      ],
+      "emergency_requisition_memo": "To: Central Medical Stores\nFrom: Pharmacy Supply Manager, Facility FAC-011\nDate: 2026-03-27\nSubject: Emergency Requisition \u2013 ORS Sachets (Critical Shortage)\n\nCommodity: Oral Rehydration Solution (ORS) sachets\nRequested Quantity: 2,000 sachets (covers projected 30\u2011day demand plus 30% safety buffer based on March 2026 consumption surge of 72%).\nJustification: Deterministic analysis (stock#1506) indicates a 72.16% increase in ORS consumption in March 2026, depleting on\u2011hand inventory and resulting in a reported stockout. Immediate resupply is required to maintain treatment of dehydration cases and prevent morbidity.\nUrgency: Critical \u2013 facility currently unable to dispense ORS; patient care at risk.\nPlease process this request on an emergency basis and arrange expedited shipment.\n---\nSignature: ______________________ (Pharmacy Supply Manager)",
+      "transfer_request": null,
+      "ordering_schedule_recommendation": "Recommendation for the next ordering cycle (April 2026):\n1. Increase the order quantity for ORS sachets by 30% relative to the standard forecast for FAC-011.\n2. Shorten the lead time target from 21 days to 14 days to accommodate potential demand spikes.\n3. Incorporate a dynamic safety stock calculation that adds 20% of the three\u2011month average consumption plus an additional buffer equal to 10% of the observed month\u2011over\u2011month change.\n4. Implement a mid\u2011cycle consumption review (day 15 of the month) to trigger supplemental orders if consumption exceeds 20% above the forecast.\nThese adjustments aim to prevent recurrence of stockouts driven by sudden demand surges.",
+      "communication_draft": "Subject: Immediate Action Required \u2013 ORS Stockout at FAC-011\n\nDear Regional Supply Chain Team,\n\nOur recent analysis confirms a significant demand surge for ORS sachets at Facility FAC-011 (72% increase in March 2026). The facility has reported a stockout, jeopardizing patient care.\n\nPlease review the attached emergency requisition (A1) and approve the expedited shipment of 2,000 sachets. Additionally, we recommend adjusting the upcoming order schedule (A4) and revising the buffer stock policy (A2) to mitigate future risks.\n\nA rapid consumption audit (A3) will be completed by 2026-04-01 and shared with the team.\n\nYour prompt attention is essential.\n\nBest regards,\n[Pharmacy Supply Manager]\nFacility FAC-011",
+      "open_questions": [
+        "What were the exact ordered and delivered quantities for orders placed for ORS sachets in the February\u2013March 2026 period?",
+        "Does any neighboring facility (e.g., FAC-010) currently hold surplus ORS sachets that could be transferred?",
+        "Are there any known public health events (e.g., diarrheal disease outbreak) in the catchment area that explain the consumption spike?"
+      ]
+    }
+  },
+  "approved_actions": [],
+  "rejected_actions": [],
+  "most_likely_cause": "Demand surge (H4) \u2013 a rapid increase in ORS sachet consumption in March 2026 depleted on\u2011hand stock faster than replenishment could keep pace.",
+  "ranked_hypotheses": [
+    {
+      "hypothesis_id": "H4",
+      "hypothesis_name": "demand_surge",
+      "likelihood": "high",
+      "verdict": "supported",
+      "summary": "Consumption of ORS sachets rose 72.16% in March 2026 (536 units) versus the three\u2011month average (311.33 units), exceeding the 25% surge threshold and likely depleting on\u2011hand inventory faster than scheduled replenishment."
+    },
+    {
+      "hypothesis_id": "H1",
+      "hypothesis_name": "late_order",
+      "likelihood": "low",
+      "verdict": "weakened",
+      "summary": "Deterministic analysis weakened this hypothesis; no specific evidence of delayed ordering was identified."
+    },
+    {
+      "hypothesis_id": "H2",
+      "hypothesis_name": "supplier_underfill",
+      "likelihood": "low",
+      "verdict": "weakened",
+      "summary": "Fill rate (0.9591) exceeds county average; supplier delivered at least the ordered quantity for orders#1505."
+    },
+    {
+      "hypothesis_id": "H3",
+      "hypothesis_name": "payment_arrears",
+      "likelihood": "low",
+      "verdict": "weakened",
+      "summary": "Deterministic analysis weakened this hypothesis; no payment\u2011related evidence found."
+    },
+    {
+      "hypothesis_id": "H5",
+      "hypothesis_name": "record_error",
+      "likelihood": "low",
+      "verdict": "weakened",
+      "summary": "Stock identity check for stock#1506 holds true, contradicting a record\u2011error cause."
+    },
+    {
+      "hypothesis_id": "H6",
+      "hypothesis_name": "expiry",
+      "likelihood": "low",
+      "verdict": "weakened",
+      "summary": "Deterministic analysis weakened this hypothesis; no expiry\u2011related evidence presented."
+    },
+    {
+      "hypothesis_id": "H7",
+      "hypothesis_name": "national_disruption",
+      "likelihood": "low",
+      "verdict": "weakened",
+      "summary": "Deterministic analysis weakened this hypothesis; no national\u2011level disruption evidence identified."
+    }
+  ],
+  "actions": [
+    {
+      "action_id": "A1",
+      "action": "Submit an emergency requisition for ORS sachets to replenish on\u2011hand stock and restore service continuity.",
+      "linked_hypothesis_ids": [
+        "H4"
+      ],
+      "evidence_basis": "stock#1506 (consumption surge), demand surge analysis",
+      "priority": "critical",
+      "proposed_owner": "Pharmacy Supply Manager",
+      "timeframe": "within 24 hours",
+      "expected_outcome": "Facility FAC-011 receives enough ORS sachets to meet projected demand for the next 30 days and avoids further stockouts.",
+      "success_measure": "On\u2011hand ORS sachet balance \u2265 safety stock level (e.g., 1,500 units) within 48 hours of request.",
+      "risks_and_caveats": "Potential delays in central warehouse processing; expedited shipping may incur higher logistics cost.",
+      "pharmacist_review_required": true
+    },
+    {
+      "action_id": "A2",
+      "action": "Adjust the buffer stock policy for ORS sachets at FAC-011 to increase safety stock by 30% for the next ordering cycle.",
+      "linked_hypothesis_ids": [
+        "H4"
+      ],
+      "evidence_basis": "stock#1506 (historical average consumption), demand surge magnitude",
+      "priority": "high",
+      "proposed_owner": "Regional Pharmacy Coordinator",
+      "timeframe": "next ordering cycle (within 2 weeks)",
+      "expected_outcome": "Revised safety stock reduces risk of stockout if future consumption spikes occur.",
+      "success_measure": "No reported ORS stockouts for the next three months post\u2011implementation.",
+      "risks_and_caveats": "Higher inventory holding costs; need to ensure storage capacity.",
+      "pharmacist_review_required": true
+    },
+    {
+      "action_id": "A3",
+      "action": "Conduct a rapid audit of ORS sachet consumption for March 2026 to confirm the surge and identify any atypical usage patterns.",
+      "linked_hypothesis_ids": [
+        "H4"
+      ],
+      "evidence_basis": "stock#1506 consumption data, surge flag",
+      "priority": "medium",
+      "proposed_owner": "Facility Pharmacist",
+      "timeframe": "within 5 business days",
+      "expected_outcome": "Validated consumption figures and understanding of drivers (e.g., outbreak, program rollout).",
+      "success_measure": "Audit report completed and shared with regional supply team.",
+      "risks_and_caveats": "Audit may uncover data quality issues requiring further investigation.",
+      "pharmacist_review_required": true
+    },
+    {
+      "action_id": "A4",
+      "action": "Review upcoming order schedules for ORS sachets to align delivery dates with the observed consumption peak.",
+      "linked_hypothesis_ids": [
+        "H4"
+      ],
+      "evidence_basis": "stock#1506 surge evidence, pending order timelines (to be obtained)",
+      "priority": "high",
+      "proposed_owner": "Central Procurement Officer",
+      "timeframe": "by the end of the current ordering cycle",
+      "expected_outcome": "Adjusted delivery dates ensure stock arrives before projected depletion.",
+      "success_measure": "Revised order schedule documented and confirmed with supplier.",
+      "risks_and_caveats": "Supplier capacity constraints may limit ability to expedite.",
+      "pharmacist_review_required": true
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"timestamp": "2026-10-25T08:13:09.242942+00:00", "run_id": "31ade73d", "agent_name": "data_reader", "action": "read_and_profile", "input_summary": "FAC-001/ORS sachet/2026-03", "output_summary": "Dataset directory not found: /nonexistent/path", "model": null, "confidence": null, "status": "error"}
