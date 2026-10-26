@@ -1,0 +1,94 @@
+{
+  "registryVersion": 3,
+  "note": "StockWhy intent registry for Scout Intent. If an intent is not here, StockWhy cannot act on it. An intent whose capabilities are not all in the capability graph (engines/scout_intent.py) is refused at the boundary.",
+  "intents": [
+    {
+      "id": "GENERAL",
+      "category": "general",
+      "description": "Safe fallback. Explains what StockWhy can do. Never routes to tools.",
+      "parameters": {"required": [], "properties": {}},
+      "capabilities": [],
+      "riskClass": "low",
+      "roles": ["*"],
+      "triggers": {"hello": 1, "help": 1, "what can you do": 2},
+      "examples": ["hello", "what can you help me with?"],
+      "version": 1
+    },
+    {
+      "id": "stockout.explain",
+      "category": "stockout",
+      "description": "Investigate why a facility ran out of a medicine in a month, with cited evidence.",
+      "parameters": {
+        "required": ["facility_id", "commodity", "month"],
+        "properties": {"facility_id": "facility", "commodity": "commodity", "month": "month"}
+      },
+      "capabilities": ["data.read", "llm.call", "memory.read", "memory.write"],
+      "riskClass": "low",
+      "roles": ["pharmacist", "records_officer", "chmt", "viewer"],
+      "triggers": {
+        "why": 3, "ran out": 4, "run out": 4, "stock-out": 4, "stockout": 4, "stock out": 4, "out of": 2,
+        "shortage": 3, "explain": 2, "cause": 2, "investigate": 3, "short of": 3, "missing": 1, "no stock": 3,
+        "kwa nini": 3, "iliishiwa": 4, "kuishiwa": 4, "imeishiwa": 4, "upungufu": 3, "ukosefu": 3, "imeisha": 3
+      },
+      "examples": [
+        "Why did FAC-009 run out of oxytocin in March 2026?",
+        "Investigate the zinc stock-out at FAC-020 in 2026-03",
+        "Explain the ORS shortage at facility 11 last March",
+        "Kwa nini FAC-009 iliishiwa na magnesium sulphate Machi 2026?"
+      ],
+      "version": 3
+    },
+    {
+      "id": "action.draft",
+      "category": "action",
+      "description": "Draft a corrective action (transfer request, emergency requisition, ordering change) for pharmacist approval. Drafts only.",
+      "parameters": {
+        "required": ["facility_id", "commodity", "month"],
+        "properties": {"facility_id": "facility", "commodity": "commodity", "month": "month"}
+      },
+      "capabilities": ["data.read", "llm.call", "action.draft"],
+      "riskClass": "medium",
+      "roles": ["pharmacist", "chmt", "records_officer", "viewer"],
+      "triggers": {
+        "draft": 3, "transfer": 3, "requisition": 3, "what should i do": 3, "fix": 2, "action": 2, "memo": 2,
+        "recommend": 2
+      },
+      "examples": ["Draft a transfer request for FAC-016 oxytocin, March 2026"],
+      "version": 2
+    },
+    {
+      "id": "order.submit",
+      "category": "order",
+      "description": "Send an order or requisition to the supplier. StockWhy has no tool for this on purpose.",
+      "parameters": {
+        "required": ["facility_id", "commodity"],
+        "properties": {"facility_id": "facility", "commodity": "commodity"}
+      },
+      "capabilities": ["order.send"],
+      "riskClass": "high",
+      "roles": ["pharmacist"],
+      "triggers": {
+        "send the order": 5, "submit": 4, "place an order": 5, "place the order": 5, "order now": 4,
+        "send to kemsa": 5, "send it": 3, "email the supplier": 5, "approve the order": 4
+      },
+      "examples": ["Submit the emergency order to KEMSA now"],
+      "version": 2
+    },
+    {
+      "id": "clinical.advice",
+      "category": "clinical",
+      "description": "Dosing, prescribing or treatment advice. Out of scope: StockWhy explains supply, not care.",
+      "parameters": {"required": [], "properties": {}},
+      "capabilities": ["clinical.advise"],
+      "riskClass": "high",
+      "roles": ["*"],
+      "triggers": {
+        "dose": 4, "dosage": 5, "dosing": 5, "mg/kg": 5, "mg per kg": 5, "prescribe": 5, "prescription": 4,
+        "how much should i give": 5, "how many tablets": 5, "should i give": 4, "treat a": 3, "treatment for": 4,
+        "side effect": 4, "diagnos": 4, "kipimo": 4, "dawa ngapi": 5
+      },
+      "examples": ["What dose of oxytocin should I give for postpartum haemorrhage?"],
+      "version": 1
+    }
+  ]
+}
