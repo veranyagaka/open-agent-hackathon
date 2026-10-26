@@ -165,29 +165,115 @@ def _print_results(result: dict) -> None:
     print("="*60)
 
 
+def _get_facilities() -> list:
+    """Return sorted list of facility IDs from data/sample/facilities.csv."""
+    import csv as _csv
+    facilities_path = Path(__file__).parent / "data" / "sample" / "facilities.csv"
+    if facilities_path.exists():
+        with open(facilities_path, newline="") as f:
+            reader = _csv.DictReader(f)
+            return sorted({row["facility_id"] for row in reader if row.get("facility_id")})
+    # Fallback: enumerate FAC-001..FAC-030
+    return [f"FAC-{i:03d}" for i in range(1, 31)]
+
+
+def _get_commodities() -> list:
+    """Return sorted list of unique commodity names from data/sample/stock.csv."""
+    import csv as _csv
+    stock_path = Path(__file__).parent / "data" / "sample" / "stock.csv"
+    if stock_path.exists():
+        with open(stock_path, newline="") as f:
+            reader = _csv.DictReader(f)
+            seen = set()
+            commodities = []
+            for row in reader:
+                c = row.get("commodity", "").strip()
+                if c and c not in seen:
+                    seen.add(c)
+                    commodities.append(c)
+            return sorted(commodities)
+    return []
+
+
+def _get_cases() -> list:
+    """Return list of case dicts from data/cases/questions.csv."""
+    import csv as _csv
+    questions_path = Path(__file__).parent / "data" / "cases" / "questions.csv"
+    if not questions_path.exists():
+        return []
+    with open(questions_path, newline="") as f:
+        reader = _csv.DictReader(f)
+        return [
+            {
+                "dataset": row["dataset"],
+                "facility_id": row["facility_id"],
+                "commodity": row["commodity"],
+                "month": row["month"],
+                "noise_level": row.get("noise_level", ""),
+            }
+            for row in reader
+        ]
+
+
 def _serve(port: int = 8000) -> None:
-    """Start a minimal HTTP server exposing a /run endpoint."""
+    """Start a minimal HTTP server exposing a /run endpoint and the frontend."""
     from http.server import BaseHTTPRequestHandler, HTTPServer
 
     print(f"StockyWhy HTTP server starting on port {port}...")
-    print(f"POST /run with JSON body: {{dataset, facility_id, commodity, month}}")
+    print(f"  Frontend  : http://localhost:{port}/")
+    print(f"  API       : POST http://localhost:{port}/run")
+    print(f"  Metadata  : GET  http://localhost:{port}/api/facilities|commodities|cases")
     print("Press Ctrl+C to stop.\n")
+
+    _base_dir = Path(__file__).parent
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, format, *args):  # suppress default access log
             pass
 
         def do_GET(self):
-            if self.path == "/health":
+            path = self.path.split("?")[0]  # strip query string
+
+            # ── Frontend index ─────────────────────────────────────
+            if path in ("/", "/index.html"):
+                index_path = _base_dir / "index.html"
+                if index_path.exists():
+                    body = index_path.read_bytes()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                else:
+                    self._error(404, "index.html not found")
+                return
+
+            # ── Health check ───────────────────────────────────────
+            if path == "/health":
                 body = json.dumps({"status": "ok", "service": "stockywhy"}).encode()
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
-            else:
-                self.send_response(404)
-                self.end_headers()
+                self._json_response(200, body)
+                return
+
+            # ── API: facilities ────────────────────────────────────
+            if path == "/api/facilities":
+                body = json.dumps({"facilities": _get_facilities()}).encode()
+                self._json_response(200, body)
+                return
+
+            # ── API: commodities ───────────────────────────────────
+            if path == "/api/commodities":
+                body = json.dumps({"commodities": _get_commodities()}).encode()
+                self._json_response(200, body)
+                return
+
+            # ── API: cases ─────────────────────────────────────────
+            if path == "/api/cases":
+                body = json.dumps({"cases": _get_cases()}).encode()
+                self._json_response(200, body)
+                return
+
+            self.send_response(404)
+            self.end_headers()
 
         def do_POST(self):
             if self.path != "/run":
@@ -223,21 +309,20 @@ def _serve(port: int = 8000) -> None:
                     interactive=False,
                 )
                 response_body = json.dumps(result, default=str).encode()
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(response_body)))
-                self.end_headers()
-                self.wfile.write(response_body)
+                self._json_response(200, response_body)
             except Exception as exc:
                 self._error(500, str(exc))
 
-        def _error(self, code: int, msg: str) -> None:
-            body = json.dumps({"error": msg}).encode()
+        def _json_response(self, code: int, body: bytes) -> None:
             self.send_response(code)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
+
+        def _error(self, code: int, msg: str) -> None:
+            body = json.dumps({"error": msg}).encode()
+            self._json_response(code, body)
 
     server = HTTPServer(("0.0.0.0", port), Handler)
     try:
