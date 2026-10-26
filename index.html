@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StockyWhy — Drug Stockout Investigation</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #1a56a8;
+      --blue-lt: #e8f0fb;
+      --green:   #1a7a3c;
+      --green-lt:#e8f6ee;
+      --amber:   #b45309;
+      --amber-lt:#fef3c7;
+      --red:     #b91c1c;
+      --red-lt:  #fef2f2;
+      --gray-50: #f8f9fa;
+      --gray-100:#f1f3f5;
+      --gray-200:#e9ecef;
+      --gray-300:#dee2e6;
+      --gray-400:#adb5bd;
+      --gray-600:#6c757d;
+      --gray-700:#495057;
+      --gray-900:#212529;
+      --border:  #dee2e6;
+      --radius:  6px;
+      --shadow:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--gray-900);
+      background: var(--gray-100);
+      min-height: 100vh;
+    }
+
+    /* ── Layout ────────────────────────────────────────────────────── */
+    .topbar {
+      background: var(--blue);
+      color: #fff;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    }
+    .topbar-logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+    .topbar-sub  { font-size: 12px; opacity: .75; }
+    .topbar-spacer { flex: 1; }
+    .topbar-badge {
+      font-size: 11px;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 4px;
+      padding: 2px 8px;
+    }
+
+    .layout {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── Cards ─────────────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--gray-50);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-header h2 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--gray-700);
+    }
+    .card-body { padding: 16px; }
+
+    /* ── Form panel ─────────────────────────────────────────────────── */
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-700); margin-bottom: 4px; }
+
+    select, input[type=text] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      background: #fff;
+      color: var(--gray-900);
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    select:focus, input[type=text]:focus {
+      outline: 2px solid var(--blue);
+      outline-offset: -1px;
+    }
+
+    .field { margin-bottom: 12px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, opacity .15s;
+    }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary  { background: var(--blue); color: #fff; width: 100%; }
+    .btn-primary:hover:not(:disabled) { background: #1447a0; }
+
+    .separator { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+    .preset-label { font-size: 12px; color: var(--gray-600); margin-bottom: 8px; }
+    .preset-list  { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .preset-list li button {
+      width: 100%;
+      text-align: left;
+      background: var(--gray-50);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background .1s;
+      color: var(--gray-900);
+    }
+    .preset-list li button:hover { background: var(--blue-lt); border-color: var(--blue); color: var(--blue); }
+
+    .synthetic-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      background: var(--amber-lt);
+      color: var(--amber);
+      border: 1px solid #fcd34d;
+      border-radius: 4px;
+      padding: 3px 8px;
+      margin-top: 6px;
+    }
+
+    /* ── Main results panel ─────────────────────────────────────────── */
+    .main-panel { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── Status bar ────────────────────────────────────────────────── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+    .status-bar.idle    { border-color: var(--border); color: var(--gray-600); }
+    .status-bar.running { border-color: var(--blue); background: var(--blue-lt); color: var(--blue); }
+    .status-bar.done    { border-color: #86efac; background: var(--green-lt); color: var(--green); }
+    .status-bar.error   { border-color: #fca5a5; background: var(--red-lt); color: var(--red); }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Investigation summary ─────────────────────────────────────── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .summary-item { }
+    .summary-item .si-label { font-size: 11px; color: var(--gray-600); text-transform: uppercase; letter-spacing: .4px; }
+    .summary-item .si-value { font-size: 15px; font-weight: 600; margin-top: 2px; }
+
+    .stockout-chip {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .stockout-chip.yes { background: var(--red-lt); color: var(--red); }
+    .stockout-chip.no  { background: var(--green-lt); color: var(--green); }
+
+    /* ── Ranked causes ─────────────────────────────────────────────── */
+    .hypothesis-list { display: flex; flex-direction: column; gap: 8px; }
+    .hyp-row {
+      display: grid;
+      grid-template-columns: 70px 1fr 90px 95px;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--gray-50);
+    }
+    .hyp-row.top { border-color: var(--blue); background: var(--blue-lt); }
+
+    .likelihood-pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .likelihood-pill.high   { background: var(--red-lt); color: var(--red); }
+    .likelihood-pill.medium { background: var(--amber-lt); color: var(--amber); }
+    .likelihood-pill.low    { background: var(--gray-100); color: var(--gray-600); }
+
+    .verdict-pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .verdict-pill.supported      { background: var(--green-lt); color: var(--green); }
+    .verdict-pill.weakened       { background: var(--gray-100); color: var(--gray-600); }
+    .verdict-pill.inconclusive   { background: var(--amber-lt); color: var(--amber); }
+
+    .hyp-name { font-size: 13px; font-weight: 500; }
+    .hyp-name span { display: block; font-size: 11px; color: var(--gray-600); font-weight: 400; margin-top: 2px; }
+
+    /* ── Evidence reviewed ─────────────────────────────────────────── */
+    .evidence-section { margin-bottom: 16px; }
+    .evidence-section h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: var(--gray-600); margin-bottom: 8px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: var(--gray-50); border-bottom: 2px solid var(--border); padding: 6px 8px; text-align: left; font-weight: 600; color: var(--gray-700); }
+    td { padding: 5px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--gray-50); }
+
+    .kv-grid { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; font-size: 12px; }
+    .kv-grid dt { color: var(--gray-600); font-weight: 500; white-space: nowrap; }
+    .kv-grid dd { color: var(--gray-900); }
+
+    /* ── Final decision ────────────────────────────────────────────── */
+    .decision-box {
+      background: var(--blue-lt);
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .decision-box .decision-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--blue); margin-bottom: 4px; }
+    .decision-box .decision-text  { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+
+    .open-questions-list { list-style: disc; padding-left: 18px; }
+    .open-questions-list li { margin-bottom: 4px; font-size: 13px; color: var(--gray-700); }
+
+    /* ── Recommended actions ───────────────────────────────────────── */
+    .action-list { display: flex; flex-direction: column; gap: 12px; }
+    .action-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .action-card.status-accepted { border-color: #86efac; }
+    .action-card.status-edited   { border-color: #fdba74; }
+    .action-card.status-rejected { border-color: #fca5a5; opacity: .65; }
+
+    .action-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .action-id { font-size: 12px; font-weight: 700; color: var(--gray-700); }
+
+    .priority-pill {
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .priority-pill.critical { background: #fee2e2; color: var(--red); }
+    .priority-pill.high     { background: var(--amber-lt); color: var(--amber); }
+    .priority-pill.medium   { background: #e0f2fe; color: #0369a1; }
+    .priority-pill.low      { background: var(--gray-100); color: var(--gray-600); }
+
+    .action-card-body { padding: 12px; }
+    .action-text { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+    .action-meta { font-size: 12px; color: var(--gray-600); margin-bottom: 10px; }
+    .action-meta span { margin-right: 14px; }
+
+    .action-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 4px; cursor: pointer; border: 1px solid; font-weight: 600; }
+    .btn-accept  { background: var(--green-lt); border-color: #86efac; color: var(--green); }
+    .btn-accept:hover  { background: #bbf7d0; }
+    .btn-edit    { background: var(--amber-lt); border-color: #fcd34d; color: var(--amber); }
+    .btn-edit:hover    { background: #fde68a; }
+    .btn-reject  { background: var(--red-lt);  border-color: #fca5a5; color: var(--red); }
+    .btn-reject:hover  { background: #fecaca; }
+
+    .action-status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .action-status-badge.accepted { background: var(--green-lt); color: var(--green); }
+    .action-status-badge.edited   { background: var(--amber-lt); color: var(--amber); }
+    .action-status-badge.rejected { background: var(--red-lt);   color: var(--red); }
+
+    .edit-form { margin-top: 10px; }
+    .edit-form textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 12px;
+      resize: vertical;
+      min-height: 60px;
+      font-family: inherit;
+    }
+    .edit-form .edit-actions { display: flex; gap: 8px; margin-top: 6px; }
+
+    .pharmacist-note {
+      font-size: 11px;
+      color: var(--amber);
+      background: var(--amber-lt);
+      border: 1px solid #fcd34d;
+      border-radius: 4px;
+      padding: 3px 8px;
+      margin-top: 6px;
+      display: inline-block;
+    }
+
+    /* ── Evidence gaps ─────────────────────────────────────────────── */
+    .gap-list { display: flex; flex-direction: column; gap: 6px; }
+    .gap-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      padding: 8px 10px;
+      background: var(--amber-lt);
+      border: 1px solid #fcd34d;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--amber);
+    }
+    .gap-icon { flex-shrink: 0; font-size: 14px; }
+
+    .none-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      background: var(--green-lt);
+      color: var(--green);
+      border: 1px solid #86efac;
+      border-radius: 4px;
+      padding: 4px 10px;
+    }
+
+    /* ── Disclaimer ────────────────────────────────────────────────── */
+    .disclaimer {
+      font-size: 11px;
+      color: var(--gray-600);
+      background: var(--gray-50);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      line-height: 1.5;
+    }
+    .disclaimer strong { color: var(--gray-700); }
+
+    /* ── Empty state ────────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--gray-400);
+    }
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ── Helpers ────────────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+    .mt-8  { margin-top: 8px; }
+    .text-muted { color: var(--gray-600); font-size: 12px; }
+    .monospace { font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 11px; }
+
+    .section-icon { font-size: 16px; }
+
+    hr.dashed { border: none; border-top: 1px dashed var(--border); margin: 12px 0; }
+
+    .draft-box {
+      background: var(--gray-50);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+      font-size: 12px;
+      white-space: pre-wrap;
+      font-family: inherit;
+      color: var(--gray-700);
+      line-height: 1.7;
+    }
+
+    .collapse-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--blue);
+      padding: 0;
+      margin-left: auto;
+    }
+    .collapse-toggle:hover { text-decoration: underline; }
+
+    .action-summary-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 12px;
+      padding: 6px 0 2px;
+      flex-wrap: wrap;
+    }
+    .action-summary-bar span { display: flex; align-items: center; gap: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Top navigation bar ───────────────────────────────────────────── -->
+<header class="topbar">
+  <span class="topbar-logo">StockyWhy</span>
+  <span class="topbar-sub">Drug Stockout Investigation System</span>
+  <span class="topbar-spacer"></span>
+  <span class="topbar-badge">KEMSA Demonstration</span>
+</header>
+
+<main class="layout">
+
+  <!-- ── Left sidebar: form ─────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <!-- Investigation form -->
+    <div class="card">
+      <div class="card-header">
+        <span class="section-icon">🔍</span>
+        <h2>New Investigation</h2>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="sel-dataset">Dataset</label>
+          <select id="sel-dataset">
+            <option value="data/cases/normal/case_01">Normal cases (8 scenarios)</option>
+            <option value="data/cases/noisy/case_01">Noisy cases (8 scenarios)</option>
+            <option value="data/sample">Sample county (30 facilities)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sel-facility">Facility</label>
+          <select id="sel-facility"><option>Loading…</option></select>
+        </div>
+        <div class="field">
+          <label for="sel-commodity">Medicine</label>
+          <select id="sel-commodity"><option>Loading…</option></select>
+        </div>
+        <div class="field">
+          <label for="inp-month">Reporting Period (YYYY-MM)</label>
+          <input type="text" id="inp-month" placeholder="e.g. 2026-03" value="2026-03" />
+        </div>
+        <button class="btn btn-primary" id="btn-run" onclick="runInvestigation()">
+          <span id="btn-run-icon">▶</span> Run Investigation
+        </button>
+        <div class="mt-8">
+          <div class="synthetic-badge">⚠ Synthetic data — not real patient records</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preset cases -->
+    <div class="card">
+      <div class="card-header">
+        <span class="section-icon">📋</span>
+        <h2>Sample Cases</h2>
+        <button class="collapse-toggle" onclick="togglePresets()" id="presets-toggle">Hide</button>
+      </div>
+      <div id="presets-body" class="card-body">
+        <p class="preset-label">Click to pre-fill the form with a known case:</p>
+        <ul class="preset-list" id="preset-list">
+          <li><em class="text-muted">Loading cases…</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+      <strong>Medical disclaimer:</strong> This system provides decision-support information only. It does not constitute medical advice. <strong>No order, transfer, requisition, or payment will execute without explicit pharmacist approval.</strong>
+    </div>
+
+  </aside>
+
+  <!-- ── Right panel: results ────────────────────────────────────── -->
+  <section class="main-panel" id="main-panel">
+
+    <!-- Status bar -->
+    <div class="status-bar idle" id="status-bar">
+      <span id="status-icon">○</span>
+      <span id="status-text">Select a facility and medicine, then click Run Investigation.</span>
+    </div>
+
+    <!-- Empty state (shown until first run) -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">🏥</div>
+      <p>Investigation results will appear here.</p>
+    </div>
+
+    <!-- Results (hidden until run completes) -->
+    <div id="results-container" class="hidden">
+
+      <!-- 1. Investigation summary -->
+      <div class="card" id="card-summary">
+        <div class="card-header">
+          <span class="section-icon">📊</span>
+          <h2>Investigation Summary</h2>
+          <span class="text-muted monospace" id="run-id-display" style="margin-left:auto"></span>
+        </div>
+        <div class="card-body">
+          <div class="summary-grid" id="summary-grid"></div>
+        </div>
+      </div>
+
+      <!-- 2. Ranked causes -->
+      <div class="card" id="card-ranked">
+        <div class="card-header">
+          <span class="section-icon">📈</span>
+          <h2>Ranked Causes</h2>
+        </div>
+        <div class="card-body">
+          <div class="hypothesis-list" id="hypothesis-list"></div>
+        </div>
+      </div>
+
+      <!-- 3. Evidence reviewed -->
+      <div class="card" id="card-evidence">
+        <div class="card-header">
+          <span class="section-icon">📂</span>
+          <h2>Evidence Reviewed</h2>
+          <button class="collapse-toggle" onclick="toggleEvidence()" id="evidence-toggle">Hide</button>
+        </div>
+        <div id="evidence-body" class="card-body">
+          <div id="evidence-content"></div>
+        </div>
+      </div>
+
+      <!-- 4. Final decision -->
+      <div class="card" id="card-decision">
+        <div class="card-header">
+          <span class="section-icon">✅</span>
+          <h2>Final Decision</h2>
+        </div>
+        <div class="card-body" id="decision-body"></div>
+      </div>
+
+      <!-- 5. Recommended actions -->
+      <div class="card" id="card-actions">
+        <div class="card-header">
+          <span class="section-icon">⚡</span>
+          <h2>Recommended Actions</h2>
+          <span class="text-muted" style="margin-left:auto;font-size:11px;">Pharmacist review required for each action</span>
+        </div>
+        <div class="card-body">
+          <div class="action-summary-bar" id="action-summary-bar"></div>
+          <div class="action-list mt-8" id="action-list"></div>
+        </div>
+      </div>
+
+      <!-- 6. Evidence gaps -->
+      <div class="card" id="card-gaps">
+        <div class="card-header">
+          <span class="section-icon">⚠️</span>
+          <h2>Evidence Gaps</h2>
+        </div>
+        <div class="card-body" id="gaps-body"></div>
+      </div>
+
+    </div><!-- /results-container -->
+
+  </section>
+
+</main>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   StockyWhy Frontend — vanilla JS, no dependencies
+   Connects to the backend HTTP API running on the same origin.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+// ── State ──────────────────────────────────────────────────────────────
+const state = {
+  result: null,
+  actionStatuses: {}, // action_id → { status: 'accepted'|'edited'|'rejected', note: '' }
+};
+
+// ── Bootstrap ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  await Promise.all([loadFacilities(), loadCommodities(), loadPresets()]);
+  // Pre-select FAC-011 and ORS sachet to match default form values
+  setSelectValue('sel-facility', 'FAC-011');
+  setSelectValue('sel-commodity', 'ORS sachet');
+});
+
+function setSelectValue(id, value) {
+  const sel = document.getElementById(id);
+  for (const opt of sel.options) {
+    if (opt.value === value) { sel.value = value; break; }
+  }
+}
+
+// ── Load metadata ──────────────────────────────────────────────────────
+async function loadFacilities() {
+  try {
+    const res = await fetch('/api/facilities');
+    const data = await res.json();
+    const sel = document.getElementById('sel-facility');
+    sel.innerHTML = data.facilities.map(f =>
+      `<option value="${f}">${f}</option>`
+    ).join('');
+  } catch (e) {
+    document.getElementById('sel-facility').innerHTML = '<option value="FAC-011">FAC-011</option>';
+  }
+}
+
+async function loadCommodities() {
+  try {
+    const res = await fetch('/api/commodities');
+    const data = await res.json();
+    const sel = document.getElementById('sel-commodity');
+    sel.innerHTML = data.commodities.map(c =>
+      `<option value="${c}">${c}</option>`
+    ).join('');
+  } catch (e) {
+    document.getElementById('sel-commodity').innerHTML =
+      '<option value="ORS sachet">ORS sachet</option>';
+  }
+}
+
+async function loadPresets() {
+  try {
+    const res = await fetch('/api/cases');
+    const data = await res.json();
+    const ul = document.getElementById('preset-list');
+    ul.innerHTML = data.cases.map(c => `
+      <li>
+        <button onclick='fillPreset(${JSON.stringify(c)})'>
+          <strong>${c.facility_id}</strong> — ${c.commodity} (${c.month})
+          <span style="color:var(--gray-400);margin-left:4px">${c.dataset.split('/').slice(-2).join('/')}</span>
+        </button>
+      </li>
+    `).join('');
+  } catch (e) {
+    document.getElementById('preset-list').innerHTML =
+      '<li><em class="text-muted">Could not load presets</em></li>';
+  }
+}
+
+// ── Preset fill ────────────────────────────────────────────────────────
+function fillPreset(c) {
+  document.getElementById('sel-dataset').value = c.dataset;
+  document.getElementById('inp-month').value   = c.month;
+  setSelectValue('sel-facility',  c.facility_id);
+  setSelectValue('sel-commodity', c.commodity);
+}
+
+// ── Toggle helpers ─────────────────────────────────────────────────────
+function togglePresets() {
+  const body = document.getElementById('presets-body');
+  const btn  = document.getElementById('presets-toggle');
+  if (body.classList.toggle('hidden')) { btn.textContent = 'Show'; }
+  else                                 { btn.textContent = 'Hide'; }
+}
+
+function toggleEvidence() {
+  const body = document.getElementById('evidence-body');
+  const btn  = document.getElementById('evidence-toggle');
+  if (body.classList.toggle('hidden')) { btn.textContent = 'Show'; }
+  else                                 { btn.textContent = 'Hide'; }
+}
+
+// ── Run investigation ──────────────────────────────────────────────────
+async function runInvestigation() {
+  const dataset     = document.getElementById('sel-dataset').value.trim();
+  const facility_id = document.getElementById('sel-facility').value.trim();
+  const commodity   = document.getElementById('sel-commodity').value.trim();
+  const month       = document.getElementById('inp-month').value.trim();
+
+  if (!dataset || !facility_id || !commodity || !month) {
+    setStatus('error', '✗', 'Please fill in all fields before running.');
+    return;
+  }
+
+  // Reset state
+  state.result = null;
+  state.actionStatuses = {};
+  document.getElementById('results-container').classList.add('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+
+  setStatus('running', '<span class="spinner"></span>',
+    `Investigating ${facility_id} — ${commodity} (${month})… This may take 30–60 seconds.`);
+
+  const btn = document.getElementById('btn-run');
+  btn.disabled = true;
+  document.getElementById('btn-run-icon').textContent = '…';
+
+  try {
+    const res = await fetch('/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dataset, facility_id, commodity, month }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok || result.error) {
+      const msg = result.error || `Server error ${res.status}`;
+      setStatus('error', '✗', `Investigation failed: ${msg}`);
+      showError(msg);
+      return;
+    }
+
+    state.result = result;
+    renderResults(result);
+    setStatus('done', '✓',
+      `Investigation complete — ${result.run_id} — Most likely: ${truncate(result.most_likely_cause, 80)}`);
+
+  } catch (err) {
+    setStatus('error', '✗', `Connection error: ${err.message}. Is the server running?`);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('btn-run-icon').textContent = '▶';
+  }
+}
+
+// ── Render all sections ────────────────────────────────────────────────
+function renderResults(r) {
+  document.getElementById('results-container').classList.remove('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+
+  renderSummary(r);
+  renderRankedCauses(r.ranked_hypotheses || []);
+  renderEvidence(r);
+  renderDecision(r);
+  renderActions(r.actions || []);
+  renderGaps(r);
+}
+
+// ── 1. Investigation summary ───────────────────────────────────────────
+function renderSummary(r) {
+  document.getElementById('run-id-display').textContent = `run: ${r.run_id}`;
+
+  const profile = (r.steps?.data_reader?._profile) || {};
+  const stockRec = (profile.stock_record || [])[0] || {};
+  const stockoutDays = stockRec.reported_stockout_days ?? '—';
+  const hasStockout = stockoutDays > 0;
+
+  const grid = document.getElementById('summary-grid');
+  grid.innerHTML = `
+    <div class="summary-item">
+      <div class="si-label">Facility</div>
+      <div class="si-value">${esc(r.facility_id)}</div>
+    </div>
+    <div class="summary-item">
+      <div class="si-label">Medicine</div>
+      <div class="si-value">${esc(r.commodity)}</div>
+    </div>
+    <div class="summary-item">
+      <div class="si-label">Period</div>
+      <div class="si-value">${esc(r.month)}</div>
+    </div>
+    <div class="summary-item">
+      <div class="si-label">Stockout Status</div>
+      <div class="si-value">
+        <span class="stockout-chip ${hasStockout ? 'yes' : 'no'}">
+          ${hasStockout ? `⚠ Stockout (${stockoutDays} days)` : '✓ No stockout'}
+        </span>
+      </div>
+    </div>
+    ${stockRec.consumed != null ? `
+    <div class="summary-item">
+      <div class="si-label">Consumed</div>
+      <div class="si-value">${fmt(stockRec.consumed)}</div>
+    </div>
+    <div class="summary-item">
+      <div class="si-label">Received</div>
+      <div class="si-value">${fmt(stockRec.received)}</div>
+    </div>
+    <div class="summary-item">
+      <div class="si-label">Closing Stock</div>
+      <div class="si-value">${fmt(stockRec.closing)}</div>
+    </div>` : ''}
+  `;
+}
+
+// ── 2. Ranked causes ───────────────────────────────────────────────────
+function renderRankedCauses(hypotheses) {
+  const NAMES = {
+    late_order: 'Late Order', supplier_underfill: 'Supplier Underfill',
+    payment_arrears: 'Payment Arrears', demand_surge: 'Demand Surge',
+    record_error: 'Record Error', expiry: 'Expiry / Wastage',
+    national_disruption: 'National Disruption',
+  };
+
+  const container = document.getElementById('hypothesis-list');
+  if (!hypotheses.length) {
+    container.innerHTML = '<em class="text-muted">No hypothesis data available.</em>';
+    return;
+  }
+
+  container.innerHTML = hypotheses.map((h, i) => {
+    const name = NAMES[h.hypothesis_name] || h.hypothesis_name;
+    const isTop = i === 0;
+    return `
+      <div class="hyp-row ${isTop ? 'top' : ''}">
+        <span class="likelihood-pill ${h.likelihood}">${h.likelihood}</span>
+        <div class="hyp-name">
+          ${esc(name)}
+          <span>${esc(h.summary)}</span>
+        </div>
+        <span class="monospace" style="color:var(--gray-400)">${esc(h.hypothesis_id)}</span>
+        <span class="verdict-pill ${h.verdict}">${h.verdict}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── 3. Evidence reviewed ───────────────────────────────────────────────
+function renderEvidence(r) {
+  const container = document.getElementById('evidence-content');
+  const profile   = r.steps?.data_reader?._profile || {};
+  const computed  = r.steps?.data_reader?.computed_evidence || {};
+
+  let html = '';
+
+  // Stock records
+  const stockRows = profile.stock_record || [];
+  if (stockRows.length) {
+    html += `<div class="evidence-section">
+      <h3>📦 Stock Record (Reporting Month)</h3>
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Opening</th><th>Received</th><th>Wastage</th>
+          <th>Consumed</th><th>Closing</th><th>Stockout Days</th>
+        </tr></thead>
+        <tbody>${stockRows.map(s => `<tr>
+          <td class="monospace">${esc(s.id)}</td>
+          <td>${fmt(s.opening)}</td><td>${fmt(s.received)}</td>
+          <td>${fmt(s.wastage)}</td><td>${fmt(s.consumed)}</td>
+          <td>${fmt(s.closing)}</td><td>${fmt(s.reported_stockout_days)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  }
+
+  // Order records
+  const orderRows = profile.order_record || [];
+  const prevOrder = profile.prev_order_record || [];
+  const allOrders = [...orderRows, ...prevOrder];
+  if (allOrders.length) {
+    html += `<div class="evidence-section">
+      <h3>📋 Order Records</h3>
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Facility</th><th>Month</th><th>Order Date</th>
+          <th>Cutoff</th><th>Requested</th><th>Delivered</th><th>Delivery Month</th>
+        </tr></thead>
+        <tbody>${allOrders.map(o => `<tr>
+          <td class="monospace">${esc(o.id)}</td>
+          <td>${esc(o.facility_id || r.facility_id)}</td>
+          <td>${esc(o.month)}</td>
+          <td>${esc(fmtDate(o.order_date))}</td>
+          <td>${esc(fmtDate(o.cutoff_date))}</td>
+          <td>${fmt(o.qty_requested)}</td>
+          <td>${fmt(o.qty_delivered)}</td>
+          <td>${esc(o.delivery_month || '—')}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  }
+
+  // Computed evidence summary
+  if (Object.keys(computed).length) {
+    html += `<div class="evidence-section">
+      <h3>🔬 Computed Hypothesis Evidence</h3>
+      ${renderComputedEvidence(computed, r.steps?.data_reader?.evidence?.evidence_for_hypotheses || {})}
+    </div>`;
+  }
+
+  // Payment info
+  const paymentMonths = r.steps?.data_reader?.evidence?.relevant_records?.payment_months || [];
+  if (paymentMonths.length) {
+    const h3 = computed.h3_payment_arrears || {};
+    html += `<div class="evidence-section">
+      <h3>💳 Payment Records</h3>
+      <dl class="kv-grid">
+        <dt>Arrears in reporting month</dt><dd>${h3.arrears_in_month ? '⚠ Yes' : '✓ No'}</dd>
+        ${h3.amount_owed_kes != null ? `<dt>Amount owed</dt><dd>${fmtKES(h3.amount_owed_kes)}</dd>` : ''}
+        ${h3.major_arrears != null ? `<dt>Major arrears (≥30M KES)</dt><dd>${h3.major_arrears ? '⚠ Yes' : 'No'}</dd>` : ''}
+        <dt>Payment records span</dt><dd>${paymentMonths[0]} → ${paymentMonths[paymentMonths.length-1]} (${paymentMonths.length} months)</dd>
+      </dl>
+    </div>`;
+  }
+
+  // Data quality
+  const warnings = r.steps?.data_reader?.missing_data_warnings || [];
+  const quality  = r.steps?.data_reader?.data_quality || [];
+  if (warnings.length || quality.length) {
+    const items = [...warnings, ...quality];
+    html += `<div class="evidence-section">
+      <h3>⚠ Data Quality Notes</h3>
+      <ul style="padding-left:16px">${items.map(w => `<li class="text-muted">${esc(String(w))}</li>`).join('')}</ul>
+    </div>`;
+  }
+
+  container.innerHTML = html || '<em class="text-muted">No evidence data available.</em>';
+}
+
+function renderComputedEvidence(computed, narrative) {
+  const LABELS = {
+    h1_late_order: 'H1 — Late Order',
+    h2_supplier_underfill: 'H2 — Supplier Underfill',
+    h3_payment_arrears: 'H3 — Payment Arrears',
+    h4_demand_surge: 'H4 — Demand Surge',
+    h5_record_error: 'H5 — Record Error',
+    h6_expiry: 'H6 — Expiry / Wastage',
+    h7_national_disruption: 'H7 — National Disruption',
+  };
+
+  return Object.entries(computed).map(([key, vals]) => {
+    if (typeof vals !== 'object' || vals === null) return '';
+    const label = LABELS[key] || key;
+    const narr  = narrative[key] || '';
+
+    // Key numeric/boolean facts
+    const facts = Object.entries(vals)
+      .filter(([k]) => !k.endsWith('_id') && k !== 'notice_details')
+      .map(([k, v]) => {
+        const fv = typeof v === 'boolean' ? (v ? '⚠ Yes' : 'No') :
+                   typeof v === 'number'  ? (Number.isInteger(v) ? v : v.toFixed(4)) :
+                   String(v ?? '—');
+        return `<dt>${esc(k.replace(/_/g,' '))}</dt><dd>${fv}</dd>`;
+      }).join('');
+
+    // Source references
+    const refs = Object.entries(vals)
+      .filter(([k, v]) => k.endsWith('_id') && v)
+      .map(([k, v]) => `<span class="monospace" style="color:var(--blue)">${esc(String(v))}</span>`)
+      .join(' ');
+
+    return `
+      <details style="margin-bottom:8px;border:1px solid var(--border);border-radius:4px">
+        <summary style="padding:6px 10px;cursor:pointer;font-size:12px;font-weight:600;background:var(--gray-50)">
+          ${esc(label)}
+          ${narr ? `<span style="font-weight:400;color:var(--gray-600);margin-left:8px">${esc(truncate(narr, 90))}</span>` : ''}
+        </summary>
+        <div style="padding:10px 12px">
+          ${narr ? `<p style="font-size:12px;color:var(--gray-700);margin-bottom:8px">${esc(narr)}</p>` : ''}
+          <dl class="kv-grid">${facts}</dl>
+          ${refs ? `<div style="margin-top:6px;font-size:11px;color:var(--gray-600)">Source refs: ${refs}</div>` : ''}
+        </div>
+      </details>
+    `;
+  }).join('');
+}
+
+// ── 4. Final decision ──────────────────────────────────────────────────
+function renderDecision(r) {
+  const container = document.getElementById('decision-body');
+  const strategist = r.steps?.action_strategist || {};
+  const top = (r.ranked_hypotheses || [])[0] || {};
+  const alternatives = (r.ranked_hypotheses || []).slice(1).filter(h => h.likelihood !== 'low');
+  const openQs = strategist.open_questions || [];
+  const analysis = r.steps?.data_analyst?.analysis_summary || '';
+
+  let html = `
+    <div class="decision-box">
+      <div class="decision-label">Leading Explanation</div>
+      <div class="decision-text">${esc(r.most_likely_cause || 'Not determined')}</div>
+    </div>
+  `;
+
+  if (analysis) {
+    html += `
+      <div style="margin-bottom:12px">
+        <div class="si-label" style="margin-bottom:4px">Why this was selected</div>
+        <p style="font-size:13px;color:var(--gray-700)">${esc(analysis)}</p>
+      </div>
+    `;
+  }
+
+  if (top.summary) {
+    html += `
+      <div style="margin-bottom:12px">
+        <div class="si-label" style="margin-bottom:4px">Primary evidence (${top.hypothesis_id})</div>
+        <p style="font-size:13px;color:var(--gray-700)">${esc(top.summary)}</p>
+      </div>
+    `;
+  }
+
+  if (alternatives.length) {
+    html += `<hr class="dashed"><div class="si-label" style="margin-bottom:6px">Alternative explanations considered</div>`;
+    html += alternatives.map(h => `
+      <div style="margin-bottom:6px;font-size:13px">
+        <span class="verdict-pill ${h.verdict}" style="margin-right:6px">${h.verdict}</span>
+        <strong>${esc(h.hypothesis_id)} ${esc(h.hypothesis_name.replace(/_/g,' '))}</strong>
+        — ${esc(h.summary)}
+      </div>
+    `).join('');
+  }
+
+  if (openQs.length) {
+    html += `
+      <hr class="dashed">
+      <div class="si-label" style="margin-bottom:6px">Remaining uncertainty / open questions</div>
+      <ul class="open-questions-list">${openQs.map(q => `<li>${esc(q)}</li>`).join('')}</ul>
+    `;
+  }
+
+  if (strategist.communication_draft) {
+    html += `
+      <hr class="dashed">
+      <details>
+        <summary style="font-size:12px;font-weight:600;cursor:pointer;color:var(--blue)">Communication draft (click to expand)</summary>
+        <div class="draft-box mt-8">${esc(strategist.communication_draft)}</div>
+      </details>
+    `;
+  }
+
+  container.innerHTML = html;
+}
+
+// ── 5. Recommended actions ─────────────────────────────────────────────
+function renderActions(actions) {
+  const container  = document.getElementById('action-list');
+  const summaryBar = document.getElementById('action-summary-bar');
+
+  if (!actions.length) {
+    container.innerHTML = '<em class="text-muted">No actions proposed.</em>';
+    summaryBar.innerHTML = '';
+    return;
+  }
+
+  // Init statuses
+  actions.forEach(a => {
+    if (!state.actionStatuses[a.action_id]) {
+      state.actionStatuses[a.action_id] = { status: 'pending', note: '' };
+    }
+  });
+
+  container.innerHTML = actions.map(a => buildActionCard(a)).join('');
+  updateActionSummary(actions);
+}
+
+function buildActionCard(a) {
+  const s = state.actionStatuses[a.action_id] || { status: 'pending', note: '' };
+  const cardClass = s.status !== 'pending' ? `status-${s.status}` : '';
+  const prio = (a.priority || '').toLowerCase();
+
+  const noteHtml = s.note
+    ? `<div class="pharmacist-note">📝 Note: ${esc(s.note)}</div>` : '';
+
+  const editFormHtml = `
+    <div class="edit-form hidden" id="edit-form-${esc(a.action_id)}">
+      <textarea id="edit-note-${esc(a.action_id)}" placeholder="Enter amendment note…">${esc(s.note)}</textarea>
+      <div class="edit-actions">
+        <button class="btn-sm btn-accept" onclick="saveEdit('${esc(a.action_id)}')">Save amendment</button>
+        <button class="btn-sm" style="border-color:var(--border);background:var(--gray-50);color:var(--gray-700)"
+          onclick="cancelEdit('${esc(a.action_id)}')">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  const controlsHtml = s.status === 'pending' ? `
+    <div class="action-controls" id="controls-${esc(a.action_id)}">
+      <button class="btn-sm btn-accept"  onclick="acceptAction('${esc(a.action_id)}')">✓ Accept</button>
+      <button class="btn-sm btn-edit"    onclick="editAction('${esc(a.action_id)}')">✎ Edit</button>
+      <button class="btn-sm btn-reject"  onclick="rejectAction('${esc(a.action_id)}')">✗ Reject</button>
+    </div>
+  ` : `
+    <div class="action-controls">
+      <span class="action-status-badge ${s.status}">
+        ${s.status === 'accepted' ? '✓ Accepted' : s.status === 'edited' ? '✎ Accepted with edit' : '✗ Rejected'}
+      </span>
+      <button class="btn-sm" style="border-color:var(--border);background:var(--gray-50);color:var(--gray-700);font-size:11px"
+        onclick="undoAction('${esc(a.action_id)}')">Undo</button>
+    </div>
+  `;
+
+  return `
+    <div class="action-card ${cardClass}" id="action-card-${esc(a.action_id)}">
+      <div class="action-card-header">
+        <span class="action-id">${esc(a.action_id)}</span>
+        <span class="priority-pill ${prio}">${prio}</span>
+        ${(a.linked_hypothesis_ids || []).map(h =>
+          `<span class="monospace" style="color:var(--blue)">${esc(h)}</span>`
+        ).join('')}
+        ${a.pharmacist_review_required
+          ? '<span class="text-muted" style="font-size:11px;margin-left:auto">⚠ Pharmacist review required</span>'
+          : ''}
+      </div>
+      <div class="action-card-body">
+        <div class="action-text">${esc(a.action)}</div>
+        <div class="action-meta">
+          <span>👤 ${esc(a.proposed_owner || '—')}</span>
+          <span>🕒 ${esc(a.timeframe || '—')}</span>
+          ${a.evidence_basis ? `<span>📎 ${esc(a.evidence_basis)}</span>` : ''}
+        </div>
+        ${a.expected_outcome ? `
+          <div style="font-size:12px;color:var(--gray-600);margin-bottom:6px">
+            <strong>Expected outcome:</strong> ${esc(a.expected_outcome)}
+          </div>` : ''}
+        ${a.risks_and_caveats ? `
+          <div style="font-size:12px;color:var(--amber);margin-bottom:8px">
+            ⚠ ${esc(a.risks_and_caveats)}
+          </div>` : ''}
+        ${noteHtml}
+        ${editFormHtml}
+        ${controlsHtml}
+      </div>
+    </div>
+  `;
+}
+
+function acceptAction(id) {
+  state.actionStatuses[id] = { status: 'accepted', note: '' };
+  refreshActions();
+}
+
+function editAction(id) {
+  // Show the edit form inline
+  const form = document.getElementById(`edit-form-${id}`);
+  const controls = document.getElementById(`controls-${id}`);
+  if (form) form.classList.remove('hidden');
+  if (controls) controls.classList.add('hidden');
+}
+
+function saveEdit(id) {
+  const note = (document.getElementById(`edit-note-${id}`)?.value || '').trim();
+  state.actionStatuses[id] = { status: 'edited', note };
+  refreshActions();
+}
+
+function cancelEdit(id) {
+  const form = document.getElementById(`edit-form-${id}`);
+  const controls = document.getElementById(`controls-${id}`);
+  if (form) form.classList.add('hidden');
+  if (controls) controls.classList.remove('hidden');
+}
+
+function rejectAction(id) {
+  state.actionStatuses[id] = { status: 'rejected', note: '' };
+  refreshActions();
+}
+
+function undoAction(id) {
+  state.actionStatuses[id] = { status: 'pending', note: '' };
+  refreshActions();
+}
+
+function refreshActions() {
+  if (!state.result) return;
+  const actions = state.result.actions || [];
+  const container = document.getElementById('action-list');
+  container.innerHTML = actions.map(a => buildActionCard(a)).join('');
+  updateActionSummary(actions);
+}
+
+function updateActionSummary(actions) {
+  const bar = document.getElementById('action-summary-bar');
+  const counts = { accepted: 0, edited: 0, rejected: 0, pending: 0 };
+  actions.forEach(a => {
+    const s = (state.actionStatuses[a.action_id]?.status) || 'pending';
+    counts[s] = (counts[s] || 0) + 1;
+  });
+
+  bar.innerHTML = `
+    <span style="color:var(--gray-600)">Total: <strong>${actions.length}</strong></span>
+    ${counts.accepted ? `<span style="color:var(--green)">✓ ${counts.accepted} accepted</span>` : ''}
+    ${counts.edited   ? `<span style="color:var(--amber)">✎ ${counts.edited} edited</span>` : ''}
+    ${counts.rejected ? `<span style="color:var(--red)">✗ ${counts.rejected} rejected</span>` : ''}
+    ${counts.pending  ? `<span style="color:var(--gray-400)">○ ${counts.pending} pending review</span>` : ''}
+  `;
+}
+
+// ── 6. Evidence gaps ───────────────────────────────────────────────────
+function renderGaps(r) {
+  const container = document.getElementById('gaps-body');
+  const warnings  = r.steps?.data_reader?.missing_data_warnings || [];
+  const quality   = r.steps?.data_reader?.data_quality || [];
+  const openQs    = r.steps?.action_strategist?.open_questions || [];
+
+  const allGaps = [
+    ...warnings.map(w => ({ type: 'missing_data', text: String(w) })),
+    ...quality.map(q => ({ type: 'quality', text: String(q) })),
+    ...openQs.map(q => ({ type: 'open_question', text: String(q) })),
+  ];
+
+  if (!allGaps.length) {
+    container.innerHTML = '<div class="none-chip">✓ No significant evidence gaps flagged</div>';
+    return;
+  }
+
+  const ICONS = { missing_data: '❌', quality: '⚠️', open_question: '❓' };
+  const LABELS = { missing_data: 'Missing data', quality: 'Data quality', open_question: 'Open question' };
+
+  container.innerHTML = `<div class="gap-list">${allGaps.map(g => `
+    <div class="gap-item">
+      <span class="gap-icon">${ICONS[g.type]}</span>
+      <div>
+        <strong>${LABELS[g.type]}:</strong> ${esc(g.text)}
+      </div>
+    </div>
+  `).join('')}</div>`;
+}
+
+// ── Error display ──────────────────────────────────────────────────────
+function showError(msg) {
+  document.getElementById('results-container').classList.add('hidden');
+  document.getElementById('empty-state').classList.remove('hidden');
+  document.getElementById('empty-state').innerHTML = `
+    <div class="empty-icon">⚠️</div>
+    <p style="color:var(--red);font-weight:600">${esc(msg)}</p>
+    <p class="text-muted mt-8">Check that the server is running and the parameters are correct.</p>
+  `;
+}
+
+// ── Status bar ─────────────────────────────────────────────────────────
+function setStatus(type, iconHtml, text) {
+  const bar = document.getElementById('status-bar');
+  bar.className = `status-bar ${type}`;
+  document.getElementById('status-icon').innerHTML = iconHtml;
+  document.getElementById('status-text').textContent = text;
+}
+
+// ── Utilities ──────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function fmt(v) {
+  if (v == null) return '—';
+  return Number.isFinite(v) ? v.toLocaleString() : String(v);
+}
+
+function fmtKES(v) {
+  if (v == null) return '—';
+  return `KES ${Number(v).toLocaleString()}`;
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  // Try to parse and format nicely
+  const d = new Date(s);
+  if (isNaN(d)) return String(s).split(' ')[0];
+  return d.toISOString().split('T')[0];
+}
+
+function truncate(s, n) {
+  if (!s) return '';
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+</script>
+</body>
+</html>
