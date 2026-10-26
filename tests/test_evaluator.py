@@ -180,6 +180,15 @@ class TestCrossCritique:
         crit = evaluator.cross_critique([make_eval("H1", "supported")], evidence, MONTH)
         assert crit[0]["target"] == "H1" and crit[0]["kind"] == "delivered_before_stockout"
 
+    def test_arrears_with_full_county_supply(self):
+        full = make_evidence(h3_payment_arrears={"major_arrears": True, "county_fill_prev_month": 0.95,
+                                                 "county_fill_this_month": 0.92})
+        crit = evaluator.cross_critique([make_eval("H3", "supported")], full, MONTH)
+        assert crit[0]["kind"] == "no_delivery_drop"
+        short = make_evidence(h3_payment_arrears={"major_arrears": True, "county_fill_prev_month": 0.39,
+                                                  "county_fill_this_month": 0.92})
+        assert evaluator.cross_critique([make_eval("H3", "supported")], short, MONTH) == []
+
     def test_no_critique_when_consistent(self):
         assert evaluator.cross_critique([make_eval("H1", "supported")], make_evidence(), MONTH) == []
 

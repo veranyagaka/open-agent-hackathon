@@ -380,14 +380,18 @@ def cross_critique(evaluations: list, computed_evidence: dict, month: str = None
                            f"stock-out month {month}. A late order cannot explain this gap. Revise."),
             })
 
-    # Arrears with no drop in county deliveries is not a supply mechanism.
+    # Arrears while the county was still fully supplied is not a supply mechanism.
+    # Both cycles count: the previous month's orders are the ones delivered in the
+    # stock-out month, so a low fill there is a real county-wide shortfall.
     if supported("H3"):
-        drop = _num(h3.get("fill_drop_vs_prev"))
-        if drop is not None and drop <= 0:
+        fills = [_num(h3.get(k)) for k in ("county_fill_prev_month", "county_fill_this_month")]
+        fills = [f for f in fills if f is not None]
+        if fills and min(fills) >= 0.85:
             critiques.append({
                 "target": "H3", "raised_by": "H2", "kind": "no_delivery_drop",
-                "reason": (f"County arrears are present, but county fill did not fall "
-                           f"(change {drop}). Revise: what reduced this facility's supply?"),
+                "reason": (f"County arrears are present, but county deliveries stayed full "
+                           f"(fill {', '.join(f'{f:.2f}' for f in fills)}). "
+                           "Revise: what reduced this facility's supply?"),
             })
     return critiques
 

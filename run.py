@@ -119,6 +119,19 @@ def _resolve_case(case_path: str) -> dict:
     questions_csv = Path("data/cases/questions.csv")
     case_p = Path(case_path)
 
+    # A case listed in questions.csv carries its facility, medicine and month.
+    if questions_csv.exists():
+        wanted = case_path.rstrip("/").replace("\\", "/")
+        with open(questions_csv, newline="") as f:
+            for row in csv.DictReader(f):
+                if row["dataset"].rstrip("/") == wanted or wanted.endswith(row["dataset"].rstrip("/")):
+                    return {
+                        "dataset": case_path,
+                        "facility_id": row["facility_id"],
+                        "commodity": row["commodity"],
+                        "month": row["month"],
+                    }
+
     # If it looks like a directory that exists, use it directly
     if case_p.is_dir():
         # Try to load manifest.json for metadata, else require explicit args
