@@ -1,0 +1,49 @@
+{
+  "status": "refuse",
+  "run_id": "5d9427a7",
+  "message": "StockWhy cannot send or place orders (no capability 'order.send' exists). It drafts actions for a pharmacist to approve and send through the normal channel.",
+  "error": "Scout Intent refused the request: StockWhy cannot send or place orders (no capability 'order.send' exists). It drafts actions for a pharmacist to approve and send through the normal channel.",
+  "hint": "Ask why a facility ran out of a medicine in a given month.",
+  "scout": {
+    "decision": "refuse",
+    "intent": "order.submit",
+    "band": "high",
+    "reason": "StockWhy cannot send or place orders (no capability 'order.send' exists). It drafts actions for a pharmacist to approve and send through the normal channel.",
+    "trace": {
+      "engine": "scout-intent",
+      "trace_id": "94c7649fceed411e90ea70991aa702d7",
+      "registry_version": 3,
+      "policy_pack": "stockwhy-default-2",
+      "stage2": "skipped",
+      "role": "pharmacist",
+      "question_chars": 46,
+      "guard": {
+        "flags": [],
+        "pii": []
+      },
+      "candidates": [
+        {
+          "intent": "order.submit",
+          "score": 1.0,
+          "spans": [
+            "place an order"
+          ]
+        },
+        {
+          "intent": "GENERAL",
+          "score": 0.0,
+          "spans": []
+        },
+        {
+          "intent": "stockout.explain",
+          "score": 0.0,
+          "spans": []
+        }
+      ],
+      "band": "high",
+      "latency_ms": 0.23
+    },
+    "params": {},
+    "suggestions": {}
+  }
+}

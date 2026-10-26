@@ -1,305 +1,264 @@
 # StockyWhy
 
-**A four-agent system that explains why a Kenyan health facility ran out of an essential medicine and drafts corrective actions for a pharmacist to approve.**
+**A team of agents that explains why a Kenyan health facility ran out of an essential medicine, checks its own
+evidence, and drafts corrective actions for a pharmacist to approve.**
 
-Built for the [Open Agent Hackathon 2026](https://genai.works) (Track 2: "The Agent That Can Explain Why").
+Built by team NexusForge for the [Open Agent Hackathon 2026](https://genai.works), track "The Agent That Can
+Explain Why".
 
-> ⚠️ **Medical disclaimer:** This system provides decision-support information only. It does not constitute medical advice. No order, transfer, requisition, or payment will execute without explicit pharmacist approval.
+> ⚠️ **Medical disclaimer:** decision support only, not medical advice. No order, transfer, requisition or payment
+> is ever executed: the agents can only draft actions, and every action needs pharmacist approval.
 
-> ⚠️ **Synthetic data:** All data in `data/` is synthetically generated. It does not represent real patient or facility records.
+> ⚠️ **Synthetic data:** everything in `data/` is synthetic. It does not describe real patients or facilities.
+
+---
+
+## Quick start (offline, no keys)
+
+```bash
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+SAMPLE_MODE=true python run.py --question "Why did FAC-009 run out of magnesium sulphate in March 2026?"
+```
+
+`SAMPLE_MODE=true` runs the **whole** agent with no Zetaris, no Nightshift and no credentials: the data comes
+from `data/sample/` and every agent uses its rule-based reasoning. Nothing is replayed from saved outputs.
+
+On Windows PowerShell: `$env:SAMPLE_MODE="true"; python run.py --question "..."`.
 
 ---
 
 ## What it does
 
-Given a question like *"Why did Facility FAC-011 run out of ORS sachets in March 2026?"*, StockyWhy:
+Given *"Why did FAC-009 run out of magnesium sulphate in March 2026?"*, StockyWhy:
 
-1. **Loads and profiles** the CSV data for that facility/commodity/month
-2. **Calculates evidence deterministically** for seven hypotheses (no LLM for arithmetic)
-3. **Generates seven theories** — one per hypothesis — using an LLM
-4. **Investigates each theory in parallel** using the computed evidence
-5. **Ranks causes, explains confidence**, and drafts practical corrective actions
-6. **Asks the pharmacist to review, edit, accept, or reject** each proposed action
+1. **Scout Intent** (Meterless engine) screens the request: blocks prompt injection, refuses out-of-scope asks
+   (placing orders, dosing advice), asks for clarification when the facility, medicine or month is missing or
+   not in the data, and otherwise issues a signed, expiring capability contract.
+2. **H-MEM case memory** (Meterless engine) recalls earlier findings for that facility and medicine, so a known
+   cause is investigated first.
+3. **Data Reader** loads the data (from Zetaris in live mode) and computes the evidence for seven hypotheses with
+   pandas. Agents explain; they never do the arithmetic.
+4. **Data Analyst** and **Theory Generator** turn the signals into seven theories.
+5. **Evidence Investigators** run in waves: the hypotheses with signals or memory priority first, the rest only
+   if needed.
+6. **Evaluator** re-reads every cited row and checks the numbers, checks each verdict against the computed flags,
+   and critiques hypotheses against each other. A failed investigator is sent back **once** with the critique;
+   a claim that still fails is dropped. If nothing is supported, a second wave runs; if still nothing, the case
+   is **escalated to the pharmacist** rather than inventing a cause.
+7. **Action Strategist** drafts actions under a narrower child contract (`action.draft`; no `order.send`
+   capability exists).
+8. The finding is stored in memory as `pending_approval`; the pharmacist's accept or reject updates its trust.
 
----
+Every step is written to a JSONL trace in `logs/`.
 
-## Seven hypotheses
+### Seven hypotheses
 
 | ID | Name | Check |
 |----|------|-------|
-| H1 | late_order | Previous month's order placed after cutoff? Delivery slipped? |
-| H2 | supplier_underfill | Facility fill rate vs county average in same cycle |
-| H3 | payment_arrears | County owed ≥30M KES + county-wide fill drop |
-| H4 | demand_surge | Consumed >25% above 3-month average |
-| H5 | record_error | Stock identity equation: opening − wastage + received − consumed = closing |
-| H6 | expiry | Wastage >2× historical average AND >10% of avg consumption |
-| H7 | national_disruption | County-wide fill drop + public notice for this commodity |
+| H1 | late_order | Previous month's order placed after cutoff, or delivery slipped past the stock-out month |
+| H2 | supplier_underfill | Facility fill rate vs county average in the same cycle |
+| H3 | payment_arrears | County owes ≥ 30M KES and county-wide fill of the supply arriving this month dropped |
+| H4 | demand_surge | Consumption > 25% above the 3-month average |
+| H5 | record_error | Stock identity (opening − wastage + received − consumed = closing) broken, or impossible stock-out days |
+| H6 | expiry | Wastage > 2× its average and > 10% of average consumption |
+| H7 | national_disruption | Public notice for the medicine and a county-wide drop in the supply arriving this month |
 
----
-
-## Setup
-
-### 1. Python environment
-
-Requires Python 3.11+.
-
-```bash
-python -m venv my_env
-source my_env/bin/activate        # Windows: my_env\Scripts\activate
-pip install -r requirements.txt
-```
-
-### 2. API key
-
-Copy `.env.example` to `.env` and fill in your Groq API key:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-
-```
-GROQ_API_KEY=gsk_your_key_here
-GROQ_MODEL=openai/gpt-oss-120b
-SAMPLE_MODE=false
-```
-
-Get a free Groq API key at: https://console.groq.com/keys
-
-### 3. Data
-
-The `data/` directory contains synthetic case data:
-
-```
-data/
-  sample/           Demo county — 30 facilities, 6 medicines, 24 months
-  cases/
-    normal/         8 cases at normal noise (case_01..case_08)
-    noisy/          Same 8 cause types with higher noise
-    questions.csv   Input questions for each case
-```
-
-The `data/datapack/` directory has the original pack (larger datasets, PostgreSQL scripts).
+When several causes are supported, the root cause leads: national disruption, then arrears, record error,
+expiry, late order, demand surge, and supplier underfill last (it is the symptom most other causes produce).
 
 ---
 
 ## Running
 
-### Investigate a specific case
-
 ```bash
-python run.py \
-  --dataset data/cases/normal/case_01 \
-  --facility FAC-011 \
-  --commodity "ORS sachet" \
-  --month 2026-03
-```
+# A plain-English question (facility, medicine and month are matched to the data)
+python run.py --question "Why did FAC-009 run out of magnesium sulphate in March 2026?"
 
-### Use a case from questions.csv directly
+# Explicit fields, on one of the 16 planted cases
+python run.py --dataset data/cases/normal/case_01 --facility FAC-011 --commodity "ORS sachet" --month 2026-03
 
-```bash
-python run.py --case data/cases/normal/case_01
-```
+# A case folder (facility, medicine and month come from data/cases/questions.csv)
+python run.py --case data/cases/normal/case_05
 
-### Sample mode (no API key needed for data loading)
+# JSON in, JSON out (no prompts, nothing but JSON on stdout)
+python run.py --input input_examples/02_demand_surge.json --json
 
-```bash
-SAMPLE_MODE=true python run.py \
-  --facility FAC-011 \
-  --commodity "ORS sachet" \
-  --month 2026-03
-```
+# Save the full result
+python run.py --case data/cases/normal/case_01 --no-review --output results/case_01.json
 
-> `SAMPLE_MODE=true` automatically uses `data/sample/`. An API key is still needed for the LLM steps.
+# Fault drill for the demo: corrupt one cited value; the Evaluator catches it and the retry recovers
+STOCKWHY_INJECT_FAULT=H1 python run.py --question "Why did FAC-009 run out of magnesium sulphate in March 2026?"
 
-### Skip pharmacist review (non-interactive / CI)
-
-```bash
-python run.py --dataset data/cases/normal/case_01 \
-  --facility FAC-011 --commodity "ORS sachet" --month 2026-03 \
-  --no-review
-```
-
-### Save full JSON output
-
-```bash
-python run.py --dataset data/cases/normal/case_01 \
-  --facility FAC-011 --commodity "ORS sachet" --month 2026-03 \
-  --no-review \
-  --output results/case_01.json
-```
-
-### HTTP server mode
-
-```bash
-python run.py --serve    # Starts on port 8000
-```
-
-Then POST:
-
-```bash
-curl -X POST http://localhost:8000/run \
-  -H "Content-Type: application/json" \
-  -d '{
-    "dataset": "data/cases/normal/case_01",
-    "facility_id": "FAC-011",
-    "commodity": "ORS sachet",
-    "month": "2026-03"
-  }'
-```
-
-### Help
-
-```bash
 python run.py help
-python run.py --help
 ```
 
----
+The interactive pharmacist review (accept / edit / reject each action) runs only in a terminal; with `--json`,
+`--no-review`, `--input` or over HTTP the run never waits for input. Exit code is 1 only for a system or data
+error; a blocked, refused or clarify result is a normal answer.
 
-## Example output
-
-Running case_01 (demand surge, FAC-011, ORS sachet, March 2026):
-
-```
-[4/5] Evidence Investigator — evaluating theories in parallel...
-    ✓ Evaluations: weakened, weakened, weakened, supported, weakened, weakened, weakened
-
-Most Likely Cause: Demand surge (H4) – consumption was 72% above the 3-month average
-
-  Ranked Hypotheses:
-    [HIGH  ] H4 demand_surge — supported
-    [LOW   ] H1 late_order — weakened
-    ...
-
-  Proposed Actions:
-    A1 [CRITICAL] — Submit an emergency requisition for ORS sachets
-    A2 [HIGH]     — Adjust buffer stock policy (+30% safety stock)
-    ...
-```
-
-Sample inputs and their outputs are in `output_examples/`:
-
-- `output_examples/case_01_result.json` — demand surge
-- `output_examples/case_03_result.json` — expiry + supplier underfill
-- `output_examples/case_06_result.json` — late order
-
----
-
-## Running tests
+### Web page and HTTP API
 
 ```bash
-# Install pytest if not present
-pip install pytest==8.3.5
-
-# Run all tests
-python -m pytest tests/ -v
-
-# Run specific test file
-python -m pytest tests/test_data_loader.py -v
+python run.py --serve          # http://localhost:8000
 ```
 
-**Test coverage** (88 tests):
+| Method | Path | |
+|---|---|---|
+| GET | `/` | Web page (`index.html`) |
+| POST | `/run` | Same JSON as `--input`: `{"question"}` or `{"facility_id","commodity","month"}`, optional `"dataset"`, `"role"` |
+| GET | `/api/facilities`, `/api/commodities`, `/api/cases` | Lists for the page |
+| GET | `/health` | Liveness |
 
-| File | Tests | What it covers |
-|------|-------|----------------|
-| `tests/test_data_loader.py` | 44 | All 7 hypothesis checks, load_dataset, profile_stockout, known-case integration |
-| `tests/test_logger.py` | 7 | JSONL format, appending, required fields, timestamps |
-| `tests/test_agents.py` | 19 | All four agents with LLM mocked, parallel investigation, error handling |
-| `tests/test_orchestrator.py` | 18 | Full pipeline, log files, SAMPLE_MODE, graceful failures, CLI args |
+```bash
+curl -X POST http://localhost:8000/run -H "Content-Type: application/json" \
+  -d '{"question": "Why did FAC-011 run out of ORS in March 2026?", "dataset": "data/cases/normal/case_01"}'
+```
 
-All tests use mocked LLM calls (no API key required). No test reads `eval/answer_key.csv`.
+---
+
+## Sample inputs and outputs
+
+`input_examples/` holds nine requests; `output_examples/` holds the matching results, regenerated with
+`python scripts/make_examples.py` (sample mode, rule-based):
+
+| Input | Shows | Result |
+|---|---|---|
+| `01_late_order_question.json` | Plain-English question on the demo county | late_order, `orders#1265` |
+| `02_demand_surge.json` | Planted case | demand_surge, `stock#1506` |
+| `03_national_disruption.json` | Federated evidence (public notice + county orders) | national_disruption |
+| `04_noisy_payment_arrears.json` | Noisy data, two supported causes | payment_arrears leads supplier_underfill |
+| `05_memory_recall.json` | H-MEM recalls the finding from 01 and investigates H1 first | late_order |
+| `06_fault_drill.json` | Evaluator catches a corrupted citation; investigator retries | caught and recovered |
+| `07_blocked_injection.json` | Scout guard | block |
+| `08_refused_order.json` | No `order.send` capability | refuse |
+| `09_clarify_missing_month.json` | Scout asks for the month | clarify |
+
+---
+
+## Live mode: Zetaris + Meterless Nightshift
+
+Copy `.env.example` to `.env` and fill it in (never commit `.env`).
+
+**Zetaris (data layer).** Run Zetaris locally in Docker, then:
+
+```bash
+docker compose up -d                       # stockwhy-pg Postgres on Zetaris's network, seeded from data/sample
+python scripts/setup_live.py --skip-load   # registers datasources stockwhy_pg and stockwhy_web, verifies a federated join
+STOCKWHY_DATA_SOURCE=zetaris python run.py --question "Why did FAC-009 run out of magnesium sulphate in March 2026?"
+```
+
+Zetaris holds one registered dataset, the demo county in `data/sample`. Any other `--dataset` folder is read from
+its CSV files and the run records a warning. Facility ids, months and medicine names are validated before they
+reach SQL, one statement per call. Details: `ZETARIS_INTEGRATION.md`.
+
+**Meterless Nightshift (AI provider).** Start Nightshift, copy its runtime token into `.env`
+(`METERLESS_RUNTIME_TOKEN`), and pin Nemotron routes in Nightshift for the deep and fast lanes. With
+`SAMPLE_MODE` unset (or `STOCKWHY_USE_LLM=true`) the agents call Nightshift; the trace records the model that
+served each call (`_served_model`). Empty Nemotron answers are retried once with a larger budget, 429/5xx back
+off, and a run makes at most `STOCKWHY_MAX_LLM_CALLS` (default 30) calls. Nightshift is never silently replaced
+by another provider; if a call fails the agent falls back to its rule-based reasoning and says so.
 
 ---
 
 ## Architecture
 
 ```
-run.py                    ← CLI / HTTP entry point
-orchestrator.py           ← Pipeline coordinator
-  │
-  ├── agents/data_reader.py        ← Loads + profiles data; LLM interprets
-  │       └── tools/data_loader.py ← Deterministic 7-hypothesis calculations
-  │
-  ├── agents/data_analyst.py       ← Interprets computed evidence signals
-  ├── agents/theory_generator.py   ← Generates 7 theories (one per hypothesis)
-  ├── agents/evidence_investigator.py  ← Parallel evaluation of each theory
-  │       └── _deterministic_verdict() ← Verdicts from computed flags, not LLM
-  └── agents/action_strategist.py  ← Ranks causes, drafts actions
-
-logger.py                 ← JSONL audit trail (logs/)
-llm_client.py             ← Groq API wrapper
+run.py                       CLI, --input/--json, HTTP server (index.html, /run, /api/*)
+orchestrator.py              the loop: Scout → memory → agents → Evaluator → retry/second wave → strategist
+  engines/scout_intent.py    Meterless Scout Intent: guard, binding, signed contracts
+  engines/hmem.py            Meterless H-MEM: case memory, feedback, append-only ledger
+  agents/data_reader.py      loads + profiles data
+    tools/data_loader.py     deterministic evidence for H1–H7; CSV or Zetaris
+  agents/data_analyst.py     interprets the signals
+  agents/theory_generator.py seven theories
+  agents/evidence_investigator.py  parallel investigation
+  agents/evaluator.py        citation re-check, consistency, cross-critique, coverage
+  agents/action_strategist.py      ranks causes, drafts actions
+  agents/rules.py            shared deterministic verdicts and root-cause ranking
+llm_client.py                Meterless Nightshift client (lanes, retries, call cap, model logging)
+logger.py                    JSONL traces
+scripts/                     setup_live, check_zetaris, evaluate, make_examples
 ```
 
-### Design principles
+### Traces
 
-- **Deterministic calculations first**: All arithmetic (fill rates, consumption averages, stock identity) uses pandas. LLMs explain, not calculate.
-- **Verdicts from data**: `evidence_investigator._deterministic_verdict()` assigns supported/weakened/inconclusive from computed flags. The LLM writes the reasoning.
-- **Parallel investigation**: 7 LLM calls run concurrently via `ThreadPoolExecutor(max_workers=7)`.
-- **Traceable evidence**: Every finding cites actual row IDs (e.g. `stock#1506`, `orders#1505`).
-- **Human in the loop**: All proposed actions require pharmacist accept/edit/reject before any downstream action.
+Every run writes `logs/run_<id>_<time>.jsonl`. Each line has `timestamp, run_id, agent_name, action,
+input_summary, output_summary, target_agent, model, confidence, retry_count, status`. Actions include
+`scout_gate, memory_recall, read_and_profile, plan_waves, investigate_wave, verify_citations, check_consistency,
+cross_critique, request_revision, retry_investigation, accept_revision, drop_unverified, coverage_check,
+request_second_pass, escalate_to_pharmacist, child_contract, recommend_actions, memory_store, memory_feedback,
+contract_summary, pipeline_complete`. The same trace is returned in the result as `trace`.
 
 ---
 
-## Logs
+## Tests and evaluation
 
-Every run produces a JSONL trace in `logs/`. Each line is an event:
-
-```json
-{
-  "timestamp": "2026-10-25T09:12:34+00:00",
-  "run_id": "52739c1b",
-  "agent_name": "evidence_investigator",
-  "action": "investigate_parallel",
-  "input_summary": "7 theories + computed_evidence",
-  "output_summary": "verdicts: weakened, weakened, weakened, supported, ...",
-  "status": "ok"
-}
+```bash
+python -m pytest -q tests          # 249 tests, no network, no keys
+python scripts/evaluate.py         # back-test on the 16 planted cases → eval/RESULTS.md
 ```
+
+| File | Tests | Covers |
+|---|---|---|
+| `test_data_loader.py` | 51 | H1–H7 checks, loading, known cases |
+| `test_zetaris_loader.py` | 25 | Zetaris path against an in-memory stand-in: CSV/Zetaris parity, SQL validation, notices fallback |
+| `test_agents.py` | 42 | every agent online (mocked) and rule-based |
+| `test_llm_client.py` | 16 | Nightshift contract against a local fake server: lanes, empty-answer retry, 429 backoff, call cap |
+| `test_evaluator.py` | 20 | citation re-check, consistency, cross-critique, coverage |
+| `test_orchestrator.py` | 33 | the loop, retries, waves, escalation, Scout and memory wiring, CLI |
+| `test_engine_scout_intent.py` | 34 | guard on Meterless's adversarial set (precision/recall floors) and our own; contracts |
+| `test_engine_hmem.py` | 19 | official H-MEM conformance vectors; memory round trip |
+| `test_logger.py` | 9 | trace fields |
+
+Back-test (offline, rule-based): **15 of 16** planted cases get the right primary cause (8/8 normal, 7/8 noisy).
+The rules were written while looking at these same cases, so treat this as a regression check, not proof of
+accuracy on real data. Only `scripts/evaluate.py` reads `eval/answer_key.csv`; the agent never does.
 
 ---
 
 ## Configuration
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GROQ_API_KEY` | Groq API key | — (required) |
-| `GROQ_MODEL` | Model name | `openai/gpt-oss-120b` |
-| `SAMPLE_MODE` | Use `data/sample/` automatically | `false` |
+| Variable | Default | |
+|---|---|---|
+| `SAMPLE_MODE` | `false` | `true`: offline, CSV data, rule-based agents |
+| `STOCKWHY_DATA_SOURCE` | `csv` | `zetaris` to read the demo county through Zetaris |
+| `STOCKWHY_USE_LLM` | not `SAMPLE_MODE` | force the LLM on or off |
+| `METERLESS_BASE_URL` | `http://127.0.0.1:8088/v1` | Nightshift runtime |
+| `METERLESS_RUNTIME_TOKEN` | | Nightshift runtime token |
+| `METERLESS_MODEL_DEEP` / `METERLESS_MODEL_FAST` | `meterless/deep` / `meterless/fast` | lanes |
+| `STOCKWHY_MAX_LLM_CALLS` | `30` | per-run cap |
+| `ZETARIS_REST_URL`, `ZETARIS_API_KEY`, `ZETARIS_ORG_ID` | | Zetaris REST |
+| `STOCKWHY_LOGS_DIR` | `logs` | trace folder |
+| `STOCKWHY_INJECT_FAULT` | | fault drill (`H1`…`H7`) |
+| `SCOUT_CONTRACT_TTL_MINUTES` | `5` | contract lifetime |
 
 ---
 
-## Models and frameworks
+## Models, frameworks and tools
 
-- **LLM**: Groq API (`openai/gpt-oss-120b` or any Groq-compatible model)
-- **Data processing**: pandas, numpy
-- **HTTP server**: stdlib `http.server`
-- **Testing**: pytest (no external services)
-- **AI coding tool**: Kiro (by AWS), Claude Sonnet
+- **AI provider:** Meterless Nightshift (OpenAI-compatible runtime), NVIDIA Nemotron routes pinned in Nightshift.
+  The NVIDIA key lives in Nightshift, never in this repo.
+- **Meterless engines:** Scout Intent and H-MEM, implemented in Python from the specs at
+  https://github.com/meterless/meterless; their conformance fixtures are in `tests/fixtures/` (Apache-2.0).
+- **Data layer:** Zetaris (local Docker) over PostgreSQL 16.
+- **Python:** pandas, numpy, python-dotenv; stdlib `http.server`; pytest.
+- **AI coding tools:** Kiro, Cursor and Claude (Claude Code).
+- Sponsor details: `SPONSORS.md`.
 
----
+## Pre-existing components (declared)
+
+- Commits before the build window: `b2bebb7` (14 Oct 2026), `287305b` and `7233d97` (20 Oct 2026).
+- The synthetic datapack in `data/` was prepared around 22 Oct 2026.
+- Meterless test fixtures in `tests/fixtures/` (third-party, Apache-2.0).
 
 ## Limitations
 
-- All data is synthetic. Thresholds (e.g. 25% demand surge, 30M KES arrears) are illustrative, not calibrated to real Kenyan pharmacy data.
-- The system cannot query live DHIS2, KEMSA, or county health systems.
-- Web notes (`web_notes.json`) are synthetic placeholders for real public notices.
-- The LLM may hallucinate reasoning text — evidence citations are grounded in actual row IDs but explanations should be verified.
-- Rate limits on Groq may cause retries on parallel calls.
-
----
-
-## Evaluation
-
-To measure accuracy against known cases without the agent seeing the answer key:
-
-```bash
-# Run the agent on each case (questions.csv has the inputs)
-cat data/cases/questions.csv
-
-# Compare agent output to eval/answer_key.csv manually
-# Never point the agent at eval/answer_key.csv
-```
-
-The answer key has 16 cases (8 normal + 8 noisy). Ground truth causes: demand_surge, late_order, supplier_underfill, payment_arrears, record_error, expiry, national_disruption.
+- All data is synthetic; thresholds (25% surge, 30M KES arrears, 5% underfill) are illustrative.
+- Zetaris holds one dataset (the demo county); the planted cases are read from CSV.
+- Public notices are synthetic placeholders for real KEMSA or ministry notices.
+- With the LLM on, explanation text can still be wrong; verdicts come from computed flags and every cited row is
+  re-checked by the Evaluator, but read the reasoning critically.
+- No connection to live DHIS2, KHIS or KEMSA systems.

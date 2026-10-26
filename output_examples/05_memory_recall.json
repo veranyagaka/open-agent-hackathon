@@ -1,0 +1,1638 @@
+{
+  "run_id": "631c9f8a",
+  "status": "complete",
+  "facility_id": "FAC-009",
+  "commodity": "magnesium sulphate inj",
+  "month": "2026-03",
+  "question": "Why did FAC-009 run out of magnesium sulphate in March 2026?",
+  "dataset_dir": "data/sample",
+  "log_file": "run_631c9f8a_20261026T190828.jsonl",
+  "llm_mode": "rule-based",
+  "steps": {
+    "data_reader": {
+      "facility_id": "FAC-009",
+      "commodity": "magnesium sulphate inj",
+      "month": "2026-03",
+      "evidence": {
+        "dataset_summary": {
+          "stock_rows": 1,
+          "order_rows": 2,
+          "history_months_available": 6,
+          "has_payment_records": true,
+          "has_web_notes": false
+        },
+        "relevant_records": {
+          "stock_ids": [
+            "stock#1266",
+            "stock#1260",
+            "stock#1261",
+            "stock#1262",
+            "stock#1263",
+            "stock#1264",
+            "stock#1265"
+          ],
+          "order_ids": [
+            "orders#1265",
+            "orders#1266"
+          ],
+          "payment_months": [
+            "2025-12",
+            "2026-01",
+            "2026-02",
+            "2026-03"
+          ]
+        },
+        "data_quality_flags": [],
+        "evidence_for_hypotheses": {
+          "h1_late_order": "orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03.",
+          "h2_supplier_underfill": "orders#1265 fill rate 0.9053 vs county average 0.9259 across 30 orders in the cycle (shortfall 0.0205; under-fill threshold 0.05).",
+          "h3_payment_arrears": "County payment records: arrears flag not set in the 4-month window, amount owed 0 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.005.",
+          "h4_demand_surge": "stock#1266: consumed 150 vs 3-month average 240.67 (-37.67%; surge threshold +25%).",
+          "h5_record_error": "stock#1266: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 13 plausible.",
+          "h6_expiry": "stock#1266: wastage 0 vs 3-month average 0, with average consumption 240.67 (high-wastage rule: >2x average and >10% of consumption).",
+          "h7_national_disruption": "no public notice for this commodity in the window; county fill-rate drop vs previous month -0.005."
+        },
+        "missing_data_warnings": [],
+        "_produced_by": "rule-based"
+      },
+      "computed_evidence": {
+        "h1_late_order": {
+          "order_date": "2026-02-22",
+          "cutoff_date": "2026-02-10",
+          "days_late": 12,
+          "late": true,
+          "delivery_month": "2026-04",
+          "expected_delivery_month": "2026-03",
+          "delivery_slipped": true,
+          "order_id": "orders#1265",
+          "order_month": "2026-02"
+        },
+        "h2_supplier_underfill": {
+          "facility_fill_rate": 0.9053,
+          "county_avg_fill_rate": 0.9259,
+          "relative_shortfall": 0.0205,
+          "underfill": false,
+          "n_facilities_in_cycle": 30,
+          "order_id": "orders#1265"
+        },
+        "h3_payment_arrears": {
+          "arrears_in_month": false,
+          "amount_owed_kes": 0.0,
+          "major_arrears": false,
+          "fill_drop_vs_prev": -0.005,
+          "county_fill_this_month": 0.9265599254130482,
+          "county_fill_prev_month": 0.9215484601786468
+        },
+        "h4_demand_surge": {
+          "consumed_this_month": 150.0,
+          "avg_consumed_3m": 240.67,
+          "pct_change": -37.67,
+          "surge": false,
+          "stock_id": "stock#1266"
+        },
+        "h5_record_error": {
+          "computed_closing": 0.0,
+          "reported_closing": 0.0,
+          "discrepancy": 0.0,
+          "identity_holds": true,
+          "stockout_days_plausible": true,
+          "reported_stockout_days": 13.0,
+          "stock_id": "stock#1266"
+        },
+        "h6_expiry": {
+          "wastage_this_month": 0.0,
+          "avg_wastage_3m": 0.0,
+          "avg_consumed_3m": 240.67,
+          "high_wastage": false,
+          "stock_id": "stock#1266"
+        },
+        "h7_national_disruption": {
+          "county_fill_drop": -0.005,
+          "county_fill_this_month": 0.9265599254130482,
+          "county_fill_prev_month": 0.9215484601786468,
+          "web_notice_found": false,
+          "notice_details": null
+        }
+      },
+      "data_quality": [],
+      "missing_data_warnings": [],
+      "_produced_by": "rule-based",
+      "_profile": {
+        "facility_id": "FAC-009",
+        "commodity": "magnesium sulphate inj",
+        "month": "2026-03",
+        "stock_record": [
+          {
+            "id": "1266",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "opening": 150,
+            "received": 0,
+            "wastage": 0,
+            "consumed": 150,
+            "closing": 0,
+            "reported_stockout_days": 13
+          }
+        ],
+        "order_record": [
+          {
+            "id": "1266",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-04 00:00:00",
+            "qty_requested": 530,
+            "qty_delivered": 509,
+            "delivery_month": "2026-04"
+          }
+        ],
+        "prev_order_record": [
+          {
+            "id": "1265",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-22 00:00:00",
+            "qty_requested": 243,
+            "qty_delivered": 220,
+            "delivery_month": "2026-04"
+          }
+        ],
+        "all_orders": [
+          {
+            "id": "113",
+            "facility_id": "FAC-001",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 243,
+            "qty_delivered": 194,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "257",
+            "facility_id": "FAC-002",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 101,
+            "qty_delivered": 90,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "401",
+            "facility_id": "FAC-003",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 212,
+            "qty_delivered": 191,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "545",
+            "facility_id": "FAC-004",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 101,
+            "qty_delivered": 95,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "689",
+            "facility_id": "FAC-005",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 113,
+            "qty_delivered": 103,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "833",
+            "facility_id": "FAC-006",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 184,
+            "qty_delivered": 184,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "977",
+            "facility_id": "FAC-007",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 167,
+            "qty_delivered": 163,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1121",
+            "facility_id": "FAC-008",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 91,
+            "qty_delivered": 78,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1265",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-22 00:00:00",
+            "qty_requested": 243,
+            "qty_delivered": 220,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "1409",
+            "facility_id": "FAC-010",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 429,
+            "qty_delivered": 373,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1553",
+            "facility_id": "FAC-011",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 108,
+            "qty_delivered": 102,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1697",
+            "facility_id": "FAC-012",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 91,
+            "qty_delivered": 91,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1841",
+            "facility_id": "FAC-013",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 277,
+            "qty_delivered": 276,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1985",
+            "facility_id": "FAC-014",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 367,
+            "qty_delivered": 367,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2129",
+            "facility_id": "FAC-015",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-04 00:00:00",
+            "qty_requested": 216,
+            "qty_delivered": 189,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2273",
+            "facility_id": "FAC-016",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 244,
+            "qty_delivered": 209,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2417",
+            "facility_id": "FAC-017",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 328,
+            "qty_delivered": 305,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2561",
+            "facility_id": "FAC-018",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 252,
+            "qty_delivered": 237,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2705",
+            "facility_id": "FAC-019",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 357,
+            "qty_delivered": 341,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2849",
+            "facility_id": "FAC-020",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 207,
+            "qty_delivered": 203,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2993",
+            "facility_id": "FAC-021",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 455,
+            "qty_delivered": 426,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3137",
+            "facility_id": "FAC-022",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 187,
+            "qty_delivered": 164,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3281",
+            "facility_id": "FAC-023",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 374,
+            "qty_delivered": 359,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3425",
+            "facility_id": "FAC-024",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 414,
+            "qty_delivered": 413,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3569",
+            "facility_id": "FAC-025",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-04 00:00:00",
+            "qty_requested": 207,
+            "qty_delivered": 195,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3713",
+            "facility_id": "FAC-026",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 349,
+            "qty_delivered": 341,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3857",
+            "facility_id": "FAC-027",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 127,
+            "qty_delivered": 102,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "4001",
+            "facility_id": "FAC-028",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 134,
+            "qty_delivered": 124,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "4145",
+            "facility_id": "FAC-029",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 231,
+            "qty_delivered": 213,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "4289",
+            "facility_id": "FAC-030",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 149,
+            "qty_delivered": 135,
+            "delivery_month": "2026-03"
+          }
+        ],
+        "payments_history": [
+          {
+            "id": "1",
+            "month": "2024-10",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "2",
+            "month": "2024-11",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "3",
+            "month": "2024-12",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "4",
+            "month": "2025-01",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "5",
+            "month": "2025-02",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "6",
+            "month": "2025-03",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "7",
+            "month": "2025-04",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "8",
+            "month": "2025-05",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "9",
+            "month": "2025-06",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "10",
+            "month": "2025-07",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "11",
+            "month": "2025-08",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "12",
+            "month": "2025-09",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "13",
+            "month": "2025-10",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "14",
+            "month": "2025-11",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "15",
+            "month": "2025-12",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "16",
+            "month": "2026-01",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "17",
+            "month": "2026-02",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "18",
+            "month": "2026-03",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "19",
+            "month": "2026-04",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "20",
+            "month": "2026-05",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "21",
+            "month": "2026-06",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "22",
+            "month": "2026-07",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "23",
+            "month": "2026-08",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "24",
+            "month": "2026-09",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          }
+        ],
+        "stock_history": [
+          {
+            "id": "1260",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2025-09",
+            "opening": 154,
+            "received": 0,
+            "wastage": 0,
+            "consumed": 154,
+            "closing": 0,
+            "reported_stockout_days": 11
+          },
+          {
+            "id": "1261",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2025-10",
+            "opening": 0,
+            "received": 756,
+            "wastage": 0,
+            "consumed": 254,
+            "closing": 502,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1262",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2025-11",
+            "opening": 502,
+            "received": 0,
+            "wastage": 0,
+            "consumed": 239,
+            "closing": 263,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1263",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2025-12",
+            "opening": 263,
+            "received": 132,
+            "wastage": 0,
+            "consumed": 228,
+            "closing": 167,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1264",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-01",
+            "opening": 167,
+            "received": 233,
+            "wastage": 0,
+            "consumed": 231,
+            "closing": 169,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1265",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "opening": 169,
+            "received": 244,
+            "wastage": 0,
+            "consumed": 263,
+            "closing": 150,
+            "reported_stockout_days": 0
+          }
+        ],
+        "facilities": [
+          {
+            "facility_id": "FAC-001",
+            "lat": -1.4486,
+            "lon": 36.5058
+          },
+          {
+            "facility_id": "FAC-002",
+            "lat": -1.1542,
+            "lon": 36.4352
+          },
+          {
+            "facility_id": "FAC-003",
+            "lat": -1.2577,
+            "lon": 36.6991
+          },
+          {
+            "facility_id": "FAC-004",
+            "lat": -1.6878,
+            "lon": 36.8267
+          },
+          {
+            "facility_id": "FAC-005",
+            "lat": -1.7063,
+            "lon": 36.7603
+          },
+          {
+            "facility_id": "FAC-006",
+            "lat": -1.6771,
+            "lon": 36.4516
+          },
+          {
+            "facility_id": "FAC-007",
+            "lat": -1.3579,
+            "lon": 37.1142
+          },
+          {
+            "facility_id": "FAC-008",
+            "lat": -1.6286,
+            "lon": 36.5709
+          },
+          {
+            "facility_id": "FAC-009",
+            "lat": -1.1753,
+            "lon": 37.2229
+          },
+          {
+            "facility_id": "FAC-010",
+            "lat": -1.2206,
+            "lon": 36.727
+          },
+          {
+            "facility_id": "FAC-011",
+            "lat": -0.8614,
+            "lon": 36.4119
+          },
+          {
+            "facility_id": "FAC-012",
+            "lat": -0.9674,
+            "lon": 36.6306
+          },
+          {
+            "facility_id": "FAC-013",
+            "lat": -1.6102,
+            "lon": 36.476
+          },
+          {
+            "facility_id": "FAC-014",
+            "lat": -1.4624,
+            "lon": 37.1045
+          },
+          {
+            "facility_id": "FAC-015",
+            "lat": -1.5773,
+            "lon": 36.8934
+          },
+          {
+            "facility_id": "FAC-016",
+            "lat": -1.165,
+            "lon": 36.7052
+          },
+          {
+            "facility_id": "FAC-017",
+            "lat": -1.247,
+            "lon": 36.4265
+          },
+          {
+            "facility_id": "FAC-018",
+            "lat": -1.6864,
+            "lon": 36.5554
+          },
+          {
+            "facility_id": "FAC-019",
+            "lat": -1.1276,
+            "lon": 36.7548
+          },
+          {
+            "facility_id": "FAC-020",
+            "lat": -1.4573,
+            "lon": 36.897
+          },
+          {
+            "facility_id": "FAC-021",
+            "lat": -1.3321,
+            "lon": 36.6398
+          },
+          {
+            "facility_id": "FAC-022",
+            "lat": -1.0251,
+            "lon": 36.9991
+          },
+          {
+            "facility_id": "FAC-023",
+            "lat": -1.5203,
+            "lon": 36.887
+          },
+          {
+            "facility_id": "FAC-024",
+            "lat": -1.2673,
+            "lon": 37.1576
+          },
+          {
+            "facility_id": "FAC-025",
+            "lat": -1.0835,
+            "lon": 36.6291
+          },
+          {
+            "facility_id": "FAC-026",
+            "lat": -0.8578,
+            "lon": 36.4763
+          },
+          {
+            "facility_id": "FAC-027",
+            "lat": -1.3637,
+            "lon": 37.0514
+          },
+          {
+            "facility_id": "FAC-028",
+            "lat": -1.6032,
+            "lon": 36.8101
+          },
+          {
+            "facility_id": "FAC-029",
+            "lat": -1.7047,
+            "lon": 36.9714
+          },
+          {
+            "facility_id": "FAC-030",
+            "lat": -1.0519,
+            "lon": 36.8857
+          }
+        ],
+        "web_notes": [],
+        "computed_evidence": {
+          "h1_late_order": {
+            "order_date": "2026-02-22",
+            "cutoff_date": "2026-02-10",
+            "days_late": 12,
+            "late": true,
+            "delivery_month": "2026-04",
+            "expected_delivery_month": "2026-03",
+            "delivery_slipped": true,
+            "order_id": "orders#1265",
+            "order_month": "2026-02"
+          },
+          "h2_supplier_underfill": {
+            "facility_fill_rate": 0.9053,
+            "county_avg_fill_rate": 0.9259,
+            "relative_shortfall": 0.0205,
+            "underfill": false,
+            "n_facilities_in_cycle": 30,
+            "order_id": "orders#1265"
+          },
+          "h3_payment_arrears": {
+            "arrears_in_month": false,
+            "amount_owed_kes": 0.0,
+            "major_arrears": false,
+            "fill_drop_vs_prev": -0.005,
+            "county_fill_this_month": 0.9265599254130482,
+            "county_fill_prev_month": 0.9215484601786468
+          },
+          "h4_demand_surge": {
+            "consumed_this_month": 150.0,
+            "avg_consumed_3m": 240.67,
+            "pct_change": -37.67,
+            "surge": false,
+            "stock_id": "stock#1266"
+          },
+          "h5_record_error": {
+            "computed_closing": 0.0,
+            "reported_closing": 0.0,
+            "discrepancy": 0.0,
+            "identity_holds": true,
+            "stockout_days_plausible": true,
+            "reported_stockout_days": 13.0,
+            "stock_id": "stock#1266"
+          },
+          "h6_expiry": {
+            "wastage_this_month": 0.0,
+            "avg_wastage_3m": 0.0,
+            "avg_consumed_3m": 240.67,
+            "high_wastage": false,
+            "stock_id": "stock#1266"
+          },
+          "h7_national_disruption": {
+            "county_fill_drop": -0.005,
+            "county_fill_this_month": 0.9265599254130482,
+            "county_fill_prev_month": 0.9215484601786468,
+            "web_notice_found": false,
+            "notice_details": null
+          }
+        }
+      }
+    },
+    "data_analyst": {
+      "analysis_summary": "Strongest computed signal: H1 late_order. orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03.",
+      "hypothesis_signals": {
+        "H1": {
+          "signal": "strong",
+          "reasoning": "orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Computed flag gives 'supported'.",
+          "evidence_ids": [
+            "orders#1265"
+          ]
+        },
+        "H2": {
+          "signal": "none",
+          "reasoning": "orders#1265 fill rate 0.9053 vs county average 0.9259 across 30 orders in the cycle (shortfall 0.0205; under-fill threshold 0.05). Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "orders#1265"
+          ]
+        },
+        "H3": {
+          "signal": "none",
+          "reasoning": "County payment records: arrears flag not set in the 4-month window, amount owed 0 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.005. Computed flag gives 'weakened'.",
+          "evidence_ids": []
+        },
+        "H4": {
+          "signal": "none",
+          "reasoning": "stock#1266: consumed 150 vs 3-month average 240.67 (-37.67%; surge threshold +25%). Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "stock#1266"
+          ]
+        },
+        "H5": {
+          "signal": "none",
+          "reasoning": "stock#1266: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 13 plausible. Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "stock#1266"
+          ]
+        },
+        "H6": {
+          "signal": "none",
+          "reasoning": "stock#1266: wastage 0 vs 3-month average 0, with average consumption 240.67 (high-wastage rule: >2x average and >10% of consumption). Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "stock#1266"
+          ]
+        },
+        "H7": {
+          "signal": "none",
+          "reasoning": "no public notice for this commodity in the window; county fill-rate drop vs previous month -0.005. Computed flag gives 'weakened'.",
+          "evidence_ids": []
+        }
+      },
+      "primary_leads": [
+        "H1 late_order: orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03."
+      ],
+      "primary_lead_ids": [
+        "H1"
+      ],
+      "data_limitations": [
+        "Signals are threshold checks on one month of records; they show association, not causation."
+      ],
+      "_produced_by": "rule-based"
+    },
+    "theory_generator": {
+      "theories": [
+        {
+          "id": "H1",
+          "hypothesis_name": "late_order",
+          "title": "Late order",
+          "mechanism": "The order meant to deliver this month was placed after the ordering cutoff, so delivery slipped to the following month and stock ran out before it arrived.",
+          "evidence_needed": [
+            "order_date later than cutoff_date on the previous month's order",
+            "delivery_month later than the stockout month"
+          ],
+          "disconfirming_evidence": [
+            "Order placed on or before the cutoff",
+            "Delivery arrived in the stockout month"
+          ],
+          "predictions": [
+            "received is 0 or low in the stockout month",
+            "A delivery lands the following month"
+          ],
+          "lead_signal": "strong",
+          "lead_reasoning": "orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Computed flag gives 'supported'."
+        },
+        {
+          "id": "H2",
+          "hypothesis_name": "supplier_underfill",
+          "title": "Supplier under-fill",
+          "mechanism": "The supplier delivered much less than requested to this facility compared with peers in the same cycle, leaving too little stock.",
+          "evidence_needed": [
+            "Facility fill rate more than 5 points below the county average for the cycle"
+          ],
+          "disconfirming_evidence": [
+            "Facility fill rate at or above the county average"
+          ],
+          "predictions": [
+            "qty_delivered well below qty_requested for this facility only"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "orders#1265 fill rate 0.9053 vs county average 0.9259 across 30 orders in the cycle (shortfall 0.0205; under-fill threshold 0.05). Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H3",
+          "hypothesis_name": "payment_arrears",
+          "title": "County payment arrears",
+          "mechanism": "The county owed the supplier at least 30M KES and the supplier cut deliveries county-wide until paid.",
+          "evidence_needed": [
+            "County arrears flag with amount owed >= 30,000,000 KES",
+            "County-wide fill rate falling vs the previous month"
+          ],
+          "disconfirming_evidence": [
+            "No arrears flag, or arrears below the threshold",
+            "County fill rate stable or rising"
+          ],
+          "predictions": [
+            "Many facilities under-filled in the same month"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "County payment records: arrears flag not set in the 4-month window, amount owed 0 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.005. Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H4",
+          "hypothesis_name": "demand_surge",
+          "title": "Demand surge",
+          "mechanism": "Consumption jumped more than 25% above the 3-month average, exhausting stock faster than the ordering cycle planned for.",
+          "evidence_needed": [
+            "consumed this month > 1.25 x the 3-month average"
+          ],
+          "disconfirming_evidence": [
+            "Consumption at or below the recent average"
+          ],
+          "predictions": [
+            "Stock reaches zero mid-month despite a normal delivery"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "stock#1266: consumed 150 vs 3-month average 240.67 (-37.67%; surge threshold +25%). Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H5",
+          "hypothesis_name": "record_error",
+          "title": "Stock record error",
+          "mechanism": "The reported stockout is a recording error: the stock ledger does not add up, or stockout days conflict with stock on hand.",
+          "evidence_needed": [
+            "opening + received - wastage - consumed differs from reported closing",
+            "Stockout days reported while closing stock is above zero"
+          ],
+          "disconfirming_evidence": [
+            "Stock identity holds and closing is zero"
+          ],
+          "predictions": [
+            "A physical count differs from the ledger"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "stock#1266: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 13 plausible. Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H6",
+          "hypothesis_name": "expiry",
+          "title": "Expiry or wastage",
+          "mechanism": "A large expiry or damage write-off removed usable stock, causing the shortfall.",
+          "evidence_needed": [
+            "Wastage more than 2x its 3-month average and above 10% of average consumption"
+          ],
+          "disconfirming_evidence": [
+            "Wastage near zero or at its normal level"
+          ],
+          "predictions": [
+            "Expired batches recorded in the stockout month"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "stock#1266: wastage 0 vs 3-month average 0, with average consumption 240.67 (high-wastage rule: >2x average and >10% of consumption). Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H7",
+          "hypothesis_name": "national_disruption",
+          "title": "National supply disruption",
+          "mechanism": "A national supply disruption (tender failure, logistics breakdown) reduced deliveries county-wide and was publicly announced.",
+          "evidence_needed": [
+            "Public notice for this commodity within 2 months",
+            "County-wide fill-rate drop vs the previous month"
+          ],
+          "disconfirming_evidence": [
+            "No public notice",
+            "County fill rate stable"
+          ],
+          "predictions": [
+            "Several facilities short of the same commodity at once"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "no public notice for this commodity in the window; county fill-rate drop vs previous month -0.005. Computed flag gives 'weakened'."
+        }
+      ],
+      "_produced_by": "rule-based"
+    },
+    "evidence_investigator": {
+      "evaluations": [
+        {
+          "theory_id": "H1",
+          "hypothesis_name": "late_order",
+          "verdict": "supported",
+          "verdict_source": "deterministic",
+          "supporting_evidence_ids": [
+            "orders#1265"
+          ],
+          "contradicting_evidence_ids": [],
+          "reasoning": "orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+          "limitations": [
+            "Order and cutoff dates show timing, not why the order was late."
+          ],
+          "additional_analysis_needed": [
+            "Confirm the order submission date with the facility pharmacist."
+          ],
+          "_produced_by": "rule-based",
+          "evidence_strength": 0.82,
+          "cited_values": {
+            "orders#1265": {
+              "order_date": "2026-02-22",
+              "cutoff_date": "2026-02-10",
+              "delivery_month": "2026-04"
+            }
+          },
+          "verified_citations": [
+            "orders#1265"
+          ],
+          "evaluator_confidence": 1.0
+        }
+      ],
+      "analysis_requests": [],
+      "waves": [
+        {
+          "wave": 1,
+          "hypotheses": [
+            "H1"
+          ]
+        }
+      ]
+    },
+    "action_strategist": {
+      "medical_disclaimer": "This system provides decision-support information only. It does not constitute medical advice, clinical guidance, or authorisation to act. All proposed actions must be reviewed and approved by a qualified pharmacist or supply-chain officer before implementation.",
+      "ranked_hypotheses": [
+        {
+          "hypothesis_id": "H1",
+          "hypothesis_name": "late_order",
+          "likelihood": "high",
+          "verdict": "supported",
+          "evidence_strength": 0.82,
+          "summary": "orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+          "evidence_ids": [
+            "orders#1265"
+          ]
+        }
+      ],
+      "most_likely_cause": "late_order (H1): orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+      "most_likely_hypothesis_id": "H1",
+      "actions": [
+        {
+          "action_id": "A1",
+          "action": "Draft an emergency requisition for the commodity to cover the gap until the slipped delivery arrives.",
+          "linked_hypothesis_ids": [
+            "H1"
+          ],
+          "evidence_basis": "orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+          "priority": "critical",
+          "proposed_owner": "Facility pharmacist",
+          "timeframe": "within 24 hours",
+          "expected_outcome": "Stock available until the delayed order is received.",
+          "success_measure": "Closing stock above zero at the next stock report.",
+          "risks_and_caveats": "Emergency supply may duplicate the slipped delivery; size it to the gap only.",
+          "pharmacist_review_required": true,
+          "verified_citations": [
+            "orders#1265"
+          ]
+        },
+        {
+          "action_id": "A2",
+          "action": "Set an ordering reminder ahead of the cutoff date for the next cycle.",
+          "linked_hypothesis_ids": [
+            "H1"
+          ],
+          "evidence_basis": "orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+          "priority": "high",
+          "proposed_owner": "Facility in-charge",
+          "timeframe": "next ordering cycle",
+          "expected_outcome": "Next order submitted on or before the cutoff.",
+          "success_measure": "order_date on or before cutoff_date next cycle.",
+          "risks_and_caveats": "Depends on staff availability at month start.",
+          "pharmacist_review_required": true,
+          "verified_citations": [
+            "orders#1265"
+          ]
+        }
+      ],
+      "emergency_requisition_memo": "DRAFT \u2014 requires pharmacist sign-off.\nSubject: Emergency requisition, the commodity, the facility\nthe facility reported a stockout of the commodity in the reporting month. Most likely cause: late_order (H1).\nEvidence: orders#1265.\nQuantity: to be set by the pharmacist from current consumption records.",
+      "transfer_request": null,
+      "ordering_schedule_recommendation": "Submit the order before the cutoff date; set a reminder several days ahead.",
+      "communication_draft": "DRAFT \u2014 for pharmacist review.\nTo: County pharmacist\nRe: the commodity stockout at the facility, the reporting month\nMost likely cause: late_order (H1). Evidence: orders#1265. Proposed actions are attached for review; none will be executed without approval.",
+      "open_questions": [],
+      "_produced_by": "rule-based"
+    }
+  },
+  "approved_actions": [],
+  "rejected_actions": [],
+  "medical_disclaimer": "This system provides decision-support information only. It does not constitute medical advice, clinical guidance, or authorisation to act. All proposed actions must be reviewed and approved by a qualified pharmacist or supply-chain officer before implementation.",
+  "requires_pharmacist_approval": true,
+  "data_backend": "csv:data/sample",
+  "scout": {
+    "decision": "allow",
+    "intent": "stockout.explain",
+    "band": "high",
+    "reason": "Bound to facility_id=FAC-009, commodity=magnesium sulphate inj, month=2026-03",
+    "params": {
+      "facility_id": "FAC-009",
+      "commodity": "magnesium sulphate inj",
+      "month": "2026-03"
+    },
+    "suggestions": {}
+  },
+  "contract": {
+    "id": "1793041708231-a8fae0dfb0",
+    "intent": "stockout.explain",
+    "capabilities": [
+      "data.read",
+      "llm.call",
+      "memory.read",
+      "memory.write"
+    ],
+    "expires_at": "2026-10-26T19:13:28.231270+00:00",
+    "issued_at": "2026-10-26T19:08:28.231270+00:00",
+    "parent_id": null,
+    "params": {
+      "facility_id": "FAC-009",
+      "commodity": "magnesium sulphate inj",
+      "month": "2026-03"
+    },
+    "role": "pharmacist",
+    "trace_id": "b13b19217dc5486ab8be744ff0c8060e",
+    "approvals": [],
+    "registry_version": 3,
+    "policy_pack": "stockwhy-default-2",
+    "signature": "ef1bf5d1d1842991543721fd9ffa0261cf015341718b93045e1308ad7604d50b"
+  },
+  "memory": {
+    "recalled": [
+      {
+        "id": "367401efae8f49bdaa9eeace3ef28042",
+        "facility_id": "FAC-009",
+        "commodity": "magnesium sulphate inj",
+        "month": "2026-03",
+        "cause": "H1 late_order",
+        "summary": "late_order (H1): orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+        "citations": [
+          "orders#1265"
+        ],
+        "status": "pending_approval",
+        "confidence": 1.0,
+        "note": "",
+        "provenance": {
+          "origin": "stockwhy",
+          "run_id": "e6e2c311",
+          "citations": [
+            "orders#1265"
+          ],
+          "learnedAt": 1793041707756,
+          "label": "StockWhy run e6e2c311"
+        },
+        "stored_at": 1793041707756
+      }
+    ],
+    "prioritised": [
+      "H1"
+    ],
+    "stored_id": "b20ee864f62841eaad1ad62b02fc051a",
+    "stored_status": "pending_approval"
+  },
+  "wave_plan": {
+    "wave1": [
+      "H1"
+    ],
+    "held_back": [
+      "H2",
+      "H3",
+      "H4",
+      "H5",
+      "H6",
+      "H7"
+    ],
+    "reasons": {
+      "H1": "prior finding in case memory"
+    }
+  },
+  "fault_drill": null,
+  "dropped_claims": [],
+  "not_investigated": [
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "H7"
+  ],
+  "coverage": {
+    "verdict": "explained",
+    "supported": [
+      "H1"
+    ],
+    "request": [],
+    "reason": "verified supported cause(s): H1"
+  },
+  "verified_citations": {
+    "H1": [
+      "orders#1265"
+    ]
+  },
+  "most_likely_cause": "late_order (H1): orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+  "verified_cause": {
+    "hypothesis_id": "H1",
+    "hypothesis_name": "late_order",
+    "citations": [
+      "orders#1265"
+    ]
+  },
+  "ranked_hypotheses": [
+    {
+      "hypothesis_id": "H1",
+      "hypothesis_name": "late_order",
+      "likelihood": "high",
+      "verdict": "supported",
+      "evidence_strength": 0.82,
+      "summary": "orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+      "evidence_ids": [
+        "orders#1265"
+      ],
+      "citations": [
+        "orders#1265"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "action_id": "A1",
+      "action": "Draft an emergency requisition for the commodity to cover the gap until the slipped delivery arrives.",
+      "linked_hypothesis_ids": [
+        "H1"
+      ],
+      "evidence_basis": "orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+      "priority": "critical",
+      "proposed_owner": "Facility pharmacist",
+      "timeframe": "within 24 hours",
+      "expected_outcome": "Stock available until the delayed order is received.",
+      "success_measure": "Closing stock above zero at the next stock report.",
+      "risks_and_caveats": "Emergency supply may duplicate the slipped delivery; size it to the gap only.",
+      "pharmacist_review_required": true,
+      "verified_citations": [
+        "orders#1265"
+      ]
+    },
+    {
+      "action_id": "A2",
+      "action": "Set an ordering reminder ahead of the cutoff date for the next cycle.",
+      "linked_hypothesis_ids": [
+        "H1"
+      ],
+      "evidence_basis": "orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+      "priority": "high",
+      "proposed_owner": "Facility in-charge",
+      "timeframe": "next ordering cycle",
+      "expected_outcome": "Next order submitted on or before the cutoff.",
+      "success_measure": "order_date on or before cutoff_date next cycle.",
+      "risks_and_caveats": "Depends on staff availability at month start.",
+      "pharmacist_review_required": true,
+      "verified_citations": [
+        "orders#1265"
+      ]
+    }
+  ],
+  "removed_actions": [],
+  "contracts": {
+    "main": {
+      "id": "1793041708231-a8fae0dfb0",
+      "intent": "stockout.explain",
+      "capabilities": [
+        "data.read",
+        "llm.call",
+        "memory.read",
+        "memory.write"
+      ],
+      "expires_at": "2026-10-26T19:13:28.231270+00:00",
+      "issued_at": "2026-10-26T19:08:28.231270+00:00",
+      "parent_id": null,
+      "params": {
+        "facility_id": "FAC-009",
+        "commodity": "magnesium sulphate inj",
+        "month": "2026-03"
+      },
+      "role": "pharmacist",
+      "trace_id": "b13b19217dc5486ab8be744ff0c8060e",
+      "approvals": [],
+      "registry_version": 3,
+      "policy_pack": "stockwhy-default-2",
+      "signature": "ef1bf5d1d1842991543721fd9ffa0261cf015341718b93045e1308ad7604d50b"
+    },
+    "child": {
+      "id": "1793041708278-1914483e9b",
+      "intent": "action.draft",
+      "capabilities": [
+        "action.draft",
+        "data.read"
+      ],
+      "expires_at": "2026-10-26T19:13:28.278117+00:00",
+      "issued_at": "2026-10-26T19:08:28.278117+00:00",
+      "parent_id": "1793041708231-a8fae0dfb0",
+      "params": {
+        "facility_id": "FAC-009",
+        "commodity": "magnesium sulphate inj",
+        "month": "2026-03"
+      },
+      "role": "pharmacist",
+      "trace_id": "b13b19217dc5486ab8be744ff0c8060e",
+      "approvals": [
+        "pharmacist-confirm"
+      ],
+      "registry_version": 3,
+      "policy_pack": "stockwhy-default-2",
+      "signature": "387bbe23a5817d99b34db446fe2b0d74604e9a45f8edb99461669c13fa6158fd"
+    },
+    "checks": 4,
+    "granted": 4,
+    "skipped": 0,
+    "denied": 0
+  },
+  "trace": [
+    {
+      "agent": "orchestrator",
+      "action": "run_start",
+      "target_agent": "scout",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "data_backend=csv; llm_mode=rule-based; scout=on; memory=on"
+    },
+    {
+      "agent": "data_reader",
+      "action": "load_dataset",
+      "target_agent": "scout",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "loaded from csv:data/sample: stock=4320, orders=4320, payments=24, web_notes=2"
+    },
+    {
+      "agent": "scout",
+      "action": "scout_gate",
+      "target_agent": "memory",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "allow (stockout.explain, band high): Bound to facility_id=FAC-009, commodity=magnesium sulphate inj, month=2026-03"
+    },
+    {
+      "agent": "scout",
+      "action": "scan_web_notes",
+      "target_agent": "memory",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "no injection text found"
+    },
+    {
+      "agent": "memory",
+      "action": "memory_recall",
+      "target_agent": "data_reader",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "1 prior finding(s); prioritise ['H1']"
+    },
+    {
+      "agent": "data_reader",
+      "action": "read_and_profile",
+      "target_agent": "data_analyst",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "Profile complete. Warnings: 0"
+    },
+    {
+      "agent": "data_analyst",
+      "action": "analyze_evidence",
+      "target_agent": "theory_generator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "Strongest computed signal: H1 late_order. orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expe"
+    },
+    {
+      "agent": "theory_generator",
+      "action": "generate",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "7 theories generated"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "plan_waves",
+      "target_agent": "evidence_investigator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "wave 1: ['H1']; held back: ['H2', 'H3', 'H4', 'H5', 'H6', 'H7']; H1: prior finding in case memory"
+    },
+    {
+      "agent": "evidence_investigator",
+      "action": "investigate_wave",
+      "target_agent": "evaluator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "verdicts: H1=supported"
+    },
+    {
+      "agent": "evaluator",
+      "action": "verify_citations",
+      "target_agent": "evaluator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "1 cited row(s) re-read and matched; failures: none"
+    },
+    {
+      "agent": "evaluator",
+      "action": "check_consistency",
+      "target_agent": "evaluator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "all verdicts agree with the computed flags"
+    },
+    {
+      "agent": "evaluator",
+      "action": "cross_critique",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "no conflicts between hypotheses"
+    },
+    {
+      "agent": "evaluator",
+      "action": "coverage_check",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "explained: verified supported cause(s): H1"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "child_contract",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793041708278-1914483e9b for action.draft (['action.draft', 'data.read'])"
+    },
+    {
+      "agent": "action_strategist",
+      "action": "recommend_actions",
+      "target_agent": "pharmacist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "Most likely: late_order (H1): orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month . 2 action(s) drafted for pharmacist approval"
+    },
+    {
+      "agent": "memory",
+      "action": "memory_store",
+      "target_agent": "pharmacist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "stored b20ee864f62841eaad1ad62b02fc051a as pending_approval"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "contract_summary",
+      "target_agent": "none",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "4 granted, 0 denied, 0 skipped (no Scout contract)"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "pipeline_complete",
+      "target_agent": "user",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "status=complete. Most likely cause: late_order (H1): orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'suppor"
+    }
+  ],
+  "contract_checks": [
+    {
+      "step": "memory_recall",
+      "capability": "memory.read",
+      "result": "granted",
+      "contract_id": "1793041708231-a8fae0dfb0"
+    },
+    {
+      "step": "data_reader",
+      "capability": "data.read",
+      "result": "granted",
+      "contract_id": "1793041708231-a8fae0dfb0"
+    },
+    {
+      "step": "action_strategist",
+      "capability": "action.draft",
+      "result": "granted",
+      "contract_id": "1793041708278-1914483e9b"
+    },
+    {
+      "step": "memory_store",
+      "capability": "memory.write",
+      "result": "granted",
+      "contract_id": "1793041708231-a8fae0dfb0"
+    }
+  ]
+}

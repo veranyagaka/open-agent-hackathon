@@ -173,6 +173,15 @@ class _Run:
         })
 
 
+def _display_path(path) -> str:
+    """Repo-relative path for results and traces (no local home folders)."""
+    root = Path(__file__).resolve().parent
+    try:
+        return Path(path).resolve().relative_to(root).as_posix()
+    except (ValueError, OSError, TypeError):
+        return str(path)
+
+
 class StockyWhy:
     """
     Main investigation orchestrator.
@@ -245,7 +254,7 @@ class StockyWhy:
             "question": question or (
                 f"Why did facility {facility_id} report a stockout of {commodity} in {month}?"
             ),
-            "dataset_dir": dataset_dir,
+            "dataset_dir": _display_path(dataset_dir),
             "log_file": log_file,
             "llm_mode": "llm" if ctx.llm_mode else "rule-based",
             "steps": {},

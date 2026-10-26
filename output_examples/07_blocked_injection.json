@@ -1,0 +1,58 @@
+{
+  "status": "block",
+  "run_id": "d4d90d23",
+  "message": "Blocked by Scout guard (instruction-override, exfiltration). StockWhy will not follow instructions embedded in a request or reveal keys, prompts or configuration.",
+  "error": "Scout Intent blocked the request: Blocked by Scout guard (instruction-override, exfiltration). StockWhy will not follow instructions embedded in a request or reveal keys, prompts or configuration.",
+  "hint": "Ask why a facility ran out of a medicine in a given month.",
+  "scout": {
+    "decision": "block",
+    "intent": "GENERAL",
+    "band": "high",
+    "reason": "Blocked by Scout guard (instruction-override, exfiltration). StockWhy will not follow instructions embedded in a request or reveal keys, prompts or configuration.",
+    "trace": {
+      "engine": "scout-intent",
+      "trace_id": "4ca0f317740d4f25a2776d3c08e74fc8",
+      "registry_version": 3,
+      "policy_pack": "stockwhy-default-2",
+      "stage2": "skipped",
+      "role": "pharmacist",
+      "question_chars": 68,
+      "guard": {
+        "flags": [
+          {
+            "layer": "injection",
+            "field": "question",
+            "kind": "instruction-override"
+          },
+          {
+            "layer": "injection",
+            "field": "question",
+            "kind": "exfiltration"
+          }
+        ],
+        "pii": []
+      },
+      "candidates": [
+        {
+          "intent": "GENERAL",
+          "score": 0.0,
+          "spans": []
+        },
+        {
+          "intent": "stockout.explain",
+          "score": 0.0,
+          "spans": []
+        },
+        {
+          "intent": "action.draft",
+          "score": 0.0,
+          "spans": []
+        }
+      ],
+      "band": "reject",
+      "latency_ms": 0.23
+    },
+    "params": {},
+    "suggestions": {}
+  }
+}

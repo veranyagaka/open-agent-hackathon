@@ -316,7 +316,8 @@ def _screen_request(payload: dict):
         "status": decision["decision"],
         "run_id": run_id,
         "message": decision.get("reason", ""),
-        "error": f"Scout Intent {decision['decision']}ed the request: {decision.get('reason', '')}",
+        "error": (f"Scout Intent {'blocked' if decision['decision'] == 'block' else 'refused'} "
+                  f"the request: {decision.get('reason', '')}"),
         "hint": "Ask why a facility ran out of a medicine in a given month.",
         "scout": {k: v for k, v in decision.items() if k != "contract"},
     }
@@ -334,6 +335,8 @@ def execute_request(payload: dict, interactive: bool = False, log_file: str = No
     """
     if not isinstance(payload, dict):
         return _invalid("Request must be a JSON object"), 400
+    # Keys starting with "_" are comments in example files, never request data
+    payload = {k: v for k, v in payload.items() if not str(k).startswith("_")}
     for key, value in payload.items():
         if value is not None and not isinstance(value, (str, int, float, bool)):
             return _invalid(f"Field '{key}' must be a plain value"), 400
