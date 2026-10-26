@@ -1,0 +1,78 @@
+"""Unit tests for the optional Zetaris-backed data loader."""
+import json
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+from tools import data_loader
+
+
+def _responses():
+    return {
+        "stock": [{"id": "1", "facility_id": "FAC-001", "commodity": "oxytocin", "month": "2024-10", "opening": "10", "received": "5", "wastage": "0", "consumed": "8", "closing": "7", "reported_stockout_days": "0"}],
+        "orders": [{"id": "2", "facility_id": "FAC-001", "commodity": "oxytocin", "month": "2024-09", "cutoff_date": "2024-09-10", "order_date": "2024-09-08", "qty_requested": "10", "qty_delivered": "10", "delivery_month": "2024-10"}],
+        "payments": [{"id": "3", "month": "2024-10", "county_arrears_flag": "1", "amount_owed_kes": "1000"}],
+        "facilities": [{"facility_id": "FAC-001", "lat": "-1.2", "lon": "36.8"}],
+    }
+
+
+def test_zetaris_loader_converts_types_and_preserves_web_notes(tmp_path, monkeypatch):
+    notes = [{"commodity": "oxytocin", "note": "test note"}]
+    (tmp_path / "web_notes.json").write_text(json.dumps(notes), encoding="utf-8")
+    tables = _responses()
+    calls = []
+
+    def fake_run_sql(sql):
+        calls.append(sql)
+        table = next(name for name in tables if f".{name} " in sql)
+        return {"data": tables[table]}
+
+    monkeypatch.setattr("scripts.check_zetaris.run_sql", fake_run_sql)
+    dataset = data_loader.load_zetaris_dataset(str(tmp_path))
+    assert set(dataset) == {"stock", "orders", "payments", "facilities", "web_notes"}
+    assert pd.api.types.is_numeric_dtype(dataset["stock"]["opening"])
+    assert pd.api.types.is_datetime64_any_dtype(dataset["orders"]["order_date"])
+    assert pd.api.types.is_numeric_dtype(dataset["facilities"]["lat"])
+    assert dataset["web_notes"] == notes
+    assert len(calls) == 4
+
+
+def test_zetaris_loader_fails_if_required_columns_missing(tmp_path, monkeypatch):
+    (tmp_path / "web_notes.json").write_text("[]", encoding="utf-8")
+    def fake_run_sql(sql):
+        table = sql.split("STOCKWHY_PG.", 1)[1].split()[0]
+        return {"data": [{"wrong_column": "x"}]}
+    monkeypatch.setattr("scripts.check_zetaris.run_sql", fake_run_sql)
+    with pytest.raises(RuntimeError, match="missing required columns"):
+        data_loader.load_zetaris_dataset(str(tmp_path))
+
+
+def test_load_dataset_defaults_to_csv(tmp_path, monkeypatch):
+    monkeypatch.delenv("STOCKWHY_DATA_SOURCE", raising=False)
+    monkeypatch.setattr(data_loader, "_load_csv_dataset", lambda path: {"source": "csv"})
+    assert data_loader.load_dataset(str(tmp_path)) == {"source": "csv"}
+
+
+def test_load_dataset_rejects_unknown_source(monkeypatch):
+    monkeypatch.setenv("STOCKWHY_DATA_SOURCE", "other")
+    with pytest.raises(ValueError, match="STOCKWHY_DATA_SOURCE"):
+        data_loader.load_dataset("unused")
+
+
+def test_zetaris_rows_supports_headers_with_positional_data():
+    response = {
+        "headers": [
+            {"name": "facility_id"}, {"name": "lat"}, {"name": "lon"}
+        ],
+        "data": [["FAC-001", "-1.2", "36.8"]],
+    }
+    assert data_loader._zetaris_rows(response) == [
+        {"facility_id": "FAC-001", "lat": "-1.2", "lon": "36.8"}
+    ]
+
+
+def test_zetaris_rows_rejects_mismatched_header_width():
+    response = {"headers": ["id", "month"], "data": [["1"]]}
+    with pytest.raises(RuntimeError, match="row width does not match"):
+        data_loader._zetaris_rows(response)

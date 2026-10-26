@@ -2,7 +2,7 @@
 
 **A four-agent system that explains why a Kenyan health facility ran out of an essential medicine and drafts corrective actions for a pharmacist to approve.**
 
-Built for the [Open Agent Hackathon 2026](https://genai.works) (Track: "The Agent That Can Explain Why").
+Built for the [Open Agent Hackathon 2026](https://genai.works) (Track 2: "The Agent That Can Explain Why").
 
 > ⚠️ **Medical disclaimer:** This system provides decision-support information only. It does not constitute medical advice. No order, transfer, requisition, or payment will execute without explicit pharmacist approval.
 
