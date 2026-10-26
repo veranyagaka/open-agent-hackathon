@@ -1,4 +1,12 @@
 
+"""Zetaris REST client used by tools/data_loader.py, plus a connectivity check.
+
+    python scripts/check_zetaris.py
+
+Reads ZETARIS_REST_URL, ZETARIS_API_KEY and ZETARIS_ORG_ID from the environment
+(or .env). Never prints the key.
+"""
+
 import json
 import os
 import uuid
@@ -7,10 +15,13 @@ import urllib.request
 
 from dotenv import load_dotenv
 
-load_dotenv()
 
+def run_sql(sql: str, limit: int = 100) -> dict:
+    """Run ONE SQL statement through the Zetaris SQL Editor REST endpoint.
 
-def run_sql(sql: str) -> dict:
+    *limit* caps the rows returned for this call.
+    """
+    load_dotenv()  # does not override variables already set
     base_url = os.getenv("ZETARIS_REST_URL", "").rstrip("/")
     api_key = os.getenv("ZETARIS_API_KEY", "")
     org_id = os.getenv("ZETARIS_ORG_ID", "")
@@ -34,7 +45,7 @@ def run_sql(sql: str) -> dict:
         "queryId": str(uuid.uuid4()),
         "sql": sql,
         "source": "SqlEditor",
-        "limit": 100,
+        "limit": int(limit),
     }
 
     request = urllib.request.Request(

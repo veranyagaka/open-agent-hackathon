@@ -1,18 +1,23 @@
--- Run these in the Zetaris SQL Editor, ONE statement at a time. Creating a datasource needs administrator rights.
--- Replace the placeholders. Do not commit this file with a real password.
+-- Registers the two StockWhy sources in Zetaris. `python scripts/setup_live.py` runs these for you, filling the
+-- placeholders from .env (one statement per call, as Zetaris requires). Creating a datasource needs admin rights.
+-- Never commit this file with real values.
 
-CREATE DATASOURCE stockwhy_pg DESCRIBE BY "StockWhy synthetic data" OPTIONS (
+CREATE DATASOURCE stockwhy_pg DESCRIBE BY "StockWhy facility stock orders and payments" OPTIONS (
   jdbcdriver "org.postgresql.Driver",
-  jdbcurl "jdbc:postgresql://YOUR_HOST:5432/YOUR_DATABASE?sslmode=require",
-  username "YOUR_USER",
-  password "YOUR_PASSWORD",
+  jdbcurl "jdbc:postgresql://{PG_HOST}:{PG_PORT}/{PG_DATABASE}{PG_JDBC_PARAMS}",
+  username "{PG_USER}",
+  password "{PG_PASSWORD}",
   fetchsize "1000"
 );
 
 REGISTER DATASOURCE TABLES FROM stockwhy_pg;
 
--- Check it worked:
-SHOW DATASOURCE TABLES stockwhy_pg;
-SELECT * FROM stockwhy_pg.stock LIMIT 5;
+CREATE DATASOURCE stockwhy_web DESCRIBE BY "StockWhy public notices" OPTIONS (
+  jdbcdriver "org.postgresql.Driver",
+  jdbcurl "jdbc:postgresql://{PG_HOST}:{PG_PORT}/{PG_WEB_DATABASE}{PG_JDBC_PARAMS}",
+  username "{PG_USER}",
+  password "{PG_PASSWORD}",
+  fetchsize "1000"
+);
 
--- Then set ZETARIS_SCHEMA=stockwhy_pg in .env
+REGISTER DATASOURCE TABLES FROM stockwhy_web;
