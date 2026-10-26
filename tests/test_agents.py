@@ -15,6 +15,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+REPO = Path(__file__).parent.parent
+
+
+@pytest.fixture(autouse=True)
+def _llm_on(monkeypatch):
+    """Mocked-LLM tests run with the LLM switch on; offline tests turn it off."""
+    monkeypatch.setenv("STOCKWHY_USE_LLM", "true")
+
 
 # ---------------------------------------------------------------------------
 # Minimal LLM response factories
@@ -289,7 +297,7 @@ class TestEvidenceInvestigatorAgent:
     def test_investigate_parallel_returns_seven(self, mock_ask):
         """investigate_parallel should return one evaluation per theory."""
         # Mock returns the appropriate evaluation for each call
-        def side_effect(system_prompt, payload):
+        def side_effect(system_prompt, payload, **kwargs):
             t = payload.get("theory", {})
             h_id = t.get("id", "H1")
             return _evaluation_response(h_id, t.get("hypothesis_name", "unknown"))
@@ -315,7 +323,7 @@ class TestEvidenceInvestigatorAgent:
     @patch("agents.evidence_investigator.ask_agent")
     def test_parallel_sorted_by_id(self, mock_ask):
         """Parallel evaluations should be sorted H1..H7 for determinism."""
-        def side_effect(system_prompt, payload):
+        def side_effect(system_prompt, payload, **kwargs):
             t = payload.get("theory", {})
             h_id = t.get("id", "H1")
             return {"theory_id": h_id, "hypothesis_name": "x",
@@ -341,7 +349,7 @@ class TestEvidenceInvestigatorAgent:
         """If one parallel call fails, the rest should still return."""
         call_count = [0]
 
-        def side_effect(system_prompt, payload):
+        def side_effect(system_prompt, payload, **kwargs):
             call_count[0] += 1
             t = payload.get("theory", {})
             if t.get("id") == "H3":
@@ -420,3 +428,163 @@ class TestActionStrategistAgent:
         result = recommend_actions("Why?", {})
         assert "ranked_hypotheses" in result
         assert len(result["ranked_hypotheses"]) > 0
+
+
+# ---------------------------------------------------------------------------
+# Rule-based (offline) mode — real logic on cached data, no LLM
+# ---------------------------------------------------------------------------
+
+OFFLINE_CASES = [
+    # dataset, facility, commodity, month, expected top hypothesis from computed_evidence
+    ("data/sample", "FAC-009", "magnesium sulphate inj", "2026-03", "H1", "orders#1265"),
+    ("data/cases/normal/case_01", "FAC-011", "ORS sachet", "2026-03", "H4", "stock#1506"),
+    ("data/cases/normal/case_06", "FAC-022", "iron-folate tab", "2026-03", "H1", "orders#3161"),
+]
+
+
+@pytest.fixture
+def offline(monkeypatch):
+    monkeypatch.setenv("STOCKWHY_USE_LLM", "false")
+    monkeypatch.setenv("STOCKWHY_DATA_SOURCE", "csv")
+
+    def no_llm(*args, **kwargs):
+        raise AssertionError("ask_agent must not be called in rule-based mode")
+
+    for module in ("data_reader", "data_analyst", "theory_generator",
+                   "evidence_investigator", "action_strategist"):
+        monkeypatch.setattr(f"agents.{module}.ask_agent", no_llm)
+
+
+def _run_offline(dataset, facility, commodity, month):
+    from agents.data_reader import read_and_profile
+    from agents.data_analyst import analyze_evidence
+    from agents.theory_generator import generate
+    from agents.evidence_investigator import investigate_parallel
+    from agents.action_strategist import recommend_actions
+
+    question = f"Why did facility {facility} report a stockout of {commodity} in {month}?"
+    profile = read_and_profile(str(REPO / dataset), facility, commodity, month)
+    analysis = analyze_evidence(profile["computed_evidence"], question)
+    theories = generate(question, analysis)
+    evaluations = investigate_parallel(question, theories, profile["computed_evidence"])
+    actions = recommend_actions(question, evaluations)
+    return profile, analysis, theories, evaluations, actions
+
+
+class TestLLMSwitch:
+    def test_sample_mode_disables_llm(self, monkeypatch):
+        from llm_client import llm_enabled
+        monkeypatch.delenv("STOCKWHY_USE_LLM", raising=False)
+        monkeypatch.setenv("SAMPLE_MODE", "true")
+        assert llm_enabled() is False
+        monkeypatch.setenv("SAMPLE_MODE", "false")
+        assert llm_enabled() is True
+
+    def test_explicit_switch_wins(self, monkeypatch):
+        from llm_client import llm_enabled
+        monkeypatch.setenv("SAMPLE_MODE", "true")
+        monkeypatch.setenv("STOCKWHY_USE_LLM", "true")
+        assert llm_enabled() is True
+        monkeypatch.setenv("SAMPLE_MODE", "false")
+        monkeypatch.setenv("STOCKWHY_USE_LLM", "0")
+        assert llm_enabled() is False
+
+
+@pytest.mark.parametrize("dataset,facility,commodity,month,top,row_id", OFFLINE_CASES)
+class TestOfflineAgents:
+    def test_data_reader(self, offline, dataset, facility, commodity, month, top, row_id):
+        profile, *_ = _run_offline(dataset, facility, commodity, month)
+        evidence = profile["evidence"]
+        assert profile["_produced_by"] == "rule-based"
+        assert evidence["_produced_by"] == "rule-based"
+        assert set(evidence["evidence_for_hypotheses"]) == {
+            "h1_late_order", "h2_supplier_underfill", "h3_payment_arrears",
+            "h4_demand_surge", "h5_record_error", "h6_expiry", "h7_national_disruption",
+        }
+        assert evidence["dataset_summary"]["stock_rows"] == 1
+        all_ids = evidence["relevant_records"]["stock_ids"] + evidence["relevant_records"]["order_ids"]
+        assert row_id in all_ids
+        assert any(row_id in text for text in evidence["evidence_for_hypotheses"].values())
+
+    def test_data_analyst(self, offline, dataset, facility, commodity, month, top, row_id):
+        _, analysis, *_ = _run_offline(dataset, facility, commodity, month)
+        assert analysis["_produced_by"] == "rule-based"
+        assert set(analysis["hypothesis_signals"]) == {f"H{i}" for i in range(1, 8)}
+        assert analysis["primary_lead_ids"][0] == top
+        assert analysis["hypothesis_signals"][top]["signal"] == "strong"
+        assert row_id in analysis["hypothesis_signals"][top]["reasoning"]
+
+    def test_theory_generator(self, offline, dataset, facility, commodity, month, top, row_id):
+        _, _, theories, *_ = _run_offline(dataset, facility, commodity, month)
+        assert theories["_produced_by"] == "rule-based"
+        assert [t["id"] for t in theories["theories"]] == [f"H{i}" for i in range(1, 8)]
+        lead = next(t for t in theories["theories"] if t["id"] == top)
+        assert lead["lead_signal"] == "strong"
+
+    def test_evidence_investigator(self, offline, dataset, facility, commodity, month, top, row_id):
+        *_, evaluations, _ = _run_offline(dataset, facility, commodity, month)
+        assert evaluations["_produced_by"] == "rule-based"
+        evals = {e["theory_id"]: e for e in evaluations["evaluations"]}
+        assert len(evals) == 7
+        assert evals[top]["verdict"] == "supported"
+        assert row_id in evals[top]["supporting_evidence_ids"]
+        assert row_id in evals[top]["reasoning"]
+        assert all(e["_produced_by"] == "rule-based" for e in evals.values())
+
+    def test_action_strategist(self, offline, dataset, facility, commodity, month, top, row_id):
+        *_, actions = _run_offline(dataset, facility, commodity, month)
+        assert actions["_produced_by"] == "rule-based"
+        assert actions["ranked_hypotheses"][0]["hypothesis_id"] == top
+        assert actions["most_likely_hypothesis_id"] == top
+        assert actions["actions"]
+        assert all(a["pharmacist_review_required"] is True for a in actions["actions"])
+        assert any(row_id in a["evidence_basis"] for a in actions["actions"])
+        assert facility in actions["emergency_requisition_memo"]
+        assert "medical_disclaimer" in actions
+
+    def test_offline_never_reads_answer_key(self, offline, monkeypatch, dataset, facility, commodity, month, top, row_id):
+        import builtins
+        real_open = builtins.open
+
+        def guarded_open(file, *args, **kwargs):
+            name = str(file).lower()
+            assert "answer_key" not in name and "dev_notes" not in name and "output_examples" not in name
+            return real_open(file, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "open", guarded_open)
+        _run_offline(dataset, facility, commodity, month)
+
+
+class TestOfflineFallbacks:
+    def test_no_supported_hypothesis_is_undetermined(self, offline):
+        from agents.action_strategist import recommend_actions
+        result = recommend_actions("Why?", {"evaluations": [
+            {"theory_id": "H1", "hypothesis_name": "late_order", "verdict": "weakened",
+             "reasoning": "x", "supporting_evidence_ids": [], "contradicting_evidence_ids": ["orders#1"]},
+        ]})
+        assert result["most_likely_hypothesis_id"] is None
+        assert result["most_likely_cause"].startswith("undetermined")
+        assert all(a["pharmacist_review_required"] for a in result["actions"])
+
+    def test_missing_evidence_is_inconclusive(self, offline):
+        from agents.evidence_investigator import investigate_parallel
+        from agents.theory_generator import generate
+        theories = generate("Why?", {})
+        result = investigate_parallel("Why?", theories, {
+            "h1_late_order": {"data_missing": True, "late": False},
+        })
+        h1 = next(e for e in result["evaluations"] if e["theory_id"] == "H1")
+        assert h1["verdict"] == "inconclusive"
+
+    def test_cap_reached_falls_back_with_label(self, monkeypatch):
+        from llm_client import LLMCallCapReached
+        import agents.data_analyst as da
+
+        def capped(*args, **kwargs):
+            raise LLMCallCapReached("LLM call cap reached (0 calls)")
+
+        monkeypatch.setattr(da, "ask_agent", capped)
+        result = da.analyze_evidence({"h4_demand_surge": {"surge": True, "pct_change": 60.0,
+                                                           "stock_id": "stock#9"}}, "Why?")
+        assert result["_produced_by"] == "rule-based"
+        assert "cap" in result["_fallback_reason"]

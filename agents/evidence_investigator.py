@@ -3,10 +3,17 @@ agents/evidence_investigator.py
 
 Evidence Investigator Agent: evaluates theories against computed evidence.
 Supports sequential (investigate) and parallel (investigate_parallel) modes.
+
+The verdict always comes from the computed flags (agents/rules.py). The LLM
+(fast lane) writes the explanation; with the LLM disabled
+(llm_client.llm_enabled) the explanation is rule-based and cites the
+computed numbers and row ids.
 """
 
 import concurrent.futures
-from llm_client import ask_agent
+
+from agents import rules
+from llm_client import RULE_BASED, ask_agent, llm_enabled
 
 
 SYSTEM = """
@@ -93,28 +100,30 @@ Return valid JSON matching exactly this structure (no extra fields, no markdown)
 }}
 """
 
-# Maps hypothesis ID to snake_case name
-HYPOTHESIS_NAMES = {
-    "H1": "late_order",
-    "H2": "supplier_underfill",
-    "H3": "payment_arrears",
-    "H4": "demand_surge",
-    "H5": "record_error",
-    "H6": "expiry",
-    "H7": "national_disruption",
+# Maps hypothesis ID to snake_case name / computed_evidence key
+HYPOTHESIS_NAMES = dict(rules.HYPOTHESIS_NAMES)
+EVIDENCE_KEYS = dict(rules.EVIDENCE_KEYS)
+
+# What each computed check cannot establish (rule-based limitations).
+LIMITATIONS = {
+    "H1": ["Order and cutoff dates show timing, not why the order was late."],
+    "H2": ["County average covers one cycle; a single under-fill may be routine."],
+    "H3": ["Arrears are county-level; they cannot be tied to this facility's delivery directly."],
+    "H4": ["A 3-month average is a short baseline; seasonality is not modelled."],
+    "H5": ["The identity check cannot detect errors that keep the ledger balanced."],
+    "H6": ["Wastage is not split into expiry versus damage."],
+    "H7": ["Public notices are sparse; absence of a notice does not rule out a disruption."],
 }
 
-# Maps hypothesis ID to computed_evidence key
-EVIDENCE_KEYS = {
-    "H1": "h1_late_order",
-    "H2": "h2_supplier_underfill",
-    "H3": "h3_payment_arrears",
-    "H4": "h4_demand_surge",
-    "H5": "h5_record_error",
-    "H6": "h6_expiry",
-    "H7": "h7_national_disruption",
+FOLLOW_UPS = {
+    "H1": ["Confirm the order submission date with the facility pharmacist."],
+    "H2": ["Compare the delivery note with the order for this cycle."],
+    "H3": ["Check the county's payment status with the supplier."],
+    "H4": ["Check clinic records for an outbreak or caseload change."],
+    "H5": ["Do a physical stock count and reconcile the ledger."],
+    "H6": ["Review expiry dates and FEFO practice for current batches."],
+    "H7": ["Check KEMSA / supplier notices for this commodity."],
 }
-
 
 def investigate(
     question: str,
@@ -123,15 +132,47 @@ def investigate(
     test_results: list,
 ) -> dict:
     """Original sequential investigate function — kept intact."""
-    return ask_agent(
-        SYSTEM,
-        {
-            "research_question": question,
-            "theories": theories,
-            "data_analysis": data_analysis,
-            "computed_test_results": test_results,
-        },
-    )
+    if llm_enabled():
+        return ask_agent(
+            SYSTEM,
+            {
+                "research_question": question,
+                "theories": theories,
+                "data_analysis": data_analysis,
+                "computed_test_results": test_results,
+            },
+        )
+    return investigate_rule_based(theories, data_analysis)
+
+
+def investigate_rule_based(theories: dict, data_analysis: dict) -> dict:
+    """
+    Offline sequential mode: map the analyst's computed signal per hypothesis
+    to a verdict (strong -> supported, weak -> inconclusive, none -> weakened).
+    """
+    signal_to_verdict = {"strong": "supported", "weak": "inconclusive", "none": "weakened"}
+    signals = (data_analysis or {}).get("hypothesis_signals") or {}
+    evaluations = []
+    for theory in (theories or {}).get("theories", []):
+        h_id = theory.get("id", "H?")
+        entry = signals.get(h_id) or signals.get(EVIDENCE_KEYS.get(h_id, "")) or {}
+        if isinstance(entry, str):
+            entry = {"signal": entry}
+        sig = entry.get("signal")
+        ids = entry.get("evidence_ids", [])
+        verdict = signal_to_verdict.get(sig, "inconclusive")
+        evaluations.append({
+            "theory_id": h_id,
+            "hypothesis_name": theory.get("hypothesis_name", HYPOTHESIS_NAMES.get(h_id, "unknown")),
+            "verdict": verdict,
+            "supporting_evidence_ids": ids if verdict == "supported" else [],
+            "contradicting_evidence_ids": ids if verdict == "weakened" else [],
+            "reasoning": entry.get("reasoning") or f"Analyst signal: {sig or 'not available'}.",
+            "limitations": list(LIMITATIONS.get(h_id, [])),
+            "additional_analysis_needed": list(FOLLOW_UPS.get(h_id, [])),
+            "_produced_by": RULE_BASED,
+        })
+    return {"evaluations": evaluations, "analysis_requests": [], "_produced_by": RULE_BASED}
 
 
 def _deterministic_verdict(hypothesis_id: str, hypothesis_evidence: dict) -> str:
@@ -143,52 +184,29 @@ def _deterministic_verdict(hypothesis_id: str, hypothesis_evidence: dict) -> str
 
     Returns "supported", "weakened", or "inconclusive".
     """
-    if hypothesis_evidence.get("data_missing"):
-        return "inconclusive"
+    return rules.deterministic_verdict(hypothesis_id, hypothesis_evidence)
 
-    if hypothesis_id == "H1":
-        if hypothesis_evidence.get("late") or hypothesis_evidence.get("delivery_slipped"):
-            return "supported"
-        return "weakened"
 
-    elif hypothesis_id == "H2":
-        if hypothesis_evidence.get("underfill"):
-            return "supported"
-        return "weakened"
-
-    elif hypothesis_id == "H3":
-        if hypothesis_evidence.get("major_arrears"):
-            return "supported"
-        return "weakened"
-
-    elif hypothesis_id == "H4":
-        pct = hypothesis_evidence.get("pct_change")
-        if hypothesis_evidence.get("surge") or (pct is not None and pct > 25):
-            return "supported"
-        return "weakened"
-
-    elif hypothesis_id == "H5":
-        # Record error: identity_holds=False means there IS an error (supported)
-        if hypothesis_evidence.get("identity_holds") is False:
-            return "supported"
-        if hypothesis_evidence.get("stockout_days_plausible") is False:
-            return "supported"
-        return "weakened"
-
-    elif hypothesis_id == "H6":
-        if hypothesis_evidence.get("high_wastage"):
-            return "supported"
-        return "weakened"
-
-    elif hypothesis_id == "H7":
-        fill_drop = hypothesis_evidence.get("county_fill_drop") or 0
-        if hypothesis_evidence.get("web_notice_found") and fill_drop > 0:
-            return "supported"
-        if hypothesis_evidence.get("web_notice_found") or fill_drop > 0.1:
-            return "inconclusive"
-        return "weakened"
-
-    return "inconclusive"
+def _rule_based_evaluation(h_id: str, h_name: str, hypothesis_evidence: dict, verdict: str) -> dict:
+    """Explanation built only from the computed numbers and row ids."""
+    ids = rules.evidence_ids(hypothesis_evidence)
+    rule = {
+        "supported": "the computed flag passes its threshold",
+        "weakened": "the computed flag does not pass its threshold",
+        "inconclusive": "the data needed for this check is missing or borderline",
+    }[verdict]
+    return {
+        "theory_id": h_id,
+        "hypothesis_name": h_name,
+        "verdict": verdict,
+        "verdict_source": "deterministic",
+        "supporting_evidence_ids": ids if verdict == "supported" else [],
+        "contradicting_evidence_ids": ids if verdict == "weakened" else [],
+        "reasoning": f"{rules.describe(h_id, hypothesis_evidence)} Verdict '{verdict}': {rule}.",
+        "limitations": list(LIMITATIONS.get(h_id, [])),
+        "additional_analysis_needed": list(FOLLOW_UPS.get(h_id, [])),
+        "_produced_by": RULE_BASED,
+    }
 
 
 def _investigate_one(
@@ -202,6 +220,12 @@ def _investigate_one(
 
     # Step 1: Assign the verdict deterministically from computed flags
     deterministic = _deterministic_verdict(h_id, hypothesis_evidence)
+    strength = rules.evidence_strength(h_id, hypothesis_evidence)
+
+    if not llm_enabled():
+        result = _rule_based_evaluation(h_id, h_name, hypothesis_evidence, deterministic)
+        result["evidence_strength"] = strength
+        return result
 
     system = SINGLE_HYPOTHESIS_SYSTEM.format(
         hypothesis_id=h_id,
@@ -221,26 +245,22 @@ def _investigate_one(
     }
 
     try:
-        result = ask_agent(system, payload)
+        result = ask_agent(system, payload, lane="fast")
         # Step 2: Always override the LLM's verdict with the deterministic one
         # The LLM is responsible for reasoning/explanation, not the verdict
         result["theory_id"] = h_id
         result["hypothesis_name"] = h_name
         result["verdict"] = deterministic  # authoritative
         result["verdict_source"] = "deterministic"
+        result["evidence_strength"] = strength
         return result
     except Exception as exc:
-        return {
-            "theory_id": h_id,
-            "hypothesis_name": h_name,
-            "verdict": deterministic,
-            "verdict_source": "deterministic",
-            "supporting_evidence_ids": [],
-            "contradicting_evidence_ids": [],
-            "reasoning": f"Deterministic verdict: {deterministic}. LLM explanation unavailable: {exc}",
-            "limitations": ["Agent call error"],
-            "additional_analysis_needed": [],
-        }
+        # The explanation falls back to rules; the label says so.
+        result = _rule_based_evaluation(h_id, h_name, hypothesis_evidence, deterministic)
+        result["evidence_strength"] = strength
+        result["limitations"] = result["limitations"] + ["Agent call error"]
+        result["_fallback_reason"] = f"LLM explanation unavailable: {exc}"
+        return result
 
 
 def investigate_parallel(
@@ -250,7 +270,8 @@ def investigate_parallel(
 ) -> dict:
     """
     Investigate each of the 7 theories in parallel using a ThreadPoolExecutor.
-    Each hypothesis gets its own LLM call with only the relevant evidence slice.
+    Each hypothesis gets its own LLM call (or rule-based explanation when the
+    LLM is disabled) with only the relevant evidence slice.
 
     Parameters
     ----------
@@ -290,6 +311,7 @@ def investigate_parallel(
                     "reasoning": f"Parallel investigation failed: {exc}",
                     "limitations": ["Thread execution error"],
                     "additional_analysis_needed": [],
+                    "_produced_by": RULE_BASED,
                 })
 
     # Sort by hypothesis ID for deterministic output
@@ -297,7 +319,9 @@ def investigate_parallel(
     evaluations.sort(key=lambda e: id_order.index(e.get("theory_id", "H7"))
                      if e.get("theory_id") in id_order else 99)
 
+    producers = sorted({str(e.get("_produced_by", RULE_BASED)) for e in evaluations})
     return {
         "evaluations": evaluations,
         "analysis_requests": [],
+        "_produced_by": producers[0] if len(producers) == 1 else "mixed: " + ", ".join(producers),
     }
