@@ -1,0 +1,42 @@
+# StockWhy data store for live mode: one Postgres holding both databases, seeded from data/sample/:
+#   stockwhy      facilities, stock, orders, payments   (postgres_load.sql)
+#   stockwhy_web  web_notes                              (web_notes_load.sql)
+# Start Zetaris first: this joins its Docker network so the Zetaris driver reaches it as "stockwhy-pg".
+#
+#   docker compose up -d
+#   python scripts/setup_live.py --skip-load      # registers both datasources in Zetaris and verifies
+#
+# The seed runs only when the data volume is empty. To reload after changing the SQL:
+#   docker compose down -v && docker compose up -d
+services:
+  stockwhy-pg:
+    image: postgres:16-alpine
+    container_name: stockwhy-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER:-stockwhy}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?PG_PASSWORD must be set in .env}
+      POSTGRES_DB: ${PG_DATABASE:-stockwhy}
+      PG_WEB_DATABASE: ${PG_WEB_DATABASE:-stockwhy_web}
+    ports:
+      - "127.0.0.1:${PG_PORT:-5433}:5432"
+    volumes:
+      - stockwhy-pgdata:/var/lib/postgresql/data
+      - ./data/sample/postgres_load.sql:/docker-entrypoint-initdb.d/10-stockwhy.sql:ro
+      - ./scripts/pg_init_web.sh:/docker-entrypoint-initdb.d/20-stockwhy-web.sh:ro
+      - ./data/sample/web_notes_load.sql:/seed/web_notes_load.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${PG_USER:-stockwhy} -d ${PG_DATABASE:-stockwhy}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks:
+      - zetaris
+
+volumes:
+  stockwhy-pgdata:
+
+networks:
+  zetaris:
+    name: zetaris_default
+    external: true

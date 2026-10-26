@@ -3,10 +3,27 @@ tools/data_loader.py
 
 Deterministic data loading and hypothesis-evidence calculations.
 NO LLM calls here — pure pandas/numpy arithmetic only.
+
+Two sources share one interface, ``load_dataset(dataset_dir, source=None)``:
+
+- ``csv``      reads ``stock.csv``, ``orders.csv``, ``payments.csv``,
+               ``facilities.csv`` and ``web_notes.json`` from *dataset_dir*.
+- ``zetaris``  reads the same tables through Zetaris (datasource
+               ``stockwhy_pg``) and the public notices from a second Zetaris
+               datasource (``stockwhy_web``). Zetaris holds ONE registered
+               dataset: ``data/sample`` (the demo county). Any other folder is
+               always read from CSV, so an explicit dataset folder is honoured.
+
+The source actually used is recorded in ``dataset["_source"]``
+(``"csv:<dir>"`` or ``"zetaris:<schema>"``), together with
+``dataset["_web_notes_source"]``, ``dataset["_warnings"]`` and, for Zetaris,
+``dataset["_queries"]`` (SQL text, row count and milliseconds per call).
 """
 
 import json
 import os
+import re
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -17,6 +34,58 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 # Dataset loading
 # ---------------------------------------------------------------------------
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# The one dataset registered in Zetaris (scripts/setup_live.py loads it from
+# data/sample/postgres_load.sql and data/sample/web_notes_load.sql).
+ZETARIS_DATASET_DIR = REPO_ROOT / "data" / "sample"
+
+VALID_SOURCES = ("csv", "zetaris")
+
+# Column order matches the CSV headers, so empty slices keep the same schema.
+TABLE_COLUMNS = {
+    "stock": ["id", "facility_id", "commodity", "month", "opening", "received",
+              "wastage", "consumed", "closing", "reported_stockout_days"],
+    "orders": ["id", "facility_id", "commodity", "month", "cutoff_date",
+               "order_date", "qty_requested", "qty_delivered", "delivery_month"],
+    "payments": ["id", "month", "county_arrears_flag", "amount_owed_kes"],
+    "facilities": ["facility_id", "lat", "lon"],
+}
+TABLE_ORDER_BY = {"stock": "id", "orders": "id", "payments": "id",
+                  "facilities": "facility_id"}
+WEB_NOTE_COLUMNS = ["id", "month", "commodity", "source", "title", "url"]
+
+# Literal allow-lists. Zetaris REST takes raw SQL text, so nothing outside
+# these patterns is ever inlined into a statement.
+_FACILITY_RE = re.compile(r"^FAC-\d{3}$")
+_MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+_COMMODITY_RE = re.compile(r"^[A-Za-z0-9 .%/()\-]{1,80}$")
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
+
+# Rows per Zetaris call. One page covers every table of the demo county
+# (stock and orders have 4,320 rows each).
+ZETARIS_PAGE_SIZE = 5000
+
+
+def _display_path(path: Path) -> str:
+    """Path relative to the repo when possible, always with forward slashes."""
+    resolved = Path(path).resolve()
+    try:
+        return resolved.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return resolved.as_posix()
+
+
+def _same_dir(a, b) -> bool:
+    norm = lambda p: os.path.normcase(str(Path(p).resolve()))  # noqa: E731
+    return norm(a) == norm(b)
+
+
+def is_zetaris_dataset(dataset_dir) -> bool:
+    """True if *dataset_dir* is the dataset registered in Zetaris (data/sample)."""
+    return _same_dir(dataset_dir, ZETARIS_DATASET_DIR)
+
 
 def _load_csv_dataset(dataset_dir: str) -> dict:
     """
@@ -69,7 +138,7 @@ def _load_csv_dataset(dataset_dir: str) -> dict:
     # web_notes
     web_notes_path = d / "web_notes.json"
     if web_notes_path.exists():
-        with open(web_notes_path, "r") as f:
+        with open(web_notes_path, "r", encoding="utf-8") as f:
             web_notes = json.load(f)
     else:
         web_notes = []
@@ -80,6 +149,11 @@ def _load_csv_dataset(dataset_dir: str) -> dict:
         "payments": payments,
         "facilities": facilities,
         "web_notes": web_notes,
+        "_source": f"csv:{_display_path(d)}",
+        "_web_notes_source": (
+            f"csv:{_display_path(web_notes_path)}" if web_notes_path.exists() else "none"
+        ),
+        "_warnings": [],
     }
 
 
@@ -166,71 +240,294 @@ def _zetaris_rows(response: dict) -> list:
     )
 
 
-def load_zetaris_dataset(dataset_dir: str) -> dict:
-    """Load all StockWhy tables from Zetaris, preserving the CSV schema."""
-    # Reuse the proven authentication, endpoint, and request headers.
-    from scripts.check_zetaris import run_sql
+# ---------------------------------------------------------------------------
+# Zetaris SQL helpers (literal validation; one statement per call)
+# ---------------------------------------------------------------------------
 
-    def query_all(table: str) -> pd.DataFrame:
-        rows = []
-        offset = 0
-        page_size = 100  # check_zetaris.run_sql applies a server-side limit of 100
-        while True:
-            response = run_sql(
-                f"SELECT * FROM STOCKWHY_PG.{table} LIMIT {page_size} OFFSET {offset}"
-            )
-            page = _zetaris_rows(response)
-            rows.extend(page)
-            if len(page) < page_size:
-                break
-            offset += page_size
-            if offset > 1_000_000:
-                raise RuntimeError(f"Aborting Zetaris pagination for {table}: safety limit exceeded")
-        return pd.DataFrame(rows)
+def sql_literal(value: str, kind: str) -> str:
+    """
+    Quote a validated value for inlining in Zetaris SQL.
 
-    d = Path(dataset_dir)
-    web_notes_path = d / "web_notes.json"
-    if not web_notes_path.exists():
-        raise FileNotFoundError(
-            f"web_notes.json is required for the Zetaris source so existing evidence is preserved: {web_notes_path}"
-        )
-    with web_notes_path.open("r", encoding="utf-8") as f:
-        web_notes = json.load(f)
+    kind: "facility" (FAC-123), "month" (YYYY-MM) or "commodity".
+    Raises ValueError for anything outside the allow-list.
+    """
+    pattern = {"facility": _FACILITY_RE, "month": _MONTH_RE,
+               "commodity": _COMMODITY_RE}[kind]
+    text = str(value)
+    if not pattern.match(text):
+        raise ValueError(f"Refusing unsafe {kind} value for SQL: {text!r}")
+    return "'" + text.replace("'", "''") + "'"
 
-    dataset = {
-        "stock": query_all("stock"),
-        "orders": query_all("orders"),
-        "payments": query_all("payments"),
-        "facilities": query_all("facilities"),
-        "web_notes": web_notes,
-    }
-    expected = {
-        "stock": {"id", "facility_id", "commodity", "month", "opening", "received", "wastage", "consumed", "closing", "reported_stockout_days"},
-        "orders": {"id", "facility_id", "commodity", "month", "cutoff_date", "order_date", "qty_requested", "qty_delivered", "delivery_month"},
-        "payments": {"id", "month", "county_arrears_flag", "amount_owed_kes"},
-        "facilities": {"facility_id", "lat", "lon"},
-    }
-    for table, required in expected.items():
-        missing = required - set(dataset[table].columns)
+
+def _schema_name(env_name: str, default: str) -> str:
+    name = os.getenv(env_name, "").strip() or default
+    if not _IDENTIFIER_RE.match(name):
+        raise ValueError(f"{env_name} must be a plain identifier, not {name!r}")
+    return name
+
+
+# Count columns: Postgres DOUBLE PRECISION comes back as "150.0", the CSV has
+# "150". Dropping a zero fraction keeps the pandas dtypes (and so every number
+# in the profile) identical to a CSV read.
+_COUNT_COLUMNS = {"opening", "received", "wastage", "consumed", "closing",
+                  "reported_stockout_days", "qty_requested", "qty_delivered",
+                  "county_arrears_flag", "amount_owed_kes", "id"}
+_ZERO_FRACTION_RE = re.compile(r"^(-?\d+)\.0+$")
+
+
+def _as_text(value, count: bool = False):
+    if value is None or (isinstance(value, float) and np.isnan(value)):
+        return np.nan
+    text = str(value)
+    if count:
+        match = _ZERO_FRACTION_RE.match(text)
+        if match:
+            return match.group(1)
+    return text
+
+
+def _to_frame(rows: list, columns: list, table: str = "") -> pd.DataFrame:
+    """
+    Build a DataFrame shaped like a CSV read: every value a string, nulls NaN,
+    columns in CSV order (so an empty slice still has the full schema).
+    Raises RuntimeError if returned rows lack a required column.
+    """
+    frame = pd.DataFrame(rows, dtype=object)
+    if rows:
+        missing = set(columns) - set(frame.columns)
         if missing:
             raise RuntimeError(
                 f"Zetaris table {table!r} is missing required columns: {sorted(missing)}"
             )
+    for col in columns:
+        if col not in frame.columns:
+            frame[col] = pd.Series(dtype=object)
+    frame = frame[columns + [c for c in frame.columns if c not in columns]]
+    for col in frame.columns:
+        count = col in _COUNT_COLUMNS
+        frame[col] = frame[col].map(lambda v: _as_text(v, count)).astype(object)
+    return frame
+
+
+class _ZetarisReader:
+    """Runs one SQL statement per call and records each call for the trace."""
+
+    def __init__(self, page_size: Optional[int] = None):
+        # Reuse the proven authentication, endpoint and request headers.
+        from scripts.check_zetaris import run_sql
+        self._run_sql = run_sql
+        self.page_size = page_size or ZETARIS_PAGE_SIZE
+        self.queries: list = []
+
+    def rows(self, sql: str, limit: Optional[int] = None) -> list:
+        start = time.monotonic()
+        response = self._run_sql(sql, limit=limit or self.page_size)
+        rows = _zetaris_rows(response)
+        self.queries.append({
+            "sql": sql,
+            "rows": len(rows),
+            "ms": round((time.monotonic() - start) * 1000, 1),
+        })
+        return rows
+
+    def table(self, sql_base: str, order_by: str) -> list:
+        """Read every row of *sql_base*, a page of ``page_size`` rows per call."""
+        rows: list = []
+        offset = 0
+        while True:
+            sql = f"{sql_base} ORDER BY {order_by} LIMIT {self.page_size}"
+            if offset:
+                sql += f" OFFSET {offset}"
+            page = self.rows(sql)
+            rows.extend(page)
+            if len(page) < self.page_size:
+                return rows
+            offset += self.page_size
+            if offset > 1_000_000:
+                raise RuntimeError(f"Aborting Zetaris pagination: safety limit exceeded ({sql_base})")
+
+
+def _load_zetaris_web_notes(reader: _ZetarisReader, dataset_dir: Path,
+                            warnings: list) -> tuple:
+    """Public notices from the second Zetaris datasource, else the local JSON."""
+    web_schema = _schema_name("ZETARIS_WEB_SCHEMA", "stockwhy_web")
+    try:
+        rows = reader.table(
+            f"SELECT {', '.join(WEB_NOTE_COLUMNS)} FROM {web_schema}.web_notes", "id"
+        )
+        notes = [
+            {k: (None if row.get(k) is None else str(row.get(k))) for k in WEB_NOTE_COLUMNS}
+            for row in rows
+        ]
+        return notes, f"zetaris:{web_schema}"
+    except Exception as exc:  # network, auth, missing datasource, bad shape
+        path = Path(dataset_dir) / "web_notes.json"
+        msg = f"Zetaris {web_schema}.web_notes unavailable ({str(exc)[:200]})"
+        if path.exists():
+            with path.open("r", encoding="utf-8") as f:
+                notes = json.load(f)
+            warnings.append(f"{msg}; public notices read from {_display_path(path)}")
+            return notes, f"csv:{_display_path(path)}"
+        warnings.append(f"{msg}; no local web_notes.json either, so no public notices")
+        return [], "none"
+
+
+def load_zetaris_dataset(
+    dataset_dir: Optional[str] = None,
+    facility_id: Optional[str] = None,
+    commodity: Optional[str] = None,
+    month: Optional[str] = None,
+) -> dict:
+    """
+    Load the StockWhy tables from Zetaris, preserving the CSV schema and types.
+
+    Without a scope every table is read in full (one call per table for the
+    demo county). With a scope the filters are pushed into SQL, reading only
+    what ``profile_stockout`` uses for that case:
+
+    - stock:      WHERE facility_id = ... AND commodity = ...  (history + month)
+    - orders:     WHERE commodity = ... [AND month IN (prev, month)]
+                  (the county average needs every facility in the cycle)
+    - payments, facilities: full (county-wide; returned in the profile)
+
+    *dataset_dir* only locates the local ``web_notes.json`` fallback.
+    """
+    schema = _schema_name("ZETARIS_SCHEMA", "stockwhy_pg")
+    reader = _ZetarisReader()
+    warnings: list = []
+    scoped = facility_id is not None or commodity is not None
+
+    def full(table: str) -> pd.DataFrame:
+        rows = reader.table(f"SELECT * FROM {schema}.{table}", TABLE_ORDER_BY[table])
+        return _to_frame(rows, TABLE_COLUMNS[table], table)
+
+    def empty(table: str) -> pd.DataFrame:
+        return _to_frame([], TABLE_COLUMNS[table])
+
+    if scoped:
+        if facility_id is None or commodity is None:
+            raise ValueError("A Zetaris scope needs both facility_id and commodity")
+        fac_lit = sql_literal(facility_id, "facility")
+        com_lit = sql_literal(commodity, "commodity")
+        known = {
+            str(r.get("commodity"))
+            for r in reader.rows(f"SELECT DISTINCT commodity FROM {schema}.stock", limit=1000)
+        }
+        if commodity not in known:
+            # Same outcome as the CSV path: no rows for an unknown commodity.
+            warnings.append(f"Commodity {commodity!r} is not in {schema}.stock")
+            stock, orders = empty("stock"), empty("orders")
+        else:
+            stock = _to_frame(reader.table(
+                f"SELECT * FROM {schema}.stock WHERE facility_id = {fac_lit} "
+                f"AND commodity = {com_lit}", "id"), TABLE_COLUMNS["stock"], "stock")
+            order_filter = f"commodity = {com_lit}"
+            if month is not None:
+                month_lit = sql_literal(month, "month")
+                prev_lit = sql_literal(_prev_months(month, 1)[0], "month")
+                order_filter += f" AND month IN ({prev_lit}, {month_lit})"
+            orders = _to_frame(reader.table(
+                f"SELECT * FROM {schema}.orders WHERE {order_filter}", "id"),
+                TABLE_COLUMNS["orders"], "orders")
+    else:
+        stock, orders = full("stock"), full("orders")
+
+    dataset = {
+        "stock": stock,
+        "orders": orders,
+        "payments": full("payments"),
+        "facilities": full("facilities"),
+    }
+    required_rows = ("payments", "facilities") if scoped else tuple(TABLE_COLUMNS)
+    for table in TABLE_COLUMNS:
+        missing = set(TABLE_COLUMNS[table]) - set(dataset[table].columns)
+        if missing:
+            raise RuntimeError(
+                f"Zetaris table {table!r} is missing required columns: {sorted(missing)}"
+            )
+    for table in required_rows:
         if dataset[table].empty:
             raise RuntimeError(f"Zetaris returned no rows for required table {table!r}")
-    return _coerce_dataset(dataset)
+
+    web_notes, web_source = _load_zetaris_web_notes(
+        reader, Path(dataset_dir) if dataset_dir else ZETARIS_DATASET_DIR, warnings
+    )
+    dataset["web_notes"] = web_notes
+    dataset = _coerce_dataset(dataset)
+    dataset["_source"] = f"zetaris:{schema}"
+    dataset["_web_notes_source"] = web_source
+    dataset["_warnings"] = warnings
+    dataset["_queries"] = reader.queries
+    if scoped:
+        dataset["_scope"] = {"facility_id": facility_id, "commodity": commodity, "month": month}
+    return dataset
 
 
-def load_dataset(dataset_dir: str) -> dict:
-    """Load data from CSV by default, or Zetaris when configured."""
-    source = os.getenv("STOCKWHY_DATA_SOURCE", "csv").strip().lower()
-    if source == "zetaris":
-        return load_zetaris_dataset(dataset_dir)
-    if source != "csv":
+def resolve_source(source: Optional[str] = None) -> str:
+    """
+    The data source to use: *source* if given, else ``csv`` when
+    SAMPLE_MODE=true (judges run offline), else STOCKWHY_DATA_SOURCE
+    (default ``csv``).
+    """
+    if source is None:
+        if os.getenv("SAMPLE_MODE", "false").strip().lower() == "true":
+            return "csv"
+        source = os.getenv("STOCKWHY_DATA_SOURCE", "") or "csv"
+        label = "STOCKWHY_DATA_SOURCE"
+    else:
+        label = "source"
+    source = str(source).strip().lower()
+    if source not in VALID_SOURCES:
         raise ValueError(
-            "STOCKWHY_DATA_SOURCE must be either 'csv' or 'zetaris', "
-            f"not {source!r}"
+            f"{label} must be either 'csv' or 'zetaris', not {source!r}"
         )
+    return source
+
+
+def load_dataset(
+    dataset_dir: str,
+    source: Optional[str] = None,
+    facility_id: Optional[str] = None,
+    commodity: Optional[str] = None,
+    month: Optional[str] = None,
+) -> dict:
+    """
+    Load a dataset from CSV or Zetaris.
+
+    source : "csv", "zetaris" or None (None -> resolve_source(): SAMPLE_MODE=true
+             forces csv, otherwise STOCKWHY_DATA_SOURCE, default csv).
+
+    Zetaris holds one registered dataset, data/sample. For any other
+    *dataset_dir* the folder is honoured: with the source taken from the
+    environment it is read from CSV and a warning is recorded; with
+    source="zetaris" passed explicitly a ValueError is raised.
+
+    facility_id / commodity / month optionally scope a Zetaris read so the
+    filters run in SQL (see load_zetaris_dataset). They do not change the CSV
+    read, and profile_stockout gives the same result either way.
+
+    The returned dict has stock, orders, payments, facilities, web_notes plus
+    ``_source`` ("csv:<dir>" or "zetaris:<schema>"), ``_web_notes_source``
+    and ``_warnings`` (and ``_queries`` for Zetaris).
+    """
+    explicit = source is not None
+    chosen = resolve_source(source)
+    if chosen == "zetaris":
+        if is_zetaris_dataset(dataset_dir):
+            return load_zetaris_dataset(dataset_dir, facility_id, commodity, month)
+        shown = _display_path(Path(dataset_dir))
+        registered = _display_path(ZETARIS_DATASET_DIR)
+        if explicit:
+            raise ValueError(
+                f"Zetaris holds only the {registered} dataset; {shown} is not "
+                "registered. Use source='csv' for other dataset folders."
+            )
+        dataset = _load_csv_dataset(dataset_dir)
+        dataset["_warnings"].append(
+            f"STOCKWHY_DATA_SOURCE=zetaris, but Zetaris holds only {registered}; "
+            f"{shown} was read from CSV"
+        )
+        return dataset
     return _load_csv_dataset(dataset_dir)
 
 
