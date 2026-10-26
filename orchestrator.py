@@ -29,7 +29,7 @@ import uuid
 from pathlib import Path
 from datetime import datetime, timezone
 
-from logger import log_event
+from logger import log_event, logs_dir
 from agents.data_reader import read_and_profile
 from agents.data_analyst import analyze_evidence
 from agents.theory_generator import generate
@@ -529,7 +529,7 @@ class StockyWhy:
         result["status"] = ("insufficient_evidence" if coverage["verdict"] == "insufficient_evidence"
                             else "complete")
         self._finish(ctx, result)
-        print(f"\n✓ Investigation complete. Log: logs/{ctx.log_file}")
+        print(f"\n✓ Investigation complete. Log: {logs_dir() / ctx.log_file}")
         return result
 
     # ------------------------------------------------------------------

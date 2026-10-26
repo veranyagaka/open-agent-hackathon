@@ -1012,7 +1012,7 @@ def _check_h5(stock_record: pd.DataFrame) -> dict:
 
     computed_closing = opening + received - wastage - consumed
     discrepancy = round(computed_closing - reported_closing, 4)
-    identity_holds = abs(discrepancy) < 1.0  # allow rounding of 1 unit
+    identity_holds = abs(discrepancy) <= 1.0  # allow rounding of 1 unit
 
     # Plausibility: if closing > 0 AND consumption > 0, daily rate would exhaust
     # stock in (closing / (consumed / 30)) days. If reported_stockout_days is

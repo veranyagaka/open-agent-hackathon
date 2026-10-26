@@ -21,6 +21,7 @@ import json
 import os
 import re
 import sys
+import uuid
 from pathlib import Path
 
 SAMPLE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "sample")
@@ -285,6 +286,42 @@ def _invalid(message: str) -> dict:
             "hint": "Send {question} or {facility_id, commodity, month}; dataset is optional."}
 
 
+def _screen_request(payload: dict):
+    """
+    Scout Intent screens the raw request text before anything parses it, so an
+    injection or out-of-scope ask is blocked or refused rather than met with a
+    clarifying question. Returns a result dict to stop on, or None to continue.
+    """
+    try:
+        from engines.scout_intent import gate
+    except ImportError:
+        return None
+    text = " ".join(str(v) for k, v in payload.items()
+                    if isinstance(v, str) and k not in ("dataset", "role"))
+    if not text.strip():
+        return None
+    decision = gate({"question": text, "role": str(payload.get("role") or "pharmacist")}, None)
+    if decision.get("decision") not in ("block", "refuse"):
+        return None
+    from logger import log_event
+    run_id = uuid.uuid4().hex[:8]
+    log_event(
+        log_file=f"run_{run_id}_screen.jsonl", run_id=run_id, agent_name="scout",
+        action="scout_gate", input_summary="request text (not logged)",
+        output_summary=f"{decision['decision']}: {decision.get('reason', '')}",
+        target_agent="user", model="deterministic", confidence=1.0,
+        status=decision["decision"],
+    )
+    return {
+        "status": decision["decision"],
+        "run_id": run_id,
+        "message": decision.get("reason", ""),
+        "error": f"Scout Intent {decision['decision']}ed the request: {decision.get('reason', '')}",
+        "hint": "Ask why a facility ran out of a medicine in a given month.",
+        "scout": {k: v for k, v in decision.items() if k != "contract"},
+    }
+
+
 def execute_request(payload: dict, interactive: bool = False, log_file: str = None,
                     agent=None) -> tuple:
     """
@@ -311,6 +348,10 @@ def execute_request(payload: dict, interactive: bool = False, log_file: str = No
     facility_id = payload.get("facility_id") or payload.get("facility")
     commodity = payload.get("commodity")
     month = payload.get("month")
+
+    screened = _screen_request(payload)
+    if screened is not None:
+        return screened, 200
 
     if question and not all([facility_id, commodity, month]):
         parsed = parse_question(question, dataset)
