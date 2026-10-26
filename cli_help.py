@@ -14,7 +14,8 @@ BANNER = r"""
 def show_help():
     print(BANNER)
     print("StockyWhy — Investigate drug stockouts in health facilities.")
-    print("Uses AI agents + deterministic data analysis to identify root causes.")
+    print("Agents investigate, an Evaluator re-checks every cited row, and only")
+    print("verified causes reach the pharmacist, who approves any action.")
 
     print("\nUSAGE")
     print("  python run.py help")
@@ -27,6 +28,9 @@ def show_help():
         "--facility FAC-011 --commodity 'ORS sachet' --month 2026-03"
     )
     print("  python run.py --case data/cases/normal/case_01")
+    print('  python run.py --question "Why did FAC-009 run out of magnesium '
+          'sulphate in March 2026?"')
+    print("  python run.py --input request.json --json")
     print("  SAMPLE_MODE=true python run.py --facility FAC-011 "
           "--commodity 'ORS sachet' --month 2026-03")
 
@@ -41,11 +45,42 @@ def show_help():
     print("  --no-review            Skip pharmacist review step")
     print("  --output PATH          Write full JSON result to file")
     print("  --log-file NAME        JSONL log filename (written to logs/)")
+    print('  --question TEXT        Plain question; facility, month and medicine are')
+    print("                         read from it (ambiguous -> a clarify result)")
+    print("  --input FILE.json      JSON request: {question} or {facility_id, commodity,")
+    print("                         month}, optional dataset and role")
+    print("  --json                 Print only the JSON result (no prompts)")
+    print("  --role NAME            Who is asking (default: pharmacist)")
+
+    print("\nHOW AN INVESTIGATION RUNS")
+    print("  Scout gate -> memory recall -> Data Reader -> Data Analyst -> Theory Generator")
+    print("  -> Investigators (wave 1: hypotheses with a signal or a prior finding)")
+    print("  -> Evaluator: re-reads every cited row, checks verdicts against the flags,")
+    print("     cross-checks hypotheses; a failed investigator re-runs once with the critique;")
+    print("     unverified claims are dropped; no cause yet -> wave 2; still none ->")
+    print("     'insufficient evidence', escalated to the pharmacist")
+    print("  -> Action Strategist (drafts only) -> memory (pending approval) -> pharmacist")
+
+    print("\nHTTP (--serve)")
+    print("  GET  /                 Web page")
+    print("  GET  /health, /api/facilities, /api/commodities, /api/cases")
+    print("  POST /run              Same JSON as --input; returns the same result")
+
+    print("\nEXIT CODES")
+    print("  0  complete, clarify, refuse, block or insufficient evidence")
+    print("  1  system or data error (the JSON has 'error' and 'hint')")
 
     print("\nENVIRONMENT VARIABLES")
-    print("  GROQ_API_KEY           Your Groq API key (required)")
-    print("  GROQ_MODEL             LLM model name (default: set in .env)")
-    print("  SAMPLE_MODE=true       Use data/sample/ as dataset automatically")
+    print("  METERLESS_BASE_URL     Meterless Nightshift runtime URL (LLM mode)")
+    print("  METERLESS_RUNTIME_TOKEN  Nightshift runtime token (LLM mode)")
+    print("  METERLESS_MODEL_DEEP   Model lane, e.g. meterless/deep")
+    print("  SAMPLE_MODE=true       Default dataset data/sample/; rule-based agents")
+    print("  STOCKWHY_USE_LLM       true/false; overrides the SAMPLE_MODE default")
+    print("  STOCKWHY_DATA_SOURCE   csv (default) or zetaris")
+    print("  STOCKWHY_LOGS_DIR      Where JSONL traces go (default: logs)")
+    print("  STOCKWHY_MEMORY_PATH   Case memory file (default: logs/memory/hmem.json)")
+    print("  STOCKWHY_INJECT_FAULT  e.g. H4: corrupt one cited value on the first pass")
+    print("                         (demo drill: the Evaluator catches it, the retry recovers)")
 
     print("\nHYPOTHESES INVESTIGATED")
     print("  H1  late_order          — Order placed after cutoff date")
