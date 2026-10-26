@@ -1,0 +1,290 @@
+{
+  "summary": {
+    "cases": 16,
+    "top1_accuracy": 0.938,
+    "contributing_cause_recall": "2/4",
+    "evaluator_revisions": 0,
+    "cases_needing_second_wave": 0,
+    "escalations": 0,
+    "mean_wave1_investigators": 1.2,
+    "llm": "off (rule-based reasoning)"
+  },
+  "cases": [
+    {
+      "dataset": "data/cases/normal/case_01",
+      "noise": "1.0",
+      "expected": "demand_surge",
+      "also": "",
+      "predicted": "demand_surge",
+      "supported": [
+        "demand_surge"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/normal/case_02",
+      "noise": "1.0",
+      "expected": "supplier_underfill",
+      "also": "",
+      "predicted": "supplier_underfill",
+      "supported": [
+        "supplier_underfill"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/normal/case_03",
+      "noise": "1.0",
+      "expected": "expiry",
+      "also": "supplier_underfill",
+      "predicted": "expiry",
+      "supported": [
+        "expiry",
+        "supplier_underfill"
+      ],
+      "top1": true,
+      "contributing_found": true,
+      "wave1": 2,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/normal/case_04",
+      "noise": "1.0",
+      "expected": "record_error",
+      "also": "",
+      "predicted": "record_error",
+      "supported": [
+        "record_error"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/normal/case_05",
+      "noise": "1.0",
+      "expected": "national_disruption",
+      "also": "",
+      "predicted": "national_disruption",
+      "supported": [
+        "national_disruption"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/normal/case_06",
+      "noise": "1.0",
+      "expected": "late_order",
+      "also": "",
+      "predicted": "late_order",
+      "supported": [
+        "late_order"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/normal/case_07",
+      "noise": "1.0",
+      "expected": "late_order",
+      "also": "demand_surge",
+      "predicted": "late_order",
+      "supported": [
+        "late_order"
+      ],
+      "top1": true,
+      "contributing_found": false,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/normal/case_08",
+      "noise": "1.0",
+      "expected": "payment_arrears",
+      "also": "",
+      "predicted": "payment_arrears",
+      "supported": [
+        "payment_arrears"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/noisy/case_01",
+      "noise": "2.5",
+      "expected": "late_order",
+      "also": "",
+      "predicted": "late_order",
+      "supported": [
+        "late_order"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/noisy/case_02",
+      "noise": "2.5",
+      "expected": "payment_arrears",
+      "also": "",
+      "predicted": "payment_arrears",
+      "supported": [
+        "payment_arrears",
+        "supplier_underfill"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 2,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/noisy/case_03",
+      "noise": "2.5",
+      "expected": "record_error",
+      "also": "",
+      "predicted": "record_error",
+      "supported": [
+        "record_error",
+        "supplier_underfill"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 2,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/noisy/case_04",
+      "noise": "2.5",
+      "expected": "expiry",
+      "also": "supplier_underfill",
+      "predicted": "expiry",
+      "supported": [
+        "expiry",
+        "supplier_underfill"
+      ],
+      "top1": true,
+      "contributing_found": true,
+      "wave1": 2,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/noisy/case_05",
+      "noise": "2.5",
+      "expected": "supplier_underfill",
+      "also": "",
+      "predicted": "supplier_underfill",
+      "supported": [
+        "supplier_underfill"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/noisy/case_06",
+      "noise": "2.5",
+      "expected": "late_order",
+      "also": "demand_surge",
+      "predicted": "late_order",
+      "supported": [
+        "late_order"
+      ],
+      "top1": true,
+      "contributing_found": false,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/noisy/case_07",
+      "noise": "2.5",
+      "expected": "demand_surge",
+      "also": "",
+      "predicted": "supplier_underfill",
+      "supported": [
+        "supplier_underfill"
+      ],
+      "top1": false,
+      "contributing_found": null,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    },
+    {
+      "dataset": "data/cases/noisy/case_08",
+      "noise": "2.5",
+      "expected": "national_disruption",
+      "also": "",
+      "predicted": "national_disruption",
+      "supported": [
+        "national_disruption"
+      ],
+      "top1": true,
+      "contributing_found": null,
+      "wave1": 1,
+      "second_wave": false,
+      "revisions": 0,
+      "escalated": false,
+      "status": "complete"
+    }
+  ]
+}

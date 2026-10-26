@@ -382,7 +382,7 @@ class StockyWhy:
         try:
             self._require(ctx, contract, "data.read", "data_reader")
             self._require_llm(ctx, contract, "data_reader")
-            profile = read_and_profile(dataset_dir, facility_id, commodity, month)
+            profile = read_and_profile(dataset_dir, facility_id, commodity, month, dataset=dataset)
         except ContractDenied as exc:
             return self._fail(ctx, result, "data_reader", "read_and_profile", "Contract violation", exc,
                               "The Scout contract does not allow this step.")
@@ -746,7 +746,8 @@ class StockyWhy:
                                "likelihood": "high" if h in supported else "low",
                                "summary": str(final[h].get("reasoning", ""))[:200],
                                "citations": verified.get(h, [])})
-        ranked.sort(key=lambda r: 0 if r.get("hypothesis_id") in supported else 1)
+        ranked.sort(key=lambda r: supported.index(r["hypothesis_id"])
+                    if r.get("hypothesis_id") in supported else len(supported))
 
         kept, removed = [], []
         for action in actions.get("actions", []) or []:

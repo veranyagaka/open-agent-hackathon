@@ -97,7 +97,7 @@ class Agents:
         self.reader_calls = 0
         self.strategist_input = None
 
-    def read_and_profile(self, dataset_dir, facility_id, commodity, month):
+    def read_and_profile(self, dataset_dir, facility_id, commodity, month, dataset=None):
         self.reader_calls += 1
         return {"facility_id": facility_id, "commodity": commodity, "month": month,
                 "evidence": {"_produced_by": "rule-based"}, "computed_evidence": self.evidence,

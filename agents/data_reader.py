@@ -73,6 +73,7 @@ def read_and_profile(
     facility_id: str,
     commodity: str,
     month: str,
+    dataset: dict = None,
 ) -> dict:
     """
     Load all data for this case, run deterministic calculations, then
@@ -91,8 +92,12 @@ def read_and_profile(
         _profile: <full raw profile for downstream agents>
     }
     """
-    # Step 1: deterministic load + calculations (no LLM)
-    dataset = load_dataset(dataset_dir)
+    # Step 1: deterministic load + calculations (no LLM). Reuse a dataset the
+    # caller already loaded so Zetaris is queried once per run.
+    if dataset is None:
+        dataset = load_dataset(
+            dataset_dir, facility_id=facility_id, commodity=commodity, month=month
+        )
     profile = profile_stockout(dataset, facility_id, commodity, month)
 
     # Step 2: interpret the structured evidence (LLM or rule-based)

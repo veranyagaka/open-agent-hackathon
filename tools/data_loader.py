@@ -386,8 +386,9 @@ def load_zetaris_dataset(
     what ``profile_stockout`` uses for that case:
 
     - stock:      WHERE facility_id = ... AND commodity = ...  (history + month)
-    - orders:     WHERE commodity = ... [AND month IN (prev, month)]
-                  (the county average needs every facility in the cycle)
+    - orders:     WHERE commodity = ... [AND (month IN (prev2, prev, month)
+                  OR delivery_month IN (prev, month))]
+                  (the county averages need every facility in the cycle)
     - payments, facilities: full (county-wide; returned in the profile)
 
     *dataset_dir* only locates the local ``web_notes.json`` fallback.
@@ -424,8 +425,15 @@ def load_zetaris_dataset(
             order_filter = f"commodity = {com_lit}"
             if month is not None:
                 month_lit = sql_literal(month, "month")
-                prev_lit = sql_literal(_prev_months(month, 1)[0], "month")
-                order_filter += f" AND month IN ({prev_lit}, {month_lit})"
+                prev_1, prev_2 = _prev_months(month, 2)
+                prev_lit = sql_literal(prev_1, "month")
+                prev2_lit = sql_literal(prev_2, "month")
+                # Orders placed in the cycle, plus every order that delivered
+                # into the stock-out month or the month before (county fill)
+                order_filter += (
+                    f" AND (month IN ({prev2_lit}, {prev_lit}, {month_lit})"
+                    f" OR delivery_month IN ({prev_lit}, {month_lit}))"
+                )
             orders = _to_frame(reader.table(
                 f"SELECT * FROM {schema}.orders WHERE {order_filter}", "id"),
                 TABLE_COLUMNS["orders"], "orders")
@@ -847,6 +855,32 @@ def _check_h2(
     }
 
 
+def _county_fill_arriving(
+    orders_df: pd.DataFrame, commodity: str, m: str
+) -> Optional[float]:
+    """
+    County-wide fill rate of the supply that ARRIVES in month *m* for one
+    commodity: orders whose delivery_month is *m* (the previous month's
+    cycle). Falls back to orders placed the month before when
+    delivery_month is missing.
+    """
+    if "delivery_month" in orders_df.columns:
+        mask = orders_df["delivery_month"].astype(str) == m
+    else:
+        mask = orders_df["month"] == _prev_months(m, 1)[0]
+    sub = orders_df[(orders_df["commodity"] == commodity) & mask].copy()
+    sub = sub[sub["qty_requested"].apply(
+        lambda x: pd.to_numeric(x, errors="coerce") > 0
+    )]
+    if sub.empty:
+        return None
+    rates = (
+        pd.to_numeric(sub["qty_delivered"], errors="coerce")
+        / pd.to_numeric(sub["qty_requested"], errors="coerce")
+    ).clip(0, 1)
+    return float(rates.mean())
+
+
 def _check_h3(
     month: str,
     payments_df: pd.DataFrame,
@@ -855,7 +889,8 @@ def _check_h3(
 ) -> dict:
     """
     H3 Payment arrears: county owed >=30M KES in or just before *month*,
-    AND county-wide fill rate dropped compared to the prior month.
+    AND the county-wide fill rate of supply arriving this month dropped
+    compared to the supply that arrived the month before.
     """
     # Find arrears record at/before this month
     prev_months = _prev_months(month, 3)  # look back 3 months
@@ -881,24 +916,11 @@ def _check_h3(
 
     major_arrears = arrears_in_month and amount_owed_kes >= 30_000_000
 
-    # County-wide fill rate this month vs previous month for this commodity
-    def county_fill(m: str) -> Optional[float]:
-        mask = (orders_df["commodity"] == commodity) & (orders_df["month"] == m)
-        sub = orders_df[mask].copy()
-        sub = sub[sub["qty_requested"].apply(
-            lambda x: pd.to_numeric(x, errors="coerce") > 0
-        )]
-        if sub.empty:
-            return None
-        rates = (
-            pd.to_numeric(sub["qty_delivered"], errors="coerce")
-            / pd.to_numeric(sub["qty_requested"], errors="coerce")
-        ).clip(0, 1)
-        return float(rates.mean())
-
+    # County-wide fill rate of the supply arriving this month vs the
+    # supply that arrived the month before (orders deliver a month later)
     prev_1 = _prev_months(month, 1)[0]
-    fill_this = county_fill(month)
-    fill_prev = county_fill(prev_1)
+    fill_this = _county_fill_arriving(orders_df, commodity, month)
+    fill_prev = _county_fill_arriving(orders_df, commodity, prev_1)
 
     if fill_this is not None and fill_prev is not None and fill_prev > 0:
         fill_drop = round(fill_prev - fill_this, 4)
@@ -1083,29 +1105,13 @@ def _check_h7(
     web_notes: list,
 ) -> dict:
     """
-    H7 National disruption: county-wide fill drop for this commodity/month
-    AND a public web notice exists.
+    H7 National disruption: county-wide fill drop in the supply arriving in
+    this month for this commodity AND a public web notice exists.
     """
     prev_1 = _prev_months(month, 1)[0]
-
-    def county_fill(m: str) -> Optional[float]:
-        mask = (orders_df["commodity"] == commodity) & (orders_df["month"] == m)
-        sub = orders_df[mask].copy()
-        sub = sub[
-            sub["qty_requested"].apply(
-                lambda x: pd.to_numeric(x, errors="coerce") > 0
-            )
-        ]
-        if sub.empty:
-            return None
-        rates = (
-            pd.to_numeric(sub["qty_delivered"], errors="coerce")
-            / pd.to_numeric(sub["qty_requested"], errors="coerce")
-        ).clip(0, 1)
-        return float(rates.mean())
-
-    fill_this = county_fill(month)
-    fill_prev = county_fill(prev_1)
+    # Supply arriving in the stock-out month vs the month before
+    fill_this = _county_fill_arriving(orders_df, commodity, month)
+    fill_prev = _county_fill_arriving(orders_df, commodity, prev_1)
 
     if fill_this is not None and fill_prev is not None and fill_prev > 0:
         county_fill_drop = round(fill_prev - fill_this, 4)

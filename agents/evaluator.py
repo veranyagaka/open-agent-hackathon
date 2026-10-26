@@ -27,6 +27,8 @@ unverified. Nothing reaches the final result without a verified row id.
 import math
 import re
 
+from agents import rules
+
 HYPOTHESIS_NAMES = {
     "H1": "late_order",
     "H2": "supplier_underfill",
@@ -312,7 +314,7 @@ def expected_verdict(h_id: str, evidence: dict) -> str:
         return "supported" if ev.get("high_wastage") else "weakened"
     if h_id == "H7":
         drop = _num(ev.get("county_fill_drop")) or 0.0
-        if ev.get("web_notice_found") and drop > 0:
+        if ev.get("web_notice_found") and drop > 0.1:
             return "supported"
         if ev.get("web_notice_found") or drop > 0.1:
             return "inconclusive"
@@ -490,6 +492,8 @@ def check_coverage(final_evaluations: dict, held_back: list) -> dict:
     supported = [h for h in HYPOTHESIS_ORDER
                  if (final_evaluations.get(h) or {}).get("verdict") == "supported"
                  and (final_evaluations.get(h) or {}).get("verified_citations")]
+    # Root cause first (see agents/rules.py ROOT_CAUSE_ORDER)
+    supported.sort(key=rules.root_cause_rank)
     if supported:
         return {"verdict": "explained", "supported": supported, "request": [],
                 "reason": f"verified supported cause(s): {', '.join(supported)}"}

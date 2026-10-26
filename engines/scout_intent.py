@@ -34,7 +34,8 @@ from difflib import get_close_matches
 from pathlib import Path
 
 BANDS = [(0.80, "high"), (0.55, "medium"), (0.40, "low"), (0.0, "reject")]
-TTL = timedelta(minutes=5)
+# 5 minutes by default; a slow live LLM run can raise it with SCOUT_CONTRACT_TTL_MINUTES
+TTL = timedelta(minutes=float(os.environ.get("SCOUT_CONTRACT_TTL_MINUTES") or 5))
 POLICY_PACK = "stockwhy-default-2"
 REGISTRY_PATH = Path(__file__).with_name("intents.json")
 

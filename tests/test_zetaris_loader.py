@@ -134,10 +134,11 @@ def test_scoped_read_pushes_filters_into_sql(fake_zetaris):
     orders_sql = next(s for s in fake_zetaris.calls if "stockwhy_pg.orders WHERE" in s)
     assert "facility_id = 'FAC-009'" in stock_sql
     assert "commodity = 'magnesium sulphate inj'" in stock_sql
-    assert "month IN ('2026-02', '2026-03')" in orders_sql
+    assert "month IN ('2026-01', '2026-02', '2026-03')" in orders_sql
+    assert "delivery_month IN ('2026-02', '2026-03')" in orders_sql
     assert set(dataset["stock"]["facility_id"]) == {"FAC-009"}
-    assert set(dataset["orders"]["month"]) == {"2026-02", "2026-03"}
-    assert len(dataset["orders"]) == 60
+    assert set(dataset["orders"]["month"]) == {"2026-01", "2026-02", "2026-03"}
+    assert len(dataset["orders"]) == 90  # 30 facilities x 3 order cycles
     assert dataset["_scope"]["facility_id"] == "FAC-009"
 
 

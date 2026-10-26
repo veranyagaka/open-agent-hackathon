@@ -577,17 +577,21 @@ class TestH6Expiry:
 
 class TestH7NationalDisruption:
     def _make_orders(self, this_month_fill: float, prev_fill: float) -> pd.DataFrame:
+        # Orders deliver the month after they are placed: the 2026-02 cycle
+        # supplies the 2026-03 stock-out month, the 2026-01 cycle the month before.
         rows = []
         for fac in range(1, 6):
             rows.append({
                 "id": str(fac), "facility_id": f"FAC-{fac:03d}",
-                "commodity": "test", "month": "2026-03",
+                "commodity": "test", "month": "2026-02",
+                "delivery_month": "2026-03",
                 "qty_requested": "100",
                 "qty_delivered": str(int(this_month_fill * 100)),
             })
             rows.append({
                 "id": str(fac + 10), "facility_id": f"FAC-{fac:03d}",
-                "commodity": "test", "month": "2026-02",
+                "commodity": "test", "month": "2026-01",
+                "delivery_month": "2026-02",
                 "qty_requested": "100",
                 "qty_delivered": str(int(prev_fill * 100)),
             })

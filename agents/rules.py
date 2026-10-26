@@ -25,6 +25,13 @@ ID_ORDER = [h_id for h_id, _, _, _ in HYPOTHESES]
 
 VERDICT_RANK = {"supported": 0, "inconclusive": 1, "weakened": 2}
 
+# When several causes are supported, the deeper (root) cause leads. A national
+# disruption or county payment arrears is why the supplier under-delivers; a
+# broken stock record makes every other signal unreliable; expired stock is
+# lost at the facility whatever was delivered. Supplier underfill on its own
+# is the symptom most other causes produce, so it comes last.
+ROOT_CAUSE_ORDER = ["H7", "H3", "H5", "H6", "H1", "H4", "H2"]
+
 ARREARS_THRESHOLD_KES = 30_000_000
 
 
@@ -83,7 +90,7 @@ def deterministic_verdict(hypothesis_id: str, hypothesis_evidence: dict) -> str:
 
     if hypothesis_id == "H7":
         fill_drop = ev.get("county_fill_drop") or 0
-        if ev.get("web_notice_found") and fill_drop > 0:
+        if ev.get("web_notice_found") and fill_drop > 0.1:
             return "supported"
         if ev.get("web_notice_found") or fill_drop > 0.1:
             return "inconclusive"
@@ -255,15 +262,22 @@ def signal(hypothesis_id: str, hypothesis_evidence: dict) -> str:
     return "none"
 
 
+def root_cause_rank(h_id: str) -> int:
+    return ROOT_CAUSE_ORDER.index(h_id) if h_id in ROOT_CAUSE_ORDER else 99
+
+
 def rank_key(verdict: str, strength, h_id: str) -> tuple:
+    """Supported causes by root-cause order; the rest by strength, then H-order."""
     order = ID_ORDER.index(h_id) if h_id in ID_ORDER else 99
-    return (VERDICT_RANK.get(verdict, 3), -(strength or 0.0), order)
+    if verdict == "supported":
+        return (0, root_cause_rank(h_id), -(strength or 0.0), order)
+    return (VERDICT_RANK.get(verdict, 3), 0, -(strength or 0.0), order)
 
 
 def rank_hypotheses(computed_evidence: dict) -> list:
     """
     All seven hypotheses ordered most-likely first:
-    verdict (supported, inconclusive, weakened), then strength, then H-order.
+    supported causes in root-cause order, then the rest by strength and H-order.
     """
     rows = []
     for h_id in ID_ORDER:
