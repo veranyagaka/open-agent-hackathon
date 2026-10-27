@@ -1,12 +1,12 @@
 {
-  "run_id": "e931861b",
+  "run_id": "aa344d8d",
   "status": "no_stockout",
   "facility_id": "FAC-009",
   "commodity": "magnesium sulphate inj",
   "month": "2026-04",
   "question": "Why did FAC-009 run out of magnesium sulphate in April 2026?",
   "dataset_dir": "data/sample",
-  "log_file": "run_e931861b_20261027T182851.jsonl",
+  "log_file": "run_aa344d8d_20261027T203359.jsonl",
   "llm_mode": "rule-based",
   "steps": {
     "data_reader": {
@@ -1108,9 +1108,9 @@
     "suggestions": {}
   },
   "contract": {
-    "contractId": "1793125731812-9c73643674",
+    "contractId": "1793133239177-03fda1a9c4",
     "parentId": null,
-    "traceId": "cacd8993f6924ac1a7166757718818d9",
+    "traceId": "6d3a81af2728461399b21b90ef14c19f",
     "intent": "stockout.explain",
     "risk": {
       "level": "low",
@@ -1133,18 +1133,18 @@
       },
       "role": "pharmacist"
     },
-    "issuedAt": "2026-10-27T18:28:51.812159+00:00",
-    "expiresAt": "2026-10-27T18:33:51.812159+00:00",
+    "issuedAt": "2026-10-27T20:33:59.177040+00:00",
+    "expiresAt": "2026-10-27T20:38:59.177040+00:00",
     "registryVersion": 3,
     "policyPackVersion": "stockwhy-default-2",
-    "signature": "daeacf9e4ce45809a0d8204086e892f0dc91ddb5b3eac8e0fdfed5c73c13c9b2",
+    "signature": "b1fd95e6562e2d7035c46982d2a0ee1c33219de63de243fc7db8ec31da3bfcc7",
     "signedBy": "scout"
   },
   "canonical_question": "Why did facility FAC-009 report a stockout of magnesium sulphate inj in 2026-04?",
   "memory": {
     "recalled": [
       {
-        "id": "22550fd841cc47aa9e575b2848497d1c",
+        "id": "e91ac68d1aba4878977a443203a8a213",
         "facility_id": "FAC-009",
         "commodity": "magnesium sulphate inj",
         "month": "2026-03",
@@ -1158,14 +1158,14 @@
         "note": "",
         "provenance": {
           "origin": "stockwhy",
-          "run_id": "fc09bdd2",
+          "run_id": "3bddafae",
           "citations": [
             "orders#1265"
           ],
-          "learnedAt": 1793125731035,
-          "label": "StockWhy run fc09bdd2"
+          "learnedAt": 1793133238592,
+          "label": "StockWhy run 3bddafae"
         },
-        "stored_at": 1793125731035,
+        "stored_at": 1793133238592,
         "dataset_key": "data/sample",
         "action_decisions": {}
       }
@@ -1184,12 +1184,13 @@
     "stock#1267"
   ],
   "most_likely_cause": "No stock-out in this month",
+  "hint": "Ask about a month in which this facility reported stock-out days.",
   "actions": [],
   "contracts": {
     "main": {
-      "contractId": "1793125731812-9c73643674",
+      "contractId": "1793133239177-03fda1a9c4",
       "parentId": null,
-      "traceId": "cacd8993f6924ac1a7166757718818d9",
+      "traceId": "6d3a81af2728461399b21b90ef14c19f",
       "intent": "stockout.explain",
       "risk": {
         "level": "low",
@@ -1212,11 +1213,11 @@
         },
         "role": "pharmacist"
       },
-      "issuedAt": "2026-10-27T18:28:51.812159+00:00",
-      "expiresAt": "2026-10-27T18:33:51.812159+00:00",
+      "issuedAt": "2026-10-27T20:33:59.177040+00:00",
+      "expiresAt": "2026-10-27T20:38:59.177040+00:00",
       "registryVersion": 3,
       "policyPackVersion": "stockwhy-default-2",
-      "signature": "daeacf9e4ce45809a0d8204086e892f0dc91ddb5b3eac8e0fdfed5c73c13c9b2",
+      "signature": "b1fd95e6562e2d7035c46982d2a0ee1c33219de63de243fc7db8ec31da3bfcc7",
       "signedBy": "scout"
     },
     "child": null,
@@ -1224,9 +1225,9 @@
       {
         "phase": "read",
         "contract": {
-          "contractId": "1793125731813-cd28171f54",
-          "parentId": "1793125731812-9c73643674",
-          "traceId": "cacd8993f6924ac1a7166757718818d9",
+          "contractId": "1793133239178-22028c3acf",
+          "parentId": "1793133239177-03fda1a9c4",
+          "traceId": "6d3a81af2728461399b21b90ef14c19f",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1246,11 +1247,11 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T18:28:51.813587+00:00",
-          "expiresAt": "2026-10-27T18:33:51.813587+00:00",
+          "issuedAt": "2026-10-27T20:33:59.178925+00:00",
+          "expiresAt": "2026-10-27T20:38:59.178925+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "34ccbfe4bc04ae908628e463256e0ddd9b1e46818ca85dd1d6eb713729d863a9",
+          "signature": "638f916326a4027b4c1851da71d0f80bcb070ce8405a0cb1a9f242bbb5f6fc01",
           "signedBy": "scout"
         }
       }
@@ -1299,7 +1300,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793125731813-cd28171f54 for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+      "summary": "child contract 1793133239178-22028c3acf for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
     },
     {
       "agent": "scout",
@@ -1307,7 +1308,7 @@
       "target_agent": "memory_recall",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793125731813-cd28171f54 signature, expiry and capability verified"
+      "summary": "contract 1793133239178-22028c3acf signature, expiry and capability verified"
     },
     {
       "agent": "memory",
@@ -1323,7 +1324,7 @@
       "target_agent": "data_reader",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793125731813-cd28171f54 signature, expiry and capability verified"
+      "summary": "contract 1793133239178-22028c3acf signature, expiry and capability verified"
     },
     {
       "agent": "data_reader",
@@ -1363,13 +1364,13 @@
       "step": "memory_recall",
       "capability": "memory.read",
       "result": "granted",
-      "contract_id": "1793125731813-cd28171f54"
+      "contract_id": "1793133239178-22028c3acf"
     },
     {
       "step": "data_reader",
       "capability": "data.read",
       "result": "granted",
-      "contract_id": "1793125731813-cd28171f54"
+      "contract_id": "1793133239178-22028c3acf"
     }
   ]
 }

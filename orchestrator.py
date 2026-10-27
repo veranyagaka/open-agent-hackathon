@@ -998,7 +998,11 @@ class StockWhy:
                 for h in evaluator.HYPOTHESIS_ORDER if h in held and h in rows]
 
     def _stockout_check(self, ctx, result, profile, computed_evidence):
-        """Stop early when the stock row shows no stock-out, or there is no stock row at all."""
+        """Stop early when a balanced stock row shows no stock-out, or there is no stock row at all.
+
+        A row that does not balance (opening + received - wastage - consumed != closing) is not
+        trusted to rule a stock-out out; the full investigation runs and H5 weighs the record.
+        """
         h5 = (computed_evidence or {}).get("h5_record_error") or {}
         stock_rows = ((profile or {}).get("_profile") or {}).get("stock_record")
         if h5.get("data_missing") or stock_rows == []:
@@ -1013,7 +1017,8 @@ class StockWhy:
             self._finish(ctx, result)
             return result
         days, closing = h5.get("reported_stockout_days"), h5.get("reported_closing")
-        if days == 0 and isinstance(closing, (int, float)) and closing > 0:
+        if (days == 0 and isinstance(closing, (int, float)) and closing > 0
+                and h5.get("identity_holds") is not False):
             rid = h5.get("stock_id")
             result["status"] = "no_stockout"
             result["summary"] = (f"{result['facility_id']} reported no stock-out of {result['commodity']} "
@@ -1021,6 +1026,7 @@ class StockWhy:
                                  f"{rules._num(closing)} ({rid}).")
             result["citations"] = [rid] if rid else []
             result["most_likely_cause"] = "No stock-out in this month"
+            result["hint"] = "Ask about a month in which this facility reported stock-out days."
             result["actions"] = []
             ctx.log("data_reader", "stockout_check", rid or "stock row",
                     result["summary"], target="user", model="deterministic", confidence=1.0,

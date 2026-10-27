@@ -11,6 +11,7 @@ import io
 import sys
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -206,6 +207,22 @@ def test_no_stockout_month_returns_no_stockout(offline):
     assert r["status"] == "no_stockout"
     assert r["citations"] == [f"stock#{row['id']}"]
     assert "investigate_wave" not in [e["action"] for e in r["trace"]]
+    assert r["hint"]
+
+
+def test_unbalanced_no_stockout_row_is_investigated(offline, tmp_path):
+    """0 stock-out days on a row that does not add up could hide a stock-out: investigate it."""
+    import shutil
+    data_dir = tmp_path / "data"
+    shutil.copytree(SAMPLE, data_dir)
+    stock = pd.read_csv(data_dir / "stock.csv")
+    i = stock[(stock["reported_stockout_days"] == 0) & (stock["closing"] > 0)].index[0]
+    stock.loc[i, "closing"] += 50
+    stock.to_csv(data_dir / "stock.csv", index=False)
+    row = stock.loc[i]
+    r = _run(str(data_dir), row["facility_id"], row["commodity"], row["month"])
+    assert r["status"] != "no_stockout"
+    assert "investigate_wave" in [e["action"] for e in r["trace"]]
 
 
 # ---------------------------------------------------------------------------
