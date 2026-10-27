@@ -66,7 +66,19 @@ INJECTION_PATTERNS = [
     (r"\b(grant|give)\b.{0,20}\badmin\b|\binternal_admin\w*|\bdrop\s+(the\s+)?\w+\s+table\b|\bdelete\s+all\b",
      "out-of-band-tool"),
     (r"\banswer_key\b|eval/answer", "evaluation-leak"),
+    (r"\b(ignore|disregard|forget)\b.{0,20}\b(everything|anything|all)\b.{0,30}"
+     r"\b(said|told|written|above|before|earlier|so far)\b", "instruction-override"),
+    (r"\b(hidden|secret|system|internal)\s+(instructions?|prompts?|rules|directives?)\b", "exfiltration"),
+    (r"\bnew\s+(task|instructions?|role)\s*:", "instruction-override"),
+    (r"\bdo anything now\b", "role-drift"),
+    # Swahili: "puuza ... maagizo" (ignore ... instructions), "ufunguo" (key)
+    (r"\bpuuza\b.{0,60}\bmaagizo\b", "instruction-override"),
+    (r"\bufunguo\b", "exfiltration"),
 ]
+# Case-sensitive: "DAN" jailbreak persona (lower-case "dan" is a name).
+CASE_SENSITIVE_PATTERNS = [(r"\bDAN\b", "role-drift")]
+# "i g n o r e  a l l" -> "ignore all": collapse runs of single letters split by single spaces.
+SPACED_LETTERS = re.compile(r"\b(?:\w[ .\-_]){3,}\w\b")
 CONTROL_CHARS = re.compile(r"[‪-‮⁦-⁩​-‏]|\\u202[a-e]", re.I)
 PII_PATTERNS = [(r"\b(?:\+?254|0)7\d{8}\b", "phone"), (r"\b\d{8}\b", "national-id")]
 
@@ -106,7 +118,11 @@ def scan_injection(text: str) -> list:
         return []
     kinds = ["control-bytes"] if CONTROL_CHARS.search(text) else []
     normalised = unicodedata.normalize("NFKC", text)
-    kinds += [kind for pattern, kind in INJECTION_PATTERNS if re.search(pattern, normalised, re.I | re.S)]
+    collapsed = SPACED_LETTERS.sub(lambda m: re.sub(r"[ .\-_]", "", m.group(0)), normalised)
+    variants = [normalised] if collapsed == normalised else [normalised, collapsed]
+    for variant in variants:
+        kinds += [kind for pattern, kind in INJECTION_PATTERNS if re.search(pattern, variant, re.I | re.S)]
+        kinds += [kind for pattern, kind in CASE_SENSITIVE_PATTERNS if re.search(pattern, variant)]
     if re.search(r"\b(note to|attention) (the )?(assistant|ai|model)\b|\bassistant\s*:", normalised, re.I):
         kinds.append("addressed-to-model")
     return list(dict.fromkeys(kinds))
