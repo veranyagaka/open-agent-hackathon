@@ -627,6 +627,7 @@
         <div class="card-body">
           <div class="action-summary-bar" id="action-summary-bar"></div>
           <div class="action-list mt-8" id="action-list"></div>
+          <div id="further-list"></div>
           <div class="review-bar" id="review-bar">
             <div class="si-label">Pharmacist review of this finding</div>
             <div class="text-muted" style="font-size:12px">Is the top cause correct? Your decision is saved in case memory
@@ -831,6 +832,7 @@ function renderResults(r) {
   renderEvidence(r);
   renderDecision(r);
   renderActions(r.actions || []);
+  renderFurther(r);
   renderReviewBar(r);
   renderGaps(r);
 }
@@ -1286,6 +1288,41 @@ function refreshActions() {
   const container = document.getElementById('action-list');
   container.innerHTML = actions.map(a => buildActionCard(a)).join('');
   updateActionSummary(actions);
+}
+
+// Actions kept apart because their rows are not verified yet, CLI review
+// outcome (if the run was reviewed in a terminal) and per-phase contracts.
+function contractBrief(c) {
+  if (!c || typeof c !== 'object') return String(c ?? '');
+  const id = c.contractId || c.id || '?';
+  const caps = (c.scope && c.scope.capabilities) || c.capabilities || [];
+  const exp = c.expiresAt || c.expires_at;
+  return `${String(id).slice(0, 12)} [${caps.join(', ')}]${exp ? ` expires ${exp}` : ''}`;
+}
+
+function renderFurther(r) {
+  const box = document.getElementById('further-list');
+  let html = '';
+  const further = Array.isArray(r.investigate_further) ? r.investigate_further : [];
+  if (further.length) {
+    html += `<div class="skipped-list"><div class="si-label">Investigate further (not yet backed by verified rows)</div>
+      <ul>${further.map(a => `<li><strong>${esc(a.action_id)}</strong> ${esc(a.action)}</li>`).join('')}</ul></div>`;
+  }
+  const pending = Array.isArray(r.pending_actions) ? r.pending_actions : [];
+  const review = (r.review && typeof r.review === 'object') ? r.review : null;
+  if (review || pending.length) {
+    const correct = review ? (review.cause_correct === true ? 'yes' : review.cause_correct === false ? 'no' : 'not answered') : '—';
+    html += `<div class="skipped-list"><div class="si-label">Terminal review</div>
+      Top cause correct: ${esc(correct)}; memory decision: ${esc((review && review.decision) || 'none')}${
+      pending.length ? `; pending: ${pending.map(a => esc(a.action_id)).join(', ')}` : ''}</div>`;
+  }
+  const phases = (r.contracts && Array.isArray(r.contracts.phases)) ? r.contracts.phases : [];
+  if (phases.length) {
+    html += `<div class="skipped-list"><div class="si-label">Scout contracts per phase</div>
+      <ul>${phases.map(ph => `<li><strong>${esc(ph && ph.phase)}</strong>
+        <span class="monospace">${esc(contractBrief(ph && ph.contract))}</span></li>`).join('')}</ul></div>`;
+  }
+  box.innerHTML = html;
 }
 
 // ── Pharmacist review → POST /api/review (case memory) ─────────────────

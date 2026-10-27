@@ -233,7 +233,7 @@ python scripts/evaluate.py         # back-test on the 16 planted cases → eval/
 | `test_engine_scout_intent.py` | 34 | guard on Meterless's adversarial set (precision/recall floors) and our own; contracts |
 | `test_engine_hmem.py` | 25 | official H-MEM conformance vectors; memory round trip, dataset namespace, upsert, partial feedback, two writers, corrupt file |
 | `test_logger.py` | 10 | trace fields, requested/served model |
-| `test_run.py` | 13 | question parsing (Swahili, conflicts), `--case`, HTTP server hardening, `/api/review`, UTF-8 output |
+| `test_run.py` | 14 | question parsing (Swahili, conflicts), `--case`, HTTP server hardening, `/api/review`, UTF-8 output |
 | `test_zetaris_client.py` | 5 | Zetaris row shapes (headerless, upper-case), optional facility columns, timeout and 5xx retry |
 
 Back-test (offline, rule-based): **15 of 16** planted cases get the right primary cause (8/8 normal, 7/8 noisy).
@@ -267,7 +267,6 @@ accuracy on real data. Only `scripts/evaluate.py` reads `eval/answer_key.csv`; t
 | `STOCKWHY_MEMORY_PATH` | `<repo>/logs/memory/hmem.json` | case memory file |
 | `SCOUT_SIGNING_KEY` | random per process | key that signs Scout contracts; set it only to keep contracts valid across processes |
 | `STOCKWHY_INJECT_FAULT` | | fault drill (`H1`…`H7`) |
-| `SCOUT_CONTRACT_TTL_MINUTES` | `5` | contract lifetime |
 
 ---
 

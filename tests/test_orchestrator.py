@@ -544,7 +544,7 @@ class TestCLI:
     def test_help_shows_banner(self):
         result = self._run_cli(["help"])
         assert result.returncode == 0
-        assert "STOCKYWHY" in result.stdout.upper()
+        assert "STOCKWHY" in result.stdout.upper()
         assert "--question" in result.stdout
         assert "GROQ" not in result.stdout
 

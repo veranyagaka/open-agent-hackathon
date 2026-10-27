@@ -114,6 +114,18 @@ def test_print_newer_result_fields(capsys):
     out = capsys.readouterr().out
     assert "H4 payment_hold" in out and "TRANSFER REQUEST" in out
     assert "120 units from Kibera HC (FAC-004), 6.5 km" in out and "stock#7" in out
+    run._print_results({
+        "status": "complete", "most_likely_cause": "H1",
+        "investigate_further": [{"action_id": "A3", "action": "Check the delivery note"}],
+        "pending_actions": [{"action_id": "A2"}],
+        "review": {"cause_correct": True, "decision": "partial"},
+        "contracts": {"phases": [{"phase": "explain", "contract": {
+            "contractId": "c-123", "scope": {"capabilities": ["action.draft"]}, "expiresAt": "2026-10-27T16:00Z"}},
+            {"phase": "old", "contract": {"id": "c-9", "capabilities": ["data.read"], "expires_at": "x"}}]},
+    })
+    out = capsys.readouterr().out
+    assert "A3" in out and "Pending Actions : 1 (A2)" in out and "memory decision = partial" in out
+    assert "c-123 [action.draft] expires 2026-10-27T16:00Z" in out and "c-9 [data.read]" in out
 
 
 # -- HTTP server ----------------------------------------------------------------
@@ -220,3 +232,23 @@ def test_facility_label():
     assert run._facility_label({"facility_id": "FAC-009", "facility_name": "Katutu Dispensary"}) == \
         "Katutu Dispensary (FAC-009)"
     assert run._facility_label({"facility_id": "FAC-009"}) == "FAC-009"
+
+
+def test_trace_view_shows_model_confidence_and_new_events(tmp_path):
+    trace = tmp_path / "run_x.jsonl"
+    trace.write_text("\n".join(json.dumps(e) for e in [
+        {"timestamp": "2026-10-27T15:00:00", "agent_name": "scout", "action": "contract.issued",
+         "target_agent": "orchestrator", "model": "deterministic", "confidence": 0.9, "status": "ok",
+         "output_summary": "c-1"},
+        {"timestamp": "2026-10-27T15:00:01", "agent_name": "data_reader", "action": "zetaris_query",
+         "served_model": "nvidia/x", "requested_model": "meterless/deep", "status": "ok",
+         "output_summary": "SELECT id"},
+    ]) + "\n", encoding="utf-8")
+    out = subprocess.run([sys.executable, str(ROOT / "scripts" / "trace_view.py"), str(trace)],
+                         capture_output=True, text=True, encoding="utf-8", timeout=60).stdout
+    assert "[deterministic] conf=0.90" in out and "Scout contract issued" in out
+    assert "[nvidia/x via meterless/deep]" in out and "SQL sent to Zetaris" in out
+    only = subprocess.run([sys.executable, str(ROOT / "scripts" / "trace_view.py"), str(trace),
+                           "--actions", "contract.*"], capture_output=True, text=True,
+                          encoding="utf-8", timeout=60).stdout
+    assert "zetaris_query" not in only and "contract.issued" in only

@@ -522,6 +522,16 @@ def _facility_label(result: dict) -> str:
     return f"{name} ({fid})" if name and fid else str(name or fid)
 
 
+def _contract_brief(c: dict) -> str:
+    """One line for a Scout contract dict (camelCase keys, older snake_case as fallback)."""
+    cid = c.get("contractId") or c.get("id") or "?"
+    scope = c.get("scope") if isinstance(c.get("scope"), dict) else {}
+    caps = scope.get("capabilities") or c.get("capabilities") or []
+    expires = c.get("expiresAt") or c.get("expires_at")
+    text = f"{str(cid)[:12]} [{', '.join(str(x) for x in caps)}]"
+    return text + (f" expires {expires}" if expires else "")
+
+
 def _print_results(result: dict) -> None:
     """Print a nicely formatted summary of the investigation result."""
     print("\n" + "="*60)
@@ -611,9 +621,36 @@ def _print_results(result: dict) -> None:
             if a.get("verified_citations"):
                 print(f"         Rows : {', '.join(a['verified_citations'])}")
 
+    further = result.get("investigate_further") or []
+    if further:
+        print(f"\n  Investigate further ({len(further)}, not yet backed by verified rows):")
+        for a in further:
+            print(f"    {a.get('action_id', '?')} — {a.get('action', '')}")
+
     rejected = result.get("rejected_actions", [])
     if rejected:
         print(f"\n  Rejected Actions: {len(rejected)}")
+    pending = result.get("pending_actions") or []
+    if pending:
+        print(f"  Pending Actions : {len(pending)} "
+              f"({', '.join(str(a.get('action_id', '?')) for a in pending)})")
+    review = result.get("review") if isinstance(result.get("review"), dict) else {}
+    if review:
+        correct = review.get("cause_correct")
+        print(f"  Review    : top cause correct = "
+              f"{'yes' if correct else 'no' if correct is False else 'not answered'}; "
+              f"memory decision = {review.get('decision') or 'none'}")
+
+    phases = ((result.get("contracts") or {}).get("phases") or []) if isinstance(
+        result.get("contracts"), dict) else []
+    if phases:
+        print("\n  Contracts per phase:")
+        for ph in phases:
+            if not isinstance(ph, dict):
+                continue
+            c = ph.get("contract")
+            info = _contract_brief(c) if isinstance(c, dict) else str(c or "")
+            print(f"    {ph.get('phase', '?')}: {info}")
 
     strategist = (result.get("steps") or {}).get("action_strategist") or {}
     comm = strategist.get("communication_draft", "")
