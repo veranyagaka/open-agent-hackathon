@@ -17,7 +17,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import orchestrator  # noqa: E402
-from orchestrator import StockyWhy  # noqa: E402
+from orchestrator import StockWhy  # noqa: E402
+StockyWhy = StockWhy
 from tests.test_evaluator import FAC, MED, MONTH, make_dataset, make_evidence  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
@@ -408,13 +409,14 @@ class TestLogsErrorsReview:
         tty = io.StringIO("")
         tty.isatty = lambda: True
         monkeypatch.setattr(sys, "stdin", tty)
-        monkeypatch.setattr("builtins.input", lambda *a, **k: "a")
+        answers = iter(["a", "y"])
+        monkeypatch.setattr("builtins.input", lambda *a, **k: next(answers))
         memory = FakeMemory()
         agent = StockyWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=memory,
                           loader=lambda d: make_dataset())
         result = _run(agent, interactive=True)
         assert len(result["approved_actions"]) == 1
-        assert memory.feedbacks[0][:2] == ("mem-1", "approve")
+        assert memory.feedbacks[0][:2] == ("mem-1", "approved")
         assert "memory_feedback" in _actions(_log(env))
 
     def test_dataset_failure_is_one_line_error(self, env, monkeypatch):
@@ -444,7 +446,7 @@ class TestLogsErrorsReview:
         monkeypatch.setattr(orchestrator.evaluator, "check_coverage",
                             lambda *a: (_ for _ in ()).throw(KeyError("x")))
         result = _run()
-        assert result["status"] == "error" and result["error"].startswith("StockyWhy failed")
+        assert result["status"] == "error" and result["error"].startswith("StockWhy failed")
 
     def test_sample_mode_supplies_default_dataset_only(self, env, monkeypatch):
         monkeypatch.setenv("SAMPLE_MODE", "true")

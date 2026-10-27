@@ -1,7 +1,7 @@
 """
 orchestrator.py
 
-StockyWhy orchestrator: runs the agents as a loop with a checker in the middle,
+StockWhy orchestrator: runs the agents as a loop with a checker in the middle,
 not as a straight A -> B -> C chain.
 
   Scout gate        -> allow / clarify / refuse / block (early result if not allow)
@@ -23,7 +23,10 @@ Every step writes one JSONL event (logger.log_event) with agent_name, action,
 target_agent, model, confidence, retry_count and status.
 """
 
+import inspect
+import math
 import os
+import re
 import sys
 import uuid
 from pathlib import Path
@@ -34,18 +37,14 @@ from agents.data_reader import read_and_profile
 from agents.data_analyst import analyze_evidence
 from agents.theory_generator import generate
 from agents.evidence_investigator import investigate_parallel
-from agents.action_strategist import recommend_actions
-from agents import evaluator
+from agents.action_strategist import MEDICAL_DISCLAIMER, SUPPLY_CAUSES, recommend_actions
+from agents import evaluator, rules
 from tools.data_loader import load_dataset
 import llm_client
 
 
-MEDICAL_DISCLAIMER = (
-    "This system provides decision-support information only. It does not "
-    "constitute medical advice, clinical guidance, or authorisation to act. "
-    "All proposed actions must be reviewed and approved by a qualified "
-    "pharmacist or supply-chain officer before implementation."
-)
+ROOT = Path(__file__).resolve().parent
+ROW_MENTION_RE = re.compile(r"\b(stock|orders|payments|web_notes|facilities)#[\w\-]+")
 
 _TRUE = {"1", "true", "yes", "on"}
 
@@ -111,7 +110,7 @@ def _default_scout():
 def _default_memory():
     try:
         from engines.hmem import CaseMemory
-        path = os.environ.get("STOCKWHY_MEMORY_PATH", "logs/memory/hmem.json")
+        path = os.environ.get("STOCKWHY_MEMORY_PATH") or str(ROOT / "logs" / "memory" / "hmem.json")
         return CaseMemory(path)
     except Exception:
         return None
@@ -175,14 +174,29 @@ class _Run:
 
 def _display_path(path) -> str:
     """Repo-relative path for results and traces (no local home folders)."""
-    root = Path(__file__).resolve().parent
     try:
-        return Path(path).resolve().relative_to(root).as_posix()
+        return Path(path).resolve().relative_to(ROOT).as_posix()
     except (ValueError, OSError, TypeError):
         return str(path)
 
 
-class StockyWhy:
+def _call_compat(fn, *args, **kwargs):
+    """Call fn with keyword arguments it accepts; drop the ones an older version lacks."""
+    try:
+        params = inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        return fn(*args, **kwargs)
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        return fn(*args, **kwargs)
+    return fn(*args, **{k: v for k, v in kwargs.items() if k in params})
+
+
+def canonical_question(facility_id, commodity, month) -> str:
+    """The question the LLM agents see: built from the bound parameters, never the raw user text."""
+    return f"Why did facility {facility_id} report a stockout of {commodity} in {month}?"
+
+
+class StockWhy:
     """
     Main investigation orchestrator.
 
@@ -213,7 +227,7 @@ class StockyWhy:
         role: str = "pharmacist",
     ) -> dict:
         """
-        Run the full StockyWhy investigation.
+        Run the full StockWhy investigation.
 
         Parameters
         ----------
@@ -266,7 +280,7 @@ class StockyWhy:
         try:
             result = self._run(ctx, result, dataset_dir, role, interactive)
         except Exception as exc:  # last resort: never a traceback to the caller
-            result = self._fail(ctx, result, "orchestrator", "run", "StockyWhy failed", exc,
+            result = self._fail(ctx, result, "orchestrator", "run", "StockWhy failed", exc,
                                 "Re-run with the same inputs; if it repeats, check the log file.")
         result["trace"] = ctx.trace
         result["contract_checks"] = ctx.contract_checks
@@ -288,7 +302,7 @@ class StockyWhy:
         data_backend = os.environ.get("STOCKWHY_DATA_SOURCE", "csv").strip().lower() or "csv"
 
         print(f"\n{'='*60}")
-        print(f"  StockyWhy Investigation")
+        print("  StockWhy Investigation")
         print(f"  Facility : {facility_id}")
         print(f"  Commodity: {commodity}")
         print(f"  Month    : {month}")
@@ -296,7 +310,7 @@ class StockyWhy:
         print(f"{'='*60}\n")
 
         ctx.log("orchestrator", "run_start",
-                f"{facility_id}/{commodity}/{month} from {dataset_dir}",
+                f"{facility_id}/{commodity}/{month} from {_display_path(dataset_dir)}",
                 f"data_backend={data_backend}; llm_mode={result['llm_mode']}; "
                 f"scout={'on' if self.scout else 'off'}; memory={'on' if self.memory else 'off'}",
                 target="scout", model="none", confidence=1.0,
@@ -311,11 +325,17 @@ class StockyWhy:
                               "payments.csv and facilities.csv (or the STOCKWHY_DATA_SOURCE settings).")
         data_backend = (dataset or {}).get("_source") or data_backend
         result["data_backend"] = data_backend
-        ctx.log("data_reader", "load_dataset", dataset_dir,
+        ctx.log("data_reader", "load_dataset", _display_path(dataset_dir),
                 f"loaded from {data_backend}: "
                 + ", ".join(f"{k}={len(v)}" for k, v in (dataset or {}).items()
                             if k in ("stock", "orders", "payments", "web_notes")),
                 target="scout", model="deterministic", confidence=1.0, data_backend=data_backend)
+        for i, q in enumerate((dataset or {}).get("_queries") or [], 1):
+            if isinstance(q, dict):
+                ctx.log("data_reader", "zetaris_query", str(q.get("sql", ""))[:400],
+                        f"query {i}: {q.get('rows')} row(s) in {q.get('ms')} ms",
+                        target="data_reader", model="deterministic", confidence=1.0,
+                        sql=str(q.get("sql", ""))[:2000], rows=q.get("rows"), ms=q.get("ms"))
 
         # -- 1. Scout gate
         contract = None
@@ -360,6 +380,11 @@ class StockyWhy:
                     result[key] = params[key]
             facility_id, commodity, month = result["facility_id"], result["commodity"], result["month"]
 
+        # The LLM agents get a question built from the bound parameters, not the raw text.
+        question = canonical_question(facility_id, commodity, month)
+        result["canonical_question"] = question
+        dataset_key = _display_path(dataset_dir)
+
         # Untrusted text in web notes must not become evidence.
         rejected_notes = self._scan_web_notes(ctx, dataset)
 
@@ -372,10 +397,18 @@ class StockyWhy:
         else:
             try:
                 self._require(ctx, contract, "memory.read", "memory_recall")
-                prior = list(self.memory.recall(facility_id, commodity, limit=5) or [])
+                prior = list(_call_compat(self.memory.recall, facility_id, commodity, limit=5,
+                                          dataset_key=dataset_key) or [])
+                # Never recall the month being asked about (that would be the answer).
+                prior = [p for p in prior if not (isinstance(p, dict) and p.get("month") == month)]
                 memory_priority = self._memory_priority(prior)
-                ctx.log("memory", "memory_recall", f"{facility_id}/{commodity}",
-                        f"{len(prior)} prior finding(s); prioritise {memory_priority or 'none'}",
+                pending = [p for p in prior if isinstance(p, dict)
+                           and p.get("status") not in ("approved", "rejected")]
+                ctx.log("memory", "memory_recall", f"{facility_id}/{commodity} ({dataset_key})",
+                        f"{len(prior)} prior finding(s); prioritise approved {memory_priority or 'none'}"
+                        + (f"; {len(pending)} pending approval, shown but not acted on: "
+                           + ", ".join(f"{p.get('month')} {p.get('cause')}" for p in pending)
+                           if pending else ""),
                         target="data_reader", model="deterministic", confidence=1.0)
             except ContractDenied as exc:
                 return self._fail(ctx, result, "memory", "memory_recall", "Contract violation", exc,
@@ -384,7 +417,8 @@ class StockyWhy:
                 ctx.log("memory", "memory_recall", f"{facility_id}/{commodity}",
                         f"recall failed, continuing without memory: {_one_line(exc)}",
                         target="data_reader", model="deterministic", status="warning")
-        result["memory"] = {"recalled": prior, "prioritised": memory_priority}
+        result["memory"] = {"recalled": prior, "prioritised": memory_priority,
+                            "dataset_key": dataset_key}
 
         # -- 3. Data Reader
         print("[2/7] Data Reader Agent — loading and profiling data...")
@@ -403,17 +437,21 @@ class StockyWhy:
         if rejected_notes:
             self._neutralise_notes(ctx, computed_evidence, rejected_notes)
         ctx.log("data_reader", "read_and_profile",
-                f"{facility_id}/{commodity}/{month} from {dataset_dir}",
+                f"{facility_id}/{commodity}/{month} from {_display_path(dataset_dir)}",
                 f"Profile complete. Warnings: {len(profile.get('missing_data_warnings', []))}",
                 target="data_analyst", model=_model_of(profile.get("evidence"), ctx.llm_mode),
                 confidence=1.0 if not profile.get("missing_data_warnings") else 0.7)
         print("    ✓ Data profile complete")
 
+        stop = self._stockout_check(ctx, result, profile, computed_evidence)
+        if stop is not None:
+            return stop
+
         # -- 4. Data Analyst
         print("[3/7] Data Analyst — interpreting evidence signals...")
         try:
             self._require_llm(ctx, contract, "data_analyst")
-            analysis = analyze_evidence(computed_evidence, result["question"])
+            analysis = analyze_evidence(computed_evidence, question)
         except ContractDenied as exc:
             return self._fail(ctx, result, "data_analyst", "analyze_evidence", "Contract violation", exc,
                               "The Scout contract does not allow this step.")
@@ -431,7 +469,7 @@ class StockyWhy:
         print("[4/7] Theory Generator — generating 7 hypothesis theories...")
         try:
             self._require_llm(ctx, contract, "theory_generator")
-            theories = generate(result["question"], analysis)
+            theories = generate(question, analysis)
         except ContractDenied as exc:
             return self._fail(ctx, result, "theory_generator", "generate", "Contract violation", exc,
                               "The Scout contract does not allow this step.")
@@ -446,7 +484,19 @@ class StockyWhy:
         print(f"    ✓ {len(theory_by_id)} theories generated")
 
         # -- 6. Plan waves
+        fault_id = (os.environ.get("STOCKWHY_INJECT_FAULT") or "").strip().upper() or None
+        if fault_id and fault_id not in evaluator.HYPOTHESIS_ORDER:
+            ctx.log("orchestrator", "inject_fault", f"STOCKWHY_INJECT_FAULT={fault_id}",
+                    f"ignored: {fault_id} is not a hypothesis id (H1-H7)", target="none",
+                    model="deterministic", status="warning")
+            result["fault_drill"] = {"target": fault_id, "injected": False, "caught": False,
+                                     "recovered": False, "ignored": "not a hypothesis id H1-H7"}
+            fault_id = None
         wave1, held, reasons = self._plan_waves(theory_by_id, computed_evidence, analysis, memory_priority)
+        if fault_id and fault_id not in wave1:
+            wave1 = [fault_id] + wave1
+            held = [h for h in held if h != fault_id]
+            reasons[fault_id] = "fault drill target"
         ctx.log("orchestrator", "plan_waves", "computed flags + analyst signals + memory",
                 f"wave 1: {wave1 or 'none'}; held back: {held or 'none'}"
                 + ("; " + "; ".join(f"{h}: {r}" for h, r in reasons.items()) if reasons else ""),
@@ -455,9 +505,11 @@ class StockyWhy:
 
         # -- 7. Investigate / evaluate loop
         final, dropped, waves = {}, [], []
-        fault_id = (os.environ.get("STOCKWHY_INJECT_FAULT") or "").strip().upper() or None
-        result["fault_drill"] = ({"target": fault_id, "injected": False, "caught": False,
-                                  "recovered": False} if fault_id else None)
+        if fault_id:
+            result["fault_drill"] = {"target": fault_id, "injected": False, "caught": False,
+                                     "recovered": False}
+        else:
+            result.setdefault("fault_drill", None)
         pending, wave_no = wave1, 1
         while True:
             if pending:
@@ -496,6 +548,7 @@ class StockyWhy:
         }
         result["dropped_claims"] = dropped
         result["not_investigated"] = held
+        result["hypotheses_not_investigated"] = self._not_investigated(computed_evidence, held)
         result["coverage"] = coverage
         supported = coverage["supported"]
         result["verified_citations"] = {
@@ -511,12 +564,15 @@ class StockyWhy:
                 child = self._child_contract(ctx, contract)
                 self._require(ctx, child, "action.draft", "action_strategist")
                 self._require_llm(ctx, child, "action_strategist")
-                actions = recommend_actions(result["question"], {
+                transfer = self._transfer_candidate(ctx, dataset, facility_id, commodity, month,
+                                                    supported)
+                actions = _call_compat(recommend_actions, question, {
                     "evaluations": evaluations,
                     "analysis_requests": [],
                     "evaluator": {"supported": supported, "dropped_claims": dropped,
                                   "verified_citations": result["verified_citations"]},
-                })
+                }, facility_id=facility_id, commodity=commodity, month=month, transfer=transfer,
+                   facility_name=rules.facility_name(dataset, facility_id))
             except ContractDenied as exc:
                 return self._fail(ctx, result, "action_strategist", "recommend_actions",
                                   "Contract violation", exc,
@@ -524,10 +580,10 @@ class StockyWhy:
             except Exception as exc:
                 return self._fail(ctx, result, "action_strategist", "recommend_actions",
                                   "Action Strategist failed", exc, "Retry the run.")
-            self._apply_strategy(ctx, result, actions, final, supported)
+            self._apply_strategy(ctx, result, actions, final, supported, dataset, computed_evidence)
 
         # -- 9. Memory store (pending pharmacist approval)
-        self._store_memory(ctx, result, final, supported, contract)
+        self._store_memory(ctx, result, final, supported, contract, dataset_key)
 
         # -- 10. Pharmacist review (terminal only)
         if interactive and sys.stdin is not None and sys.stdin.isatty():
@@ -555,7 +611,19 @@ class StockyWhy:
                 theory["evaluator_critique"] = critiques[h]
                 theory["revision_request"] = True
             batch.append(theory)
-        out = investigate_parallel(question, {"theories": batch}, computed_evidence) or {}
+        try:
+            out = investigate_parallel(question, {"theories": batch}, computed_evidence) or {}
+        except Exception as exc:  # outside the per-thread guard: mark inconclusive, keep running
+            ctx.log("evidence_investigator", "investigate_wave", ", ".join(ids),
+                    f"investigator failed, marking {', '.join(ids)} inconclusive: {_one_line(exc)}",
+                    target="evaluator", model="none", status="warning")
+            out = {"evaluations": [{
+                "theory_id": h, "hypothesis_name": evaluator.HYPOTHESIS_NAMES.get(h, "unknown"),
+                "verdict": "inconclusive", "supporting_evidence_ids": [],
+                "contradicting_evidence_ids": [],
+                "reasoning": f"Investigator failed: {_one_line(exc)}",
+                "limitations": ["investigator error"], "additional_analysis_needed": [],
+            } for h in ids]}
         by_id = {e.get("theory_id"): e for e in out.get("evaluations", []) if isinstance(e, dict)}
         evals = []
         for h in ids:
@@ -569,8 +637,9 @@ class StockyWhy:
 
     def _investigate_and_evaluate(self, ctx, result, theory_by_id, ids, computed_evidence,
                                   dataset, month, wave_no, final, dropped, contract):
-        question = result["question"]
+        question = result.get("canonical_question") or result["question"]
         drill = result.get("fault_drill")
+        scope = {"facility_id": result["facility_id"], "commodity": result["commodity"], "month": month}
         evals, raw = self._investigate(ctx, question, theory_by_id, ids, computed_evidence, contract)
         for ev in evals:
             evaluator.attach_claims(ev, computed_evidence, dataset, month)
@@ -587,7 +656,7 @@ class StockyWhy:
                 target="evaluator", model=_model_of(raw, ctx.llm_mode),
                 confidence=_share_decided(evals), wave=wave_no)
 
-        review = self._evaluate(ctx, evals, computed_evidence, dataset, month, retry=0)
+        review = self._evaluate(ctx, evals, computed_evidence, dataset, month, retry=0, scope=scope)
         if drill and drill["injected"] and drill["target"] in review["failed"]:
             drill["caught"] = True
 
@@ -619,7 +688,8 @@ class StockyWhy:
                     confidence=_share_decided(revised), retry=1, wave=wave_no)
             # Re-review the revised ones alongside the accepted ones (cross-critique needs the set).
             second = self._evaluate(ctx, list(accepted.values()) + revised, computed_evidence,
-                                    dataset, month, retry=1, only=[e["theory_id"] for e in revised])
+                                    dataset, month, retry=1, only=[e["theory_id"] for e in revised],
+                                    scope=scope)
             for ev in revised:
                 h = ev["theory_id"]
                 report = second["reports"][h]
@@ -631,7 +701,9 @@ class StockyWhy:
                         drill["recovered"] = True
                     ctx.log("evaluator", "accept_revision", f"{h} revised evaluation",
                             f"{h} verified after revision ({ev.get('verdict')}; rows "
-                            f"{', '.join(ev['verified_citations']) or 'none'})",
+                            f"{', '.join(ev['verified_citations']) or 'none'})"
+                            + (f"; {ev['recomputed_after_critique']}"
+                               if ev.get("recomputed_after_critique") else ""),
                             target="action_strategist", model="deterministic",
                             confidence=report["confidence"], retry=1, hypothesis_id=h)
                     continue
@@ -652,8 +724,8 @@ class StockyWhy:
                             confidence=report["confidence"], retry=1, status="warning", hypothesis_id=h)
         final.update(accepted)
 
-    def _evaluate(self, ctx, evals, computed_evidence, dataset, month, retry, only=None):
-        review = evaluator.review(evals, computed_evidence, dataset, month)
+    def _evaluate(self, ctx, evals, computed_evidence, dataset, month, retry, only=None, scope=None):
+        review = evaluator.review(evals, computed_evidence, dataset, month, scope=scope)
         scope = only or [e["theory_id"] for e in evals]
         reports = {h: review["reports"][h] for h in scope}
 
@@ -678,6 +750,13 @@ class StockyWhy:
                 model="deterministic",
                 confidence=round(1.0 - len(cons_fail) / max(len(scope), 1), 2),
                 retry=retry, status="warning" if cons_fail else "ok")
+
+        rec_fail = [h for h, r in reports.items() if not r.get("record_check", {}).get("ok", True)]
+        if rec_fail:
+            ctx.log("evaluator", "record_check", "H4 demand basis vs the stock row",
+                    "; ".join(f"{h}: {reports[h]['record_check']['reason']}" for h in rec_fail),
+                    target="evidence_investigator", model="deterministic", confidence=1.0,
+                    retry=retry, status="warning")
 
         crit = [c for c in review["critiques"] if c["target"] in scope]
         ctx.log("evaluator", "cross_critique", "supported verdicts vs other hypotheses' evidence",
@@ -721,10 +800,10 @@ class StockyWhy:
 
     @staticmethod
     def _memory_priority(prior):
-        """Hypothesis ids named by prior (not rejected) findings, newest first."""
+        """Hypothesis ids named by prior findings a pharmacist approved, newest first."""
         ids = []
         for rec in prior:
-            if not isinstance(rec, dict) or rec.get("status") == "rejected":
+            if not isinstance(rec, dict) or rec.get("status") != "approved":
                 continue
             text = " ".join(str(rec.get(k, "")) for k in ("cause", "hypothesis_id", "top_cause"))
             tokens = text.upper().replace("_", " ").replace(",", " ").split()
@@ -733,7 +812,8 @@ class StockyWhy:
                     ids.append(h)
         return ids
 
-    def _apply_strategy(self, ctx, result, actions, final, supported):
+    def _apply_strategy(self, ctx, result, actions, final, supported, dataset=None,
+                        computed_evidence=None):
         """Keep only what verified rows back; attach those rows to every ranked cause and action."""
         result["steps"]["action_strategist"] = actions
         verified = {h: final[h].get("verified_citations", []) for h in final}
@@ -758,21 +838,49 @@ class StockyWhy:
         ranked.sort(key=lambda r: supported.index(r["hypothesis_id"])
                     if r.get("hypothesis_id") in supported else len(supported))
 
-        kept, removed = [], []
+        kept, removed, further = [], [], []
+        scope = {"facility_id": result["facility_id"], "commodity": result["commodity"],
+                 "month": result["month"]}
         for action in actions.get("actions", []) or []:
             links = action.get("linked_hypothesis_ids") or action.get("linked_theory_ids") or []
             links = [h for h in links if isinstance(h, str)]
-            if links and not any(h in supported for h in links):
-                removed.append(action.get("action_id", "?"))
-                continue
             action["pharmacist_review_required"] = True
+            if action.get("type") == "transfer_request":
+                check = evaluator.verify_transfer(action, dataset, scope)
+                ctx.log("evaluator", "verify_transfer",
+                        f"{action.get('action_id')}: {action.get('units')} units from "
+                        f"{action.get('source_facility')}",
+                        (f"{len(check['verified'])} row(s) re-read; units and distance recomputed and match"
+                         if check["ok"] else "rejected: " + "; ".join(
+                             f"{f['row_id']} {f['reason']}" for f in check["failures"])),
+                        target="action_strategist" if check["ok"] else "pharmacist",
+                        model="deterministic", confidence=1.0 if check["ok"] else 0.0,
+                        status="ok" if check["ok"] else "warning")
+                if not check["ok"]:
+                    removed.append(action.get("action_id", "?"))
+                    continue
+                action["verified_citations"] = check["verified"]
+                action["requires_pharmacist_approval"] = True
+                kept.append(action)
+                continue
+            if links and not any(h in supported for h in links):
+                if any((final.get(h) or {}).get("verdict") == "inconclusive" for h in links):
+                    action["verified_citations"] = sorted({r for h in links for r in verified.get(h, [])})
+                    further.append(action)  # "investigate further": kept apart, not dropped
+                else:
+                    removed.append(action.get("action_id", "?"))
+                continue
             rows = sorted({r for h in links for r in verified.get(h, [])})
             action["verified_citations"] = rows or support_rows
             kept.append(action)
 
         top = supported[0] if supported else None
         cause = actions.get("most_likely_cause", "")
-        if top and ranked and ranked[0].get("hypothesis_id") == top and cause:
+        if top and ctx.llm_mode:
+            # Headline built from the verified evidence, not from model text.
+            ev = evaluator.evidence_used(final[top], computed_evidence or {})
+            most_likely = f"{evaluator.HYPOTHESIS_NAMES[top]} ({top}): {rules.describe(top, ev)}"
+        elif top and ranked and ranked[0].get("hypothesis_id") == top and cause:
             most_likely = cause
         elif top:
             most_likely = (f"{evaluator.HYPOTHESIS_NAMES[top]} ({top}) — verified from "
@@ -784,17 +892,123 @@ class StockyWhy:
                                      "citations": verified.get(top, [])} if top else None)
         result["ranked_hypotheses"] = ranked
         result["actions"] = kept
+        result["investigate_further"] = further
         result["removed_actions"] = removed
         if actions.get("medical_disclaimer"):
             result["medical_disclaimer"] = actions["medical_disclaimer"]
+
+        # Free text may only mention rows the Evaluator verified.
+        allowed = ({r for rows in verified.values() for r in rows}
+                   | {r for a in kept + further for r in a.get("verified_citations", [])})
+        flagged = self._scrub_row_mentions(result, actions, ranked, kept + further, allowed)
+        if flagged:
+            result["unverified_mentions"] = sorted(flagged)
+            ctx.log("evaluator", "scrub_free_text", "row ids mentioned in drafted text",
+                    f"removed {len(flagged)} unverified row mention(s): {', '.join(sorted(flagged))}",
+                    target="pharmacist", model="deterministic", confidence=1.0, status="warning")
+
         ctx.log("action_strategist", "recommend_actions",
                 f"verified evaluations: {sorted(final)}; supported: {supported}",
                 f"Most likely: {str(most_likely)[:120]}. {len(kept)} action(s) drafted for pharmacist approval"
+                + (f"; {len(further)} investigate-further action(s) kept apart" if further else "")
                 + (f"; removed actions without verified backing {removed}" if removed else ""),
                 target="pharmacist", model=_model_of(actions, ctx.llm_mode),
                 confidence=_confidence_of(actions)
                 or _mean([final[h].get("evaluator_confidence") for h in supported]))
         print(f"    ✓ {len(kept)} actions proposed")
+
+    @staticmethod
+    def _scrub_row_mentions(result, actions, ranked, action_list, allowed):
+        """Drop row ids that are not verified from every free-text field; return the ids dropped."""
+        flagged = set()
+
+        def clean(text):
+            if not isinstance(text, str):
+                return text
+
+            def sub(m):
+                if m.group(0) in allowed:
+                    return m.group(0)
+                flagged.add(m.group(0))
+                return "[unverified row removed]"
+            return ROW_MENTION_RE.sub(sub, text)
+
+        result["most_likely_cause"] = clean(result.get("most_likely_cause"))
+        for item in ranked:
+            item["summary"] = clean(item.get("summary"))
+        for action in action_list:
+            for key in ("action", "evidence_basis", "expected_outcome", "success_measure",
+                        "risks_and_caveats", "draft"):
+                if key in action:
+                    action[key] = clean(action[key])
+        for key in ("emergency_requisition_memo", "transfer_request", "ordering_schedule_recommendation",
+                    "communication_draft"):
+            if isinstance(actions.get(key), str):
+                actions[key] = clean(actions[key])
+        if isinstance(actions.get("open_questions"), list):
+            actions["open_questions"] = [clean(q) for q in actions["open_questions"]]
+        return flagged
+
+    def _transfer_candidate(self, ctx, dataset, facility_id, commodity, month, supported):
+        """Nearest facility with surplus, only when the top verified cause is a supply cause."""
+        top = supported[0] if supported else None
+        if top not in SUPPLY_CAUSES:
+            return None
+        try:
+            candidates = rules.transfer_candidates(dataset, facility_id, commodity, month)
+        except Exception as exc:
+            ctx.log("orchestrator", "transfer_candidates", f"{facility_id}/{commodity}/{month}",
+                    f"not computed: {_one_line(exc)}", target="action_strategist",
+                    model="deterministic", status="warning")
+            return None
+        best = candidates[0] if candidates else None
+        ctx.log("orchestrator", "transfer_candidates",
+                f"top cause {top} cuts supply; surplus = closing - 1 x 3-month average use",
+                (f"{len(candidates)} facility(ies) with surplus; nearest {best['source_facility']} "
+                 f"{best['distance_km']} km, closing {rules._num(best['source_closing'])} - avg "
+                 f"{rules._num(best['source_avg_consumed_3m'])} -> {best['units']} units "
+                 f"({', '.join(best['citations'])})") if best else "no facility has surplus; no transfer drafted",
+                target="action_strategist", model="deterministic", confidence=1.0)
+        return best
+
+    @staticmethod
+    def _not_investigated(computed_evidence, held):
+        rows = {r["hypothesis_id"]: r for r in rules.rank_hypotheses(computed_evidence)}
+        return [{"id": h, "name": evaluator.HYPOTHESIS_NAMES[h],
+                 "computed_verdict": rows[h]["verdict"], "rows": rows[h]["evidence_ids"]}
+                for h in evaluator.HYPOTHESIS_ORDER if h in held and h in rows]
+
+    def _stockout_check(self, ctx, result, profile, computed_evidence):
+        """Stop early when the stock row shows no stock-out, or there is no stock row at all."""
+        h5 = (computed_evidence or {}).get("h5_record_error") or {}
+        stock_rows = ((profile or {}).get("_profile") or {}).get("stock_record")
+        if h5.get("data_missing") or stock_rows == []:
+            result["status"] = "clarify"
+            result["message"] = (f"There is no stock record for {result['facility_id']}, "
+                                 f"{result['commodity']} in {result['month']}. Check the facility, "
+                                 "medicine and month.")
+            result["hint"] = "Ask about a facility, medicine and month that exist in the dataset."
+            ctx.log("data_reader", "stockout_check", f"{result['facility_id']}/{result['commodity']}/"
+                    f"{result['month']}", "no stock row; asking the user to clarify",
+                    target="user", model="deterministic", confidence=1.0, status="clarify")
+            self._finish(ctx, result)
+            return result
+        days, closing = h5.get("reported_stockout_days"), h5.get("reported_closing")
+        if days == 0 and isinstance(closing, (int, float)) and closing > 0:
+            rid = h5.get("stock_id")
+            result["status"] = "no_stockout"
+            result["summary"] = (f"{result['facility_id']} reported no stock-out of {result['commodity']} "
+                                 f"in {result['month']}: 0 stock-out days and closing stock "
+                                 f"{rules._num(closing)} ({rid}).")
+            result["citations"] = [rid] if rid else []
+            result["most_likely_cause"] = "No stock-out in this month"
+            result["actions"] = []
+            ctx.log("data_reader", "stockout_check", rid or "stock row",
+                    result["summary"], target="user", model="deterministic", confidence=1.0,
+                    status="no_stockout")
+            self._finish(ctx, result)
+            return result
+        return None
 
     def _escalate(self, ctx, result, final):
         checked = sorted({r for ev in final.values() for r in ev.get("verified_citations", [])})
@@ -834,7 +1048,7 @@ class StockyWhy:
                 target="pharmacist", model="deterministic", confidence=1.0, status="escalated")
         print("    ! Insufficient evidence — escalated to the pharmacist")
 
-    def _store_memory(self, ctx, result, final, supported, contract):
+    def _store_memory(self, ctx, result, final, supported, contract, dataset_key=None):
         if self.memory is None:
             ctx.log("memory", "memory_store", "finding", "Case memory not installed; store skipped",
                     target="pharmacist", model="deterministic", status="skipped")
@@ -855,7 +1069,8 @@ class StockyWhy:
         }
         try:
             self._require(ctx, contract, "memory.write", "memory_store")
-            memory_id = self.memory.store(finding, citations, ctx.run_id)
+            memory_id = _call_compat(self.memory.store, finding, citations, ctx.run_id,
+                                     dataset_key=dataset_key)
             result.setdefault("memory", {})["stored_id"] = memory_id
             result["memory"]["stored_status"] = "pending_approval"
             ctx.log("memory", "memory_store", f"{finding['cause']} with {len(citations)} citation(s)",
@@ -866,17 +1081,24 @@ class StockyWhy:
                     target="pharmacist", model="deterministic", status="warning")
 
     def _memory_feedback(self, ctx, result):
+        """Feed the pharmacist's verdict on the top cause back to memory (approved/rejected/partial)."""
         memory_id = (result.get("memory") or {}).get("stored_id")
-        if not memory_id or self.memory is None:
+        review = result.get("review") or {}
+        decision = review.get("decision")
+        if not memory_id or self.memory is None or not decision:
             return
         approved, rejected = result.get("approved_actions", []), result.get("rejected_actions", [])
-        if not approved and not rejected:
-            return
-        decision = "approve" if approved else "reject"
-        note = f"{len(approved)} action(s) approved, {len(rejected)} rejected by pharmacist"
+        note = (f"top cause {'confirmed' if review.get('cause_correct') else 'rejected'}; "
+                f"{len(approved)} action(s) accepted, {len(rejected)} rejected, "
+                f"{len(review.get('pending', []))} left pending")
         try:
-            self.memory.feedback(memory_id, decision, note=note)
-            result["memory"]["stored_status"] = "approved" if decision == "approve" else "rejected"
+            try:
+                self.memory.feedback(memory_id, decision, note=note)
+            except ValueError:
+                # Older CaseMemory takes approve/reject only; partial keeps the confirmed cause.
+                legacy = "reject" if decision == "rejected" else "approve"
+                self.memory.feedback(memory_id, legacy, note=f"{decision}: {note}")
+            result["memory"]["stored_status"] = decision
             ctx.log("memory", "memory_feedback", f"pharmacist review of {memory_id}",
                     f"{decision}: {note}", target="memory", model="human", confidence=1.0)
         except Exception as exc:
@@ -964,6 +1186,7 @@ class StockyWhy:
         skipped = [c for c in checks if c["result"] == "skipped"]
         denied = [c for c in checks if c["result"] == "denied"]
         child = ctx.child_contract
+        llm_calls = self._llm_calls()
         result["contracts"] = {
             "main": result.get("contract"),
             "child": child.to_dict() if child is not None and hasattr(child, "to_dict") else None,
@@ -979,8 +1202,8 @@ class StockyWhy:
                 f"status={result.get('status')}. Most likely cause: "
                 f"{result.get('most_likely_cause', 'n/a')}. "
                 f"Approved actions: {len(result.get('approved_actions', []))}. "
-                f"LLM calls: {self._llm_calls() if self._llm_calls() is not None else 'n/a'}",
-                target="user", model="deterministic", confidence=1.0, llm_calls=self._llm_calls(),
+                f"LLM calls: {llm_calls if llm_calls is not None else 'n/a'}",
+                target="user", model="deterministic", confidence=1.0, llm_calls=llm_calls,
                 status="ok" if result.get("status") in ("complete", "running") else result.get("status"))
 
     def _fail(self, ctx, result, agent, action, label, exc, hint):
@@ -998,8 +1221,10 @@ class StockyWhy:
     # ------------------------------------------------------------------
     def _pharmacist_review_step(self, result: dict) -> dict:
         """
-        Interactive terminal loop: pharmacist reviews each proposed action
-        and can accept, edit, or reject it.
+        Interactive terminal loop: the pharmacist accepts, edits or rejects each
+        proposed action ([s] stops reviewing and leaves the rest pending), then
+        says whether the top cause is correct. That answer drives the memory
+        decision: approved, rejected, or partial when action decisions are mixed.
         """
         actions = result.get("actions", [])
         if not actions:
@@ -1015,10 +1240,12 @@ class StockyWhy:
             "authorisation to act.\n"
         )
 
-        approved = []
-        rejected = []
-
+        approved, rejected, pending = [], [], []
+        stopped = False
         for action in actions:
+            if stopped:
+                pending.append(action)
+                continue
             a_id = action.get("action_id", "?")
             priority = action.get("priority", "?").upper()
             print(f"\n--- Action {a_id} [{priority}] ---")
@@ -1028,43 +1255,63 @@ class StockyWhy:
             print(f"  Evidence: {action.get('evidence_basis', '')}")
             print(f"  Verified rows: {', '.join(action.get('verified_citations', [])) or 'none'}")
             print(f"  Caveats : {action.get('risks_and_caveats', '')}")
-            print(f"  ⚠️  pharmacist_review_required: True")
+            print("  ⚠️  pharmacist_review_required: True")
 
-            while True:
-                choice = input(
-                    "\n  [a]ccept / [e]dit / [r]eject / [s]kip all? "
-                ).strip().lower()
-
+            for _ in range(5):
+                choice = input("\n  [a]ccept / [e]dit / [r]eject / [s]top reviewing? ").strip().lower()
                 if choice in ("a", "accept"):
                     approved.append(action)
                     print("  → Accepted.")
                     break
-                elif choice in ("e", "edit"):
-                    note = input("  Enter your amendment note: ").strip()
-                    action["pharmacist_amendment"] = note
+                if choice in ("e", "edit"):
+                    action["pharmacist_amendment"] = input("  Enter your amendment note: ").strip()
                     approved.append(action)
                     print("  → Accepted with amendment.")
                     break
-                elif choice in ("r", "reject"):
-                    reason = input("  Rejection reason (optional): ").strip()
-                    action["rejection_reason"] = reason
+                if choice in ("r", "reject"):
+                    action["rejection_reason"] = input("  Rejection reason (optional): ").strip()
                     rejected.append(action)
                     print("  → Rejected.")
                     break
-                elif choice in ("s", "skip"):
-                    # Accept all remaining without prompting
-                    approved.append(action)
-                    for remaining in actions[actions.index(action) + 1:]:
-                        approved.append(remaining)
-                    print("  → Skipping remaining reviews. All remaining accepted.")
-                    result["approved_actions"] = approved
-                    result["rejected_actions"] = rejected
-                    return result
-                else:
-                    print("  Please enter a, e, r, or s.")
+                if choice in ("s", "stop", "skip"):
+                    stopped = True
+                    pending.append(action)
+                    print("  → Stopped reviewing. Remaining actions stay pending.")
+                    break
+                print("  Please enter a, e, r, or s.")
+            else:
+                pending.append(action)
+
+        cause_correct = None
+        top = (result.get("verified_cause") or {}).get("hypothesis_id")
+        if top:
+            for _ in range(3):
+                answer = input(f"\n  Is the top cause correct ({top})? [y/n] ").strip().lower()
+                if answer in ("y", "yes", "n", "no"):
+                    cause_correct = answer.startswith("y")
+                    break
+                print("  Please enter y or n.")
+
+        if cause_correct is None:
+            decision = None
+        elif not cause_correct:
+            decision = "rejected"
+        elif approved and rejected:
+            decision = "partial"
+        else:
+            decision = "approved"
 
         result["approved_actions"] = approved
         result["rejected_actions"] = rejected
-
-        print(f"\n  Summary: {len(approved)} accepted, {len(rejected)} rejected.")
+        result["pending_actions"] = pending
+        result["review"] = {"cause_correct": cause_correct, "decision": decision,
+                            "accepted": [a.get("action_id") for a in approved],
+                            "rejected": [a.get("action_id") for a in rejected],
+                            "pending": [a.get("action_id") for a in pending]}
+        print(f"\n  Summary: {len(approved)} accepted, {len(rejected)} rejected, {len(pending)} pending."
+              + (f" Memory decision: {decision}." if decision else ""))
         return result
+
+
+# Older name, kept so existing scripts and imports keep working.
+StockyWhy = StockWhy

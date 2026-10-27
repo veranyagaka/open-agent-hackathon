@@ -364,6 +364,23 @@ def _finite(value):
     return v if v == v and v not in (float("inf"), float("-inf")) else None
 
 
+def facility_name(dataset: dict, facility_id: str):
+    """facilities.csv `facility_name` for an id, or None when the column or row is missing."""
+    df = (dataset or {}).get("facilities")
+    if df is None or not hasattr(df, "columns") or "facility_name" not in df.columns:
+        return None
+    hit = df[df["facility_id"].astype(str).str.strip() == str(facility_id)]
+    if hit.empty:
+        return None
+    name = hit.iloc[0]["facility_name"]
+    return str(name).strip() if isinstance(name, str) and name.strip() else None
+
+
+def facility_label(facility_id: str, name: str = None) -> str:
+    """'Katutu Dispensary (FAC-009)' when a name is known, else the id."""
+    return f"{name} ({facility_id})" if name else str(facility_id)
+
+
 def transfer_candidates(dataset: dict, facility: str, commodity: str, month: str,
                         k: float = 1.0) -> list:
     """
@@ -410,6 +427,7 @@ def transfer_candidates(dataset: dict, facility: str, commodity: str, month: str
         distance = haversine_km(*coords[facility], *coords[source])
         out.append({
             "source_facility": source,
+            "source_facility_name": facility_name(dataset, source),
             "units": int(math.floor(surplus)),
             "distance_km": round(distance, 1),
             "source_closing": closing,

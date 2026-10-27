@@ -471,7 +471,8 @@ def _run_offline(dataset, facility, commodity, month):
     analysis = analyze_evidence(profile["computed_evidence"], question)
     theories = generate(question, analysis)
     evaluations = investigate_parallel(question, theories, profile["computed_evidence"])
-    actions = recommend_actions(question, evaluations)
+    actions = recommend_actions(question, evaluations, facility_id=facility, commodity=commodity,
+                                month=month)
     return profile, analysis, theories, evaluations, actions
 
 
