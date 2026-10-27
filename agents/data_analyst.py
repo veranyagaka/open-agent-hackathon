@@ -7,11 +7,11 @@ same schema from rule-based reasoning over the computed numbers.
 """
 
 from agents import rules
-from llm_client import RULE_BASED, LLMCallCapReached, ask_agent, llm_enabled
+from llm_client import RULE_BASED, ask_agent, llm_enabled
 
 
 SYSTEM = """
-You are the StockyWhy Data Analyst.
+You are the StockWhy Data Analyst.
 
 Analyze the supplied workbook profile and sample records.
 
@@ -35,7 +35,7 @@ Return valid JSON with:
 """
 
 EVIDENCE_SYSTEM = """
-You are the StockyWhy Data Analyst.
+You are the StockWhy Data Analyst.
 
 You will receive computed_evidence — deterministic calculations for all 7
 stockout hypotheses — plus the investigation question.
@@ -87,9 +87,9 @@ def analyze(profile: dict, question: str) -> dict:
                     "workbook_profile": profile,
                 },
             )
-        except LLMCallCapReached as exc:
+        except Exception as exc:  # LLMError or any client failure
             result = analyze_rule_based(profile, question)
-            result["_fallback_reason"] = str(exc)
+            result["_fallback_reason"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             return result
     return analyze_rule_based(profile, question)
 
@@ -101,16 +101,20 @@ def analyze_evidence(computed_evidence: dict, question: str) -> dict:
     """
     if llm_enabled():
         try:
-            return ask_agent(
+            result = ask_agent(
                 EVIDENCE_SYSTEM,
                 {
                     "research_question": question,
                     "computed_evidence": computed_evidence,
                 },
             )
-        except LLMCallCapReached as exc:
+            signals = result.get("hypothesis_signals") if isinstance(result, dict) else None
+            if not isinstance(signals, dict):
+                raise ValueError("LLM reply has no 'hypothesis_signals' object")
+            return result
+        except Exception as exc:  # LLMError or a reply in the wrong shape
             result = analyze_evidence_rule_based(computed_evidence, question)
-            result["_fallback_reason"] = str(exc)
+            result["_fallback_reason"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             return result
     return analyze_evidence_rule_based(computed_evidence, question)
 

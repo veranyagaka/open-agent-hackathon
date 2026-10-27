@@ -1,12 +1,12 @@
 {
-  "run_id": "ffc338f9",
+  "run_id": "0661518d",
   "status": "complete",
   "facility_id": "FAC-030",
   "commodity": "magnesium sulphate inj",
   "month": "2026-03",
   "question": "Why did facility FAC-030 report a stockout of magnesium sulphate inj in 2026-03?",
   "dataset_dir": "data/cases/normal/case_05",
-  "log_file": "run_ffc338f9_20261026T190827.jsonl",
+  "log_file": "run_0661518d_20261027T151456.jsonl",
   "llm_mode": "rule-based",
   "steps": {
     "data_reader": {
@@ -47,7 +47,7 @@
           "h1_late_order": "orders#4289 was placed 2026-02-08 against cutoff 2026-02-10 (2 days before the cutoff); delivery month 2026-03 vs expected 2026-03.",
           "h2_supplier_underfill": "orders#4289 fill rate 0.0836 vs county average 0.0914 across 30 orders in the cycle (shortfall 0.0078; under-fill threshold 0.05).",
           "h3_payment_arrears": "County payment records: arrears flag not set in the 4-month window, amount owed 0 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month 0.811.",
-          "h4_demand_surge": "stock#4290: consumed 141 vs 3-month average 227 (-37.89%; surge threshold +25%).",
+          "h4_demand_surge": "stock#4290: consumed 141 with 12 reported stock-out days; stock-out-adjusted demand 141 x 30 / (30 - 12) = 235 vs 3-month average 227 (+3.52%; issues only -37.89%; surge threshold +25%).",
           "h5_record_error": "stock#4290: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 12 plausible.",
           "h6_expiry": "stock#4290: wastage 0 vs 3-month average 0, with average consumption 227 (high-wastage rule: >2x average and >10% of consumption).",
           "h7_national_disruption": "public notice found (KEMSA notice (synthetic), 2026-02: \"Supply interruption affecting magnesium sulphate inj\"); county fill-rate drop vs previous month 0.811."
@@ -86,9 +86,13 @@
         "h4_demand_surge": {
           "consumed_this_month": 141.0,
           "avg_consumed_3m": 227.0,
-          "pct_change": -37.89,
-          "surge": false,
-          "stock_id": "stock#4290"
+          "reported_stockout_days": 12.0,
+          "pct_change_issues_only": -37.89,
+          "demand_basis": "stockout_adjusted",
+          "pct_change": 3.52,
+          "stock_id": "stock#4290",
+          "adjusted_demand": 235.0,
+          "surge": false
         },
         "h5_record_error": {
           "computed_closing": 0.0,
@@ -913,9 +917,13 @@
           "h4_demand_surge": {
             "consumed_this_month": 141.0,
             "avg_consumed_3m": 227.0,
-            "pct_change": -37.89,
-            "surge": false,
-            "stock_id": "stock#4290"
+            "reported_stockout_days": 12.0,
+            "pct_change_issues_only": -37.89,
+            "demand_basis": "stockout_adjusted",
+            "pct_change": 3.52,
+            "stock_id": "stock#4290",
+            "adjusted_demand": 235.0,
+            "surge": false
           },
           "h5_record_error": {
             "computed_closing": 0.0,
@@ -974,7 +982,7 @@
         },
         "H4": {
           "signal": "none",
-          "reasoning": "stock#4290: consumed 141 vs 3-month average 227 (-37.89%; surge threshold +25%). Computed flag gives 'weakened'.",
+          "reasoning": "stock#4290: consumed 141 with 12 reported stock-out days; stock-out-adjusted demand 141 x 30 / (30 - 12) = 235 vs 3-month average 227 (+3.52%; issues only -37.89%; surge threshold +25%). Computed flag gives 'weakened'.",
           "evidence_ids": [
             "stock#4290"
           ]
@@ -1083,7 +1091,7 @@
             "Stock reaches zero mid-month despite a normal delivery"
           ],
           "lead_signal": "none",
-          "lead_reasoning": "stock#4290: consumed 141 vs 3-month average 227 (-37.89%; surge threshold +25%). Computed flag gives 'weakened'."
+          "lead_reasoning": "stock#4290: consumed 141 with 12 reported stock-out days; stock-out-adjusted demand 141 x 30 / (30 - 12) = 235 vs 3-month average 227 (+3.52%; issues only -37.89%; surge threshold +25%). Computed flag gives 'weakened'."
         },
         {
           "id": "H5",
@@ -1161,13 +1169,13 @@
           "_produced_by": "rule-based",
           "evidence_strength": 1.0,
           "cited_values": {
-            "web_notes#2": {
+            "web_notes#3": {
               "month": "2026-02",
               "commodity": "magnesium sulphate inj"
             }
           },
           "verified_citations": [
-            "web_notes#2"
+            "web_notes#3"
           ],
           "evaluator_confidence": 1.0
         }
@@ -1213,7 +1221,7 @@
           "risks_and_caveats": "Transfers can leave the source facility short.",
           "pharmacist_review_required": true,
           "verified_citations": [
-            "web_notes#2"
+            "web_notes#3"
           ]
         }
       ],
@@ -1243,33 +1251,44 @@
     "suggestions": {}
   },
   "contract": {
-    "id": "1793041707935-f23d8cfb69",
+    "contractId": "1793114096077-495f7249fc",
+    "parentId": null,
+    "traceId": "0441e67d00e545e4b31945d9b3029698",
     "intent": "stockout.explain",
-    "capabilities": [
-      "data.read",
-      "llm.call",
-      "memory.read",
-      "memory.write"
-    ],
-    "expires_at": "2026-10-26T19:13:27.935453+00:00",
-    "issued_at": "2026-10-26T19:08:27.935453+00:00",
-    "parent_id": null,
-    "params": {
-      "facility_id": "FAC-030",
-      "commodity": "magnesium sulphate inj",
-      "month": "2026-03"
+    "risk": {
+      "level": "low",
+      "flags": [
+        "memory.write"
+      ],
+      "approvals": []
     },
-    "role": "pharmacist",
-    "trace_id": "010d2d5f06474899a902d31c049ad080",
-    "approvals": [],
-    "registry_version": 3,
-    "policy_pack": "stockwhy-default-2",
-    "signature": "d1d638eeb08aaee2fd6e5732ef8650a2b2e12384d1cfa943882d3345cf5a9d1b"
+    "scope": {
+      "capabilities": [
+        "data.read",
+        "llm.call",
+        "memory.read",
+        "memory.write"
+      ],
+      "params": {
+        "facility_id": "FAC-030",
+        "commodity": "magnesium sulphate inj",
+        "month": "2026-03"
+      },
+      "role": "pharmacist"
+    },
+    "issuedAt": "2026-10-27T15:14:56.077258+00:00",
+    "expiresAt": "2026-10-27T15:19:56.077258+00:00",
+    "registryVersion": 3,
+    "policyPackVersion": "stockwhy-default-2",
+    "signature": "51d18d636e63574be502e4791f8de0d317211240a9f41f0e4a2ca68be2373988",
+    "signedBy": "scout"
   },
+  "canonical_question": "Why did facility FAC-030 report a stockout of magnesium sulphate inj in 2026-03?",
   "memory": {
     "recalled": [],
     "prioritised": [],
-    "stored_id": "6b6fd6943ddc4024bf1734a6585f37c3",
+    "dataset_key": "data/cases/normal/case_05",
+    "stored_id": "a1ad9f4a8a134c939d5687cb73f671af",
     "stored_status": "pending_approval"
   },
   "wave_plan": {
@@ -1298,6 +1317,54 @@
     "H5",
     "H6"
   ],
+  "hypotheses_not_investigated": [
+    {
+      "id": "H1",
+      "name": "late_order",
+      "computed_verdict": "weakened",
+      "rows": [
+        "orders#4289"
+      ]
+    },
+    {
+      "id": "H2",
+      "name": "supplier_underfill",
+      "computed_verdict": "weakened",
+      "rows": [
+        "orders#4289"
+      ]
+    },
+    {
+      "id": "H3",
+      "name": "payment_arrears",
+      "computed_verdict": "weakened",
+      "rows": []
+    },
+    {
+      "id": "H4",
+      "name": "demand_surge",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#4290"
+      ]
+    },
+    {
+      "id": "H5",
+      "name": "record_error",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#4290"
+      ]
+    },
+    {
+      "id": "H6",
+      "name": "expiry",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#4290"
+      ]
+    }
+  ],
   "coverage": {
     "verdict": "explained",
     "supported": [
@@ -1308,7 +1375,7 @@
   },
   "verified_citations": {
     "H7": [
-      "web_notes#2"
+      "web_notes#3"
     ]
   },
   "most_likely_cause": "national_disruption (H7): public notice found (KEMSA notice (synthetic), 2026-02: \"Supply interruption affecting magnesium sulphate inj\"); county fill-rate drop vs previous month 0.811. Verdict 'supported': the computed flag passes its threshold.",
@@ -1316,7 +1383,7 @@
     "hypothesis_id": "H7",
     "hypothesis_name": "national_disruption",
     "citations": [
-      "web_notes#2"
+      "web_notes#3"
     ]
   },
   "ranked_hypotheses": [
@@ -1329,7 +1396,7 @@
       "summary": "public notice found (KEMSA notice (synthetic), 2026-02: \"Supply interruption affecting magnesium sulphate inj\"); county fill-rate drop vs previous month 0.811. Verdict 'supported': the computed flag passes its threshold.",
       "evidence_ids": [],
       "citations": [
-        "web_notes#2"
+        "web_notes#3"
       ]
     }
   ],
@@ -1349,60 +1416,246 @@
       "risks_and_caveats": "Transfers can leave the source facility short.",
       "pharmacist_review_required": true,
       "verified_citations": [
-        "web_notes#2"
+        "web_notes#3"
       ]
     }
   ],
+  "investigate_further": [],
   "removed_actions": [],
   "contracts": {
     "main": {
-      "id": "1793041707935-f23d8cfb69",
+      "contractId": "1793114096077-495f7249fc",
+      "parentId": null,
+      "traceId": "0441e67d00e545e4b31945d9b3029698",
       "intent": "stockout.explain",
-      "capabilities": [
-        "data.read",
-        "llm.call",
-        "memory.read",
-        "memory.write"
-      ],
-      "expires_at": "2026-10-26T19:13:27.935453+00:00",
-      "issued_at": "2026-10-26T19:08:27.935453+00:00",
-      "parent_id": null,
-      "params": {
-        "facility_id": "FAC-030",
-        "commodity": "magnesium sulphate inj",
-        "month": "2026-03"
+      "risk": {
+        "level": "low",
+        "flags": [
+          "memory.write"
+        ],
+        "approvals": []
       },
-      "role": "pharmacist",
-      "trace_id": "010d2d5f06474899a902d31c049ad080",
-      "approvals": [],
-      "registry_version": 3,
-      "policy_pack": "stockwhy-default-2",
-      "signature": "d1d638eeb08aaee2fd6e5732ef8650a2b2e12384d1cfa943882d3345cf5a9d1b"
+      "scope": {
+        "capabilities": [
+          "data.read",
+          "llm.call",
+          "memory.read",
+          "memory.write"
+        ],
+        "params": {
+          "facility_id": "FAC-030",
+          "commodity": "magnesium sulphate inj",
+          "month": "2026-03"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T15:14:56.077258+00:00",
+      "expiresAt": "2026-10-27T15:19:56.077258+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "51d18d636e63574be502e4791f8de0d317211240a9f41f0e4a2ca68be2373988",
+      "signedBy": "scout"
     },
     "child": {
-      "id": "1793041707982-99ddee0e51",
+      "contractId": "1793114096121-6867310ed4",
+      "parentId": "1793114096077-495f7249fc",
+      "traceId": "0441e67d00e545e4b31945d9b3029698",
       "intent": "action.draft",
-      "capabilities": [
-        "action.draft",
-        "data.read"
-      ],
-      "expires_at": "2026-10-26T19:13:27.982166+00:00",
-      "issued_at": "2026-10-26T19:08:27.982166+00:00",
-      "parent_id": "1793041707935-f23d8cfb69",
-      "params": {
-        "facility_id": "FAC-030",
-        "commodity": "magnesium sulphate inj",
-        "month": "2026-03"
+      "risk": {
+        "level": "medium",
+        "flags": [
+          "action.draft"
+        ],
+        "approvals": [
+          "pharmacist-confirm"
+        ]
       },
-      "role": "pharmacist",
-      "trace_id": "010d2d5f06474899a902d31c049ad080",
-      "approvals": [
-        "pharmacist-confirm"
-      ],
-      "registry_version": 3,
-      "policy_pack": "stockwhy-default-2",
-      "signature": "c62009e273e1539255a70cb9c1b2a4bb803486a6837576451ab536d0549dc40d"
+      "scope": {
+        "capabilities": [
+          "action.draft",
+          "data.read"
+        ],
+        "params": {
+          "facility_id": "FAC-030",
+          "commodity": "magnesium sulphate inj",
+          "month": "2026-03"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T15:14:56.121479+00:00",
+      "expiresAt": "2026-10-27T15:19:56.121479+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "3b52fc57d782d8374b98b00fdc4349b244ac98032151186d16376553180445ae",
+      "signedBy": "scout"
     },
+    "phases": [
+      {
+        "phase": "read",
+        "contract": {
+          "contractId": "1793114096078-977ceccf2f",
+          "parentId": "1793114096077-495f7249fc",
+          "traceId": "0441e67d00e545e4b31945d9b3029698",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call",
+              "memory.read"
+            ],
+            "params": {
+              "facility_id": "FAC-030",
+              "commodity": "magnesium sulphate inj",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.078715+00:00",
+          "expiresAt": "2026-10-27T15:19:56.078715+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "1f845261ab969769749552c3b8d41741594e04ac238dfa70458d5794a6e67c25",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "analyse",
+        "contract": {
+          "contractId": "1793114096117-4e36ac1e13",
+          "parentId": "1793114096077-495f7249fc",
+          "traceId": "0441e67d00e545e4b31945d9b3029698",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "llm.call"
+            ],
+            "params": {
+              "facility_id": "FAC-030",
+              "commodity": "magnesium sulphate inj",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.117463+00:00",
+          "expiresAt": "2026-10-27T15:19:56.117463+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "69d8e35b3a9a92f4c7ed360d9b140a4255d0fb504092cd1c0905deb8fdbde9d6",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "investigate",
+        "contract": {
+          "contractId": "1793114096119-6c367c83f2",
+          "parentId": "1793114096077-495f7249fc",
+          "traceId": "0441e67d00e545e4b31945d9b3029698",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call"
+            ],
+            "params": {
+              "facility_id": "FAC-030",
+              "commodity": "magnesium sulphate inj",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.119116+00:00",
+          "expiresAt": "2026-10-27T15:19:56.119116+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "52c3ce41aaafb49045fbc87b9399389433e7be60c23c3244ceb94decf93d5fe2",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "draft",
+        "contract": {
+          "contractId": "1793114096121-6867310ed4",
+          "parentId": "1793114096077-495f7249fc",
+          "traceId": "0441e67d00e545e4b31945d9b3029698",
+          "intent": "action.draft",
+          "risk": {
+            "level": "medium",
+            "flags": [
+              "action.draft"
+            ],
+            "approvals": [
+              "pharmacist-confirm"
+            ]
+          },
+          "scope": {
+            "capabilities": [
+              "action.draft",
+              "data.read"
+            ],
+            "params": {
+              "facility_id": "FAC-030",
+              "commodity": "magnesium sulphate inj",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.121479+00:00",
+          "expiresAt": "2026-10-27T15:19:56.121479+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "3b52fc57d782d8374b98b00fdc4349b244ac98032151186d16376553180445ae",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "memory",
+        "contract": {
+          "contractId": "1793114096179-103e54a328",
+          "parentId": "1793114096077-495f7249fc",
+          "traceId": "0441e67d00e545e4b31945d9b3029698",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [
+              "memory.write"
+            ],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "memory.write"
+            ],
+            "params": {
+              "facility_id": "FAC-030",
+              "commodity": "magnesium sulphate inj",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.179845+00:00",
+          "expiresAt": "2026-10-27T15:19:56.179845+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "8572c2676b44f66c4af4567586095e169c6d29e2e0feb23ff4296b443dbe3d60",
+          "signedBy": "scout"
+        }
+      }
+    ],
     "checks": 4,
     "granted": 4,
     "skipped": 0,
@@ -1442,12 +1695,36 @@
       "summary": "no injection text found"
     },
     {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096078-977ceccf2f for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_recall",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793114096078-977ceccf2f signature, expiry and capability verified"
+    },
+    {
       "agent": "memory",
       "action": "memory_recall",
       "target_agent": "data_reader",
       "retry_count": 0,
       "status": "ok",
-      "summary": "0 prior finding(s); prioritise none"
+      "summary": "0 prior finding(s); prioritise approved none"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "data_reader",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793114096078-977ceccf2f signature, expiry and capability verified"
     },
     {
       "agent": "data_reader",
@@ -1456,6 +1733,14 @@
       "retry_count": 0,
       "status": "ok",
       "summary": "Profile complete. Warnings: 0"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096117-4e36ac1e13 for stockout.explain (['llm.call'])"
     },
     {
       "agent": "data_analyst",
@@ -1480,6 +1765,14 @@
       "retry_count": 0,
       "status": "ok",
       "summary": "wave 1: ['H7']; held back: ['H1', 'H2', 'H3', 'H4', 'H5', 'H6']; H7: computed flags -> supported"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096119-6c367c83f2 for stockout.explain (['data.read', 'llm.call'])"
     },
     {
       "agent": "evidence_investigator",
@@ -1522,12 +1815,28 @@
       "summary": "explained: verified supported cause(s): H7"
     },
     {
-      "agent": "orchestrator",
-      "action": "child_contract",
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096121-6867310ed4 for action.draft (['action.draft', 'data.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
       "target_agent": "action_strategist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793041707982-99ddee0e51 for action.draft (['action.draft', 'data.read'])"
+      "summary": "contract 1793114096121-6867310ed4 signature, expiry and capability verified"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "transfer_candidates",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "no facility has surplus; no transfer drafted"
     },
     {
       "agent": "action_strategist",
@@ -1538,12 +1847,28 @@
       "summary": "Most likely: national_disruption (H7): public notice found (KEMSA notice (synthetic), 2026-02: \"Supply interruption affecting magnesi. 1 action(s) drafted for pharmacist approval"
     },
     {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096179-103e54a328 for stockout.explain (['memory.write'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_store",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793114096179-103e54a328 signature, expiry and capability verified"
+    },
+    {
       "agent": "memory",
       "action": "memory_store",
       "target_agent": "pharmacist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "stored 6b6fd6943ddc4024bf1734a6585f37c3 as pending_approval"
+      "summary": "stored a1ad9f4a8a134c939d5687cb73f671af as pending_approval"
     },
     {
       "agent": "orchestrator",
@@ -1567,25 +1892,25 @@
       "step": "memory_recall",
       "capability": "memory.read",
       "result": "granted",
-      "contract_id": "1793041707935-f23d8cfb69"
+      "contract_id": "1793114096078-977ceccf2f"
     },
     {
       "step": "data_reader",
       "capability": "data.read",
       "result": "granted",
-      "contract_id": "1793041707935-f23d8cfb69"
+      "contract_id": "1793114096078-977ceccf2f"
     },
     {
       "step": "action_strategist",
       "capability": "action.draft",
       "result": "granted",
-      "contract_id": "1793041707982-99ddee0e51"
+      "contract_id": "1793114096121-6867310ed4"
     },
     {
       "step": "memory_store",
       "capability": "memory.write",
       "result": "granted",
-      "contract_id": "1793041707935-f23d8cfb69"
+      "contract_id": "1793114096179-103e54a328"
     }
   ]
 }

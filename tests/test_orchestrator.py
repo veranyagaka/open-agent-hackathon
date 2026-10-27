@@ -17,7 +17,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import orchestrator  # noqa: E402
-from orchestrator import StockyWhy  # noqa: E402
+from orchestrator import StockWhy  # noqa: E402
+StockyWhy = StockWhy
 from tests.test_evaluator import FAC, MED, MONTH, make_dataset, make_evidence  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
@@ -42,7 +43,11 @@ class FakeContract:
             raise PermissionError(f"capability '{capability}' is not granted")
 
     def child(self, intent, capabilities):
-        caps = self.child_caps if self.child_caps is not None else capabilities
+        caps = capabilities
+        if isinstance(self.child_caps, dict):
+            caps = self.child_caps.get(intent, capabilities)
+        elif self.child_caps is not None:
+            caps = self.child_caps
         c = FakeContract(caps, id="c-child")
         self.children.append((intent, set(capabilities)))
         return c
@@ -341,13 +346,13 @@ class TestGateAndContracts:
 
     def test_strategist_needs_action_draft_in_child_contract(self, env, monkeypatch):
         fake = Agents().install(monkeypatch)
-        contract = FakeContract(ALL_CAPS, child_caps={"data.read"})
+        contract = FakeContract(ALL_CAPS, child_caps={"action.draft": {"data.read"}})
         agent = StockyWhy(scout=FakeScout(contract=contract), memory=FakeMemory(),
                           loader=lambda d: make_dataset())
         result = _run(agent)
         assert result["status"] == "error" and "action.draft" in result["error"]
         assert fake.strategist_input is None
-        assert contract.children[0][0] == "action.draft"
+        assert any(intent == "action.draft" for intent, _ in contract.children)
 
     def test_child_contract_used_when_granted(self, env, monkeypatch):
         Agents().install(monkeypatch)
@@ -356,7 +361,13 @@ class TestGateAndContracts:
                           loader=lambda d: make_dataset())
         result = _run(agent)
         assert result["status"] == "complete"
-        assert contract.children == [("action.draft", {"data.read", "action.draft"})]
+        assert ("action.draft", {"data.read", "action.draft"}) in contract.children
+        # One child per phase, each with only what the parent granted for it
+        assert [i for i, _ in contract.children].count("stockout.explain") == 4
+        assert {p["phase"] for p in result["contracts"]["phases"]} == {
+            "read", "analyse", "investigate", "draft", "memory"}
+        acts = _actions(_log(env))
+        assert "contract.issued" in acts and "contract.verified" in acts
         assert result["contracts"]["child"]["id"] == "c-child"
         assert "contract_summary" in _actions(_log(env))
 
@@ -408,13 +419,14 @@ class TestLogsErrorsReview:
         tty = io.StringIO("")
         tty.isatty = lambda: True
         monkeypatch.setattr(sys, "stdin", tty)
-        monkeypatch.setattr("builtins.input", lambda *a, **k: "a")
+        answers = iter(["a", "y"])
+        monkeypatch.setattr("builtins.input", lambda *a, **k: next(answers))
         memory = FakeMemory()
         agent = StockyWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=memory,
                           loader=lambda d: make_dataset())
         result = _run(agent, interactive=True)
         assert len(result["approved_actions"]) == 1
-        assert memory.feedbacks[0][:2] == ("mem-1", "approve")
+        assert memory.feedbacks[0][:2] == ("mem-1", "approved")
         assert "memory_feedback" in _actions(_log(env))
 
     def test_dataset_failure_is_one_line_error(self, env, monkeypatch):
@@ -444,7 +456,7 @@ class TestLogsErrorsReview:
         monkeypatch.setattr(orchestrator.evaluator, "check_coverage",
                             lambda *a: (_ for _ in ()).throw(KeyError("x")))
         result = _run()
-        assert result["status"] == "error" and result["error"].startswith("StockyWhy failed")
+        assert result["status"] == "error" and result["error"].startswith("StockWhy failed")
 
     def test_sample_mode_supplies_default_dataset_only(self, env, monkeypatch):
         monkeypatch.setenv("SAMPLE_MODE", "true")

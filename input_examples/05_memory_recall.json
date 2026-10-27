@@ -1,1 +1,1 @@
-{"question": "Why did FAC-009 run out of magnesium sulphate in March 2026?", "_note": "run straight after 01: case memory recalls the earlier finding and investigates H1 first"}
+{"question": "Why did FAC-009 run out of magnesium sulphate in April 2026?", "_note": "run straight after 01: case memory recalls the March finding, which is still pending pharmacist approval, so it is shown in the trace but not used to prioritise; the April stock row shows no stock-out (0 stock-out days, closing 489), so StockWhy says so instead of inventing a cause"}

@@ -1,12 +1,12 @@
 {
-  "run_id": "b23c8f3a",
+  "run_id": "11dcbbe9",
   "status": "complete",
   "facility_id": "FAC-011",
   "commodity": "ORS sachet",
   "month": "2026-03",
   "question": "Why did facility FAC-011 report a stockout of ORS sachet in 2026-03?",
   "dataset_dir": "data/cases/normal/case_01",
-  "log_file": "run_b23c8f3a_20261026T190827.jsonl",
+  "log_file": "run_11dcbbe9_20261027T151455.jsonl",
   "llm_mode": "rule-based",
   "steps": {
     "data_reader": {
@@ -47,7 +47,7 @@
           "h1_late_order": "orders#1505 was placed 2026-02-05 against cutoff 2026-02-10 (5 days before the cutoff); delivery month 2026-03 vs expected 2026-03.",
           "h2_supplier_underfill": "orders#1505 fill rate 0.9591 vs county average 0.9096 across 30 orders in the cycle (shortfall -0.0494; under-fill threshold 0.05).",
           "h3_payment_arrears": "County payment records: arrears flag set in the 4-month window, amount owed 3,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month 0.0113.",
-          "h4_demand_surge": "stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%).",
+          "h4_demand_surge": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%).",
           "h5_record_error": "stock#1506: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 8 plausible.",
           "h6_expiry": "stock#1506: wastage 0 vs 3-month average 0, with average consumption 311.33 (high-wastage rule: >2x average and >10% of consumption).",
           "h7_national_disruption": "no public notice for this commodity in the window; county fill-rate drop vs previous month 0.0113."
@@ -86,9 +86,13 @@
         "h4_demand_surge": {
           "consumed_this_month": 536.0,
           "avg_consumed_3m": 311.33,
-          "pct_change": 72.16,
-          "surge": true,
-          "stock_id": "stock#1506"
+          "reported_stockout_days": 8.0,
+          "pct_change_issues_only": 72.16,
+          "demand_basis": "stockout_adjusted",
+          "pct_change": 134.77,
+          "stock_id": "stock#1506",
+          "adjusted_demand": 730.91,
+          "surge": true
         },
         "h5_record_error": {
           "computed_closing": 0.0,
@@ -906,9 +910,13 @@
           "h4_demand_surge": {
             "consumed_this_month": 536.0,
             "avg_consumed_3m": 311.33,
-            "pct_change": 72.16,
-            "surge": true,
-            "stock_id": "stock#1506"
+            "reported_stockout_days": 8.0,
+            "pct_change_issues_only": 72.16,
+            "demand_basis": "stockout_adjusted",
+            "pct_change": 134.77,
+            "stock_id": "stock#1506",
+            "adjusted_demand": 730.91,
+            "surge": true
           },
           "h5_record_error": {
             "computed_closing": 0.0,
@@ -937,7 +945,7 @@
       }
     },
     "data_analyst": {
-      "analysis_summary": "Strongest computed signal: H4 demand_surge. stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%).",
+      "analysis_summary": "Strongest computed signal: H4 demand_surge. stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%).",
       "hypothesis_signals": {
         "H1": {
           "signal": "none",
@@ -960,7 +968,7 @@
         },
         "H4": {
           "signal": "strong",
-          "reasoning": "stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Computed flag gives 'supported'.",
+          "reasoning": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Computed flag gives 'supported'.",
           "evidence_ids": [
             "stock#1506"
           ]
@@ -986,7 +994,7 @@
         }
       },
       "primary_leads": [
-        "H4 demand_surge: stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%)."
+        "H4 demand_surge: stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%)."
       ],
       "primary_lead_ids": [
         "H4"
@@ -1069,7 +1077,7 @@
             "Stock reaches zero mid-month despite a normal delivery"
           ],
           "lead_signal": "strong",
-          "lead_reasoning": "stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Computed flag gives 'supported'."
+          "lead_reasoning": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Computed flag gives 'supported'."
         },
         {
           "id": "H5",
@@ -1139,7 +1147,7 @@
             "stock#1506"
           ],
           "contradicting_evidence_ids": [],
-          "reasoning": "stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+          "reasoning": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
           "limitations": [
             "A 3-month average is a short baseline; seasonality is not modelled."
           ],
@@ -1147,10 +1155,12 @@
             "Check clinic records for an outbreak or caseload change."
           ],
           "_produced_by": "rule-based",
-          "evidence_strength": 0.722,
+          "evidence_strength": 1.0,
+          "demand_basis": "stockout_adjusted",
           "cited_values": {
             "stock#1506": {
-              "consumed": 536.0
+              "consumed": 536.0,
+              "reported_stockout_days": 8.0
             }
           },
           "verified_citations": [
@@ -1177,14 +1187,14 @@
           "hypothesis_name": "demand_surge",
           "likelihood": "high",
           "verdict": "supported",
-          "evidence_strength": 0.722,
-          "summary": "stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+          "evidence_strength": 1.0,
+          "summary": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
           "evidence_ids": [
             "stock#1506"
           ]
         }
       ],
-      "most_likely_cause": "demand_surge (H4): stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+      "most_likely_cause": "demand_surge (H4): stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
       "most_likely_hypothesis_id": "H4",
       "actions": [
         {
@@ -1193,7 +1203,7 @@
           "linked_hypothesis_ids": [
             "H4"
           ],
-          "evidence_basis": "stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+          "evidence_basis": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
           "priority": "critical",
           "proposed_owner": "Facility pharmacist",
           "timeframe": "within 24 hours",
@@ -1211,7 +1221,7 @@
           "linked_hypothesis_ids": [
             "H4"
           ],
-          "evidence_basis": "stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+          "evidence_basis": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
           "priority": "high",
           "proposed_owner": "Facility pharmacist",
           "timeframe": "next ordering cycle",
@@ -1250,33 +1260,44 @@
     "suggestions": {}
   },
   "contract": {
-    "id": "1793041707824-c2a7a978ee",
+    "contractId": "1793114095969-e4e734d0be",
+    "parentId": null,
+    "traceId": "73e548ecfd694efea162729b1eb4cc23",
     "intent": "stockout.explain",
-    "capabilities": [
-      "data.read",
-      "llm.call",
-      "memory.read",
-      "memory.write"
-    ],
-    "expires_at": "2026-10-26T19:13:27.824370+00:00",
-    "issued_at": "2026-10-26T19:08:27.824370+00:00",
-    "parent_id": null,
-    "params": {
-      "facility_id": "FAC-011",
-      "commodity": "ORS sachet",
-      "month": "2026-03"
+    "risk": {
+      "level": "low",
+      "flags": [
+        "memory.write"
+      ],
+      "approvals": []
     },
-    "role": "pharmacist",
-    "trace_id": "79788e4c43be4c9c842f6c5489b874e8",
-    "approvals": [],
-    "registry_version": 3,
-    "policy_pack": "stockwhy-default-2",
-    "signature": "4a6c1ffeaa0a89a572e2a5d85cce2e11e57c8d962e13c8431ade462284cdcb67"
+    "scope": {
+      "capabilities": [
+        "data.read",
+        "llm.call",
+        "memory.read",
+        "memory.write"
+      ],
+      "params": {
+        "facility_id": "FAC-011",
+        "commodity": "ORS sachet",
+        "month": "2026-03"
+      },
+      "role": "pharmacist"
+    },
+    "issuedAt": "2026-10-27T15:14:55.969288+00:00",
+    "expiresAt": "2026-10-27T15:19:55.969288+00:00",
+    "registryVersion": 3,
+    "policyPackVersion": "stockwhy-default-2",
+    "signature": "d1ea0e33dd1828d00832652b5291505bed7c490ebc11534723be98df008ad54e",
+    "signedBy": "scout"
   },
+  "canonical_question": "Why did facility FAC-011 report a stockout of ORS sachet in 2026-03?",
   "memory": {
     "recalled": [],
     "prioritised": [],
-    "stored_id": "04fd28a001b444dab37f8516759420d5",
+    "dataset_key": "data/cases/normal/case_01",
+    "stored_id": "58d9c797af8f4a10a02b5e4c0a860e67",
     "stored_status": "pending_approval"
   },
   "wave_plan": {
@@ -1305,6 +1326,52 @@
     "H6",
     "H7"
   ],
+  "hypotheses_not_investigated": [
+    {
+      "id": "H1",
+      "name": "late_order",
+      "computed_verdict": "weakened",
+      "rows": [
+        "orders#1505"
+      ]
+    },
+    {
+      "id": "H2",
+      "name": "supplier_underfill",
+      "computed_verdict": "weakened",
+      "rows": [
+        "orders#1505"
+      ]
+    },
+    {
+      "id": "H3",
+      "name": "payment_arrears",
+      "computed_verdict": "weakened",
+      "rows": []
+    },
+    {
+      "id": "H5",
+      "name": "record_error",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#1506"
+      ]
+    },
+    {
+      "id": "H6",
+      "name": "expiry",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#1506"
+      ]
+    },
+    {
+      "id": "H7",
+      "name": "national_disruption",
+      "computed_verdict": "weakened",
+      "rows": []
+    }
+  ],
   "coverage": {
     "verdict": "explained",
     "supported": [
@@ -1318,7 +1385,7 @@
       "stock#1506"
     ]
   },
-  "most_likely_cause": "demand_surge (H4): stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+  "most_likely_cause": "demand_surge (H4): stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
   "verified_cause": {
     "hypothesis_id": "H4",
     "hypothesis_name": "demand_surge",
@@ -1332,8 +1399,8 @@
       "hypothesis_name": "demand_surge",
       "likelihood": "high",
       "verdict": "supported",
-      "evidence_strength": 0.722,
-      "summary": "stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+      "evidence_strength": 1.0,
+      "summary": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
       "evidence_ids": [
         "stock#1506"
       ],
@@ -1349,7 +1416,7 @@
       "linked_hypothesis_ids": [
         "H4"
       ],
-      "evidence_basis": "stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+      "evidence_basis": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
       "priority": "critical",
       "proposed_owner": "Facility pharmacist",
       "timeframe": "within 24 hours",
@@ -1367,7 +1434,7 @@
       "linked_hypothesis_ids": [
         "H4"
       ],
-      "evidence_basis": "stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+      "evidence_basis": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
       "priority": "high",
       "proposed_owner": "Facility pharmacist",
       "timeframe": "next ordering cycle",
@@ -1380,56 +1447,242 @@
       ]
     }
   ],
+  "investigate_further": [],
   "removed_actions": [],
   "contracts": {
     "main": {
-      "id": "1793041707824-c2a7a978ee",
+      "contractId": "1793114095969-e4e734d0be",
+      "parentId": null,
+      "traceId": "73e548ecfd694efea162729b1eb4cc23",
       "intent": "stockout.explain",
-      "capabilities": [
-        "data.read",
-        "llm.call",
-        "memory.read",
-        "memory.write"
-      ],
-      "expires_at": "2026-10-26T19:13:27.824370+00:00",
-      "issued_at": "2026-10-26T19:08:27.824370+00:00",
-      "parent_id": null,
-      "params": {
-        "facility_id": "FAC-011",
-        "commodity": "ORS sachet",
-        "month": "2026-03"
+      "risk": {
+        "level": "low",
+        "flags": [
+          "memory.write"
+        ],
+        "approvals": []
       },
-      "role": "pharmacist",
-      "trace_id": "79788e4c43be4c9c842f6c5489b874e8",
-      "approvals": [],
-      "registry_version": 3,
-      "policy_pack": "stockwhy-default-2",
-      "signature": "4a6c1ffeaa0a89a572e2a5d85cce2e11e57c8d962e13c8431ade462284cdcb67"
+      "scope": {
+        "capabilities": [
+          "data.read",
+          "llm.call",
+          "memory.read",
+          "memory.write"
+        ],
+        "params": {
+          "facility_id": "FAC-011",
+          "commodity": "ORS sachet",
+          "month": "2026-03"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T15:14:55.969288+00:00",
+      "expiresAt": "2026-10-27T15:19:55.969288+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "d1ea0e33dd1828d00832652b5291505bed7c490ebc11534723be98df008ad54e",
+      "signedBy": "scout"
     },
     "child": {
-      "id": "1793041707874-72d17fae92",
+      "contractId": "1793114096017-44ecd4f7cc",
+      "parentId": "1793114095969-e4e734d0be",
+      "traceId": "73e548ecfd694efea162729b1eb4cc23",
       "intent": "action.draft",
-      "capabilities": [
-        "action.draft",
-        "data.read"
-      ],
-      "expires_at": "2026-10-26T19:13:27.874042+00:00",
-      "issued_at": "2026-10-26T19:08:27.874042+00:00",
-      "parent_id": "1793041707824-c2a7a978ee",
-      "params": {
-        "facility_id": "FAC-011",
-        "commodity": "ORS sachet",
-        "month": "2026-03"
+      "risk": {
+        "level": "medium",
+        "flags": [
+          "action.draft"
+        ],
+        "approvals": [
+          "pharmacist-confirm"
+        ]
       },
-      "role": "pharmacist",
-      "trace_id": "79788e4c43be4c9c842f6c5489b874e8",
-      "approvals": [
-        "pharmacist-confirm"
-      ],
-      "registry_version": 3,
-      "policy_pack": "stockwhy-default-2",
-      "signature": "da4b11aa943a77e6278d2a31d7e3f557dbc54864df8b66009069e4c1d08c150f"
+      "scope": {
+        "capabilities": [
+          "action.draft",
+          "data.read"
+        ],
+        "params": {
+          "facility_id": "FAC-011",
+          "commodity": "ORS sachet",
+          "month": "2026-03"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T15:14:56.017916+00:00",
+      "expiresAt": "2026-10-27T15:19:56.017916+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "4ce3493ef23600db3cad963f187e669bce95f9917a344285ca2b6c9d0338c611",
+      "signedBy": "scout"
     },
+    "phases": [
+      {
+        "phase": "read",
+        "contract": {
+          "contractId": "1793114095970-a2d16b3cfb",
+          "parentId": "1793114095969-e4e734d0be",
+          "traceId": "73e548ecfd694efea162729b1eb4cc23",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call",
+              "memory.read"
+            ],
+            "params": {
+              "facility_id": "FAC-011",
+              "commodity": "ORS sachet",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:55.970522+00:00",
+          "expiresAt": "2026-10-27T15:19:55.970522+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "5c2c4479a7e6ca362c8df751238f0c760b9b41b0ad599328b40b3687314fafb0",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "analyse",
+        "contract": {
+          "contractId": "1793114096009-dd491e9359",
+          "parentId": "1793114095969-e4e734d0be",
+          "traceId": "73e548ecfd694efea162729b1eb4cc23",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "llm.call"
+            ],
+            "params": {
+              "facility_id": "FAC-011",
+              "commodity": "ORS sachet",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.009190+00:00",
+          "expiresAt": "2026-10-27T15:19:56.009190+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "03848e8b72125db43c28d198d731da562bcded0122e772a6cb5094f83b6135aa",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "investigate",
+        "contract": {
+          "contractId": "1793114096010-cd01dde66f",
+          "parentId": "1793114095969-e4e734d0be",
+          "traceId": "73e548ecfd694efea162729b1eb4cc23",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call"
+            ],
+            "params": {
+              "facility_id": "FAC-011",
+              "commodity": "ORS sachet",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.010809+00:00",
+          "expiresAt": "2026-10-27T15:19:56.010809+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "7aa9caa83fbc61335566ea8ca10d4a36100867c1f5c5efcb9ade4b831d2df918",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "draft",
+        "contract": {
+          "contractId": "1793114096017-44ecd4f7cc",
+          "parentId": "1793114095969-e4e734d0be",
+          "traceId": "73e548ecfd694efea162729b1eb4cc23",
+          "intent": "action.draft",
+          "risk": {
+            "level": "medium",
+            "flags": [
+              "action.draft"
+            ],
+            "approvals": [
+              "pharmacist-confirm"
+            ]
+          },
+          "scope": {
+            "capabilities": [
+              "action.draft",
+              "data.read"
+            ],
+            "params": {
+              "facility_id": "FAC-011",
+              "commodity": "ORS sachet",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.017916+00:00",
+          "expiresAt": "2026-10-27T15:19:56.017916+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "4ce3493ef23600db3cad963f187e669bce95f9917a344285ca2b6c9d0338c611",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "memory",
+        "contract": {
+          "contractId": "1793114096019-82d2661228",
+          "parentId": "1793114095969-e4e734d0be",
+          "traceId": "73e548ecfd694efea162729b1eb4cc23",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [
+              "memory.write"
+            ],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "memory.write"
+            ],
+            "params": {
+              "facility_id": "FAC-011",
+              "commodity": "ORS sachet",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.019468+00:00",
+          "expiresAt": "2026-10-27T15:19:56.019468+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "68c3ca12d292d701a088f79bd4c5a5e363e76b2f2a81e7a75ef076239000f238",
+          "signedBy": "scout"
+        }
+      }
+    ],
     "checks": 4,
     "granted": 4,
     "skipped": 0,
@@ -1469,12 +1722,36 @@
       "summary": "no injection text found"
     },
     {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114095970-a2d16b3cfb for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_recall",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793114095970-a2d16b3cfb signature, expiry and capability verified"
+    },
+    {
       "agent": "memory",
       "action": "memory_recall",
       "target_agent": "data_reader",
       "retry_count": 0,
       "status": "ok",
-      "summary": "0 prior finding(s); prioritise none"
+      "summary": "0 prior finding(s); prioritise approved none"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "data_reader",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793114095970-a2d16b3cfb signature, expiry and capability verified"
     },
     {
       "agent": "data_reader",
@@ -1485,12 +1762,20 @@
       "summary": "Profile complete. Warnings: 0"
     },
     {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096009-dd491e9359 for stockout.explain (['llm.call'])"
+    },
+    {
       "agent": "data_analyst",
       "action": "analyze_evidence",
       "target_agent": "theory_generator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "Strongest computed signal: H4 demand_surge. stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%)."
+      "summary": "Strongest computed signal: H4 demand_surge. stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3"
     },
     {
       "agent": "theory_generator",
@@ -1507,6 +1792,14 @@
       "retry_count": 0,
       "status": "ok",
       "summary": "wave 1: ['H4']; held back: ['H1', 'H2', 'H3', 'H5', 'H6', 'H7']; H4: computed flags -> supported"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096010-cd01dde66f for stockout.explain (['data.read', 'llm.call'])"
     },
     {
       "agent": "evidence_investigator",
@@ -1549,12 +1842,20 @@
       "summary": "explained: verified supported cause(s): H4"
     },
     {
-      "agent": "orchestrator",
-      "action": "child_contract",
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096017-44ecd4f7cc for action.draft (['action.draft', 'data.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
       "target_agent": "action_strategist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793041707874-72d17fae92 for action.draft (['action.draft', 'data.read'])"
+      "summary": "contract 1793114096017-44ecd4f7cc signature, expiry and capability verified"
     },
     {
       "agent": "action_strategist",
@@ -1562,7 +1863,23 @@
       "target_agent": "pharmacist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "Most likely: demand_surge (H4): stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supporte. 2 action(s) drafted for pharmacist approval"
+      "summary": "Most likely: demand_surge (H4): stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8. 2 action(s) drafted for pharmacist approval"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096019-82d2661228 for stockout.explain (['memory.write'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_store",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793114096019-82d2661228 signature, expiry and capability verified"
     },
     {
       "agent": "memory",
@@ -1570,7 +1887,7 @@
       "target_agent": "pharmacist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "stored 04fd28a001b444dab37f8516759420d5 as pending_approval"
+      "summary": "stored 58d9c797af8f4a10a02b5e4c0a860e67 as pending_approval"
     },
     {
       "agent": "orchestrator",
@@ -1586,7 +1903,7 @@
       "target_agent": "user",
       "retry_count": 0,
       "status": "ok",
-      "summary": "status=complete. Most likely cause: demand_surge (H4): stock#1506: consumed 536 vs 3-month average 311.33 (+72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.."
+      "summary": "status=complete. Most likely cause: demand_surge (H4): stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.7"
     }
   ],
   "contract_checks": [
@@ -1594,25 +1911,25 @@
       "step": "memory_recall",
       "capability": "memory.read",
       "result": "granted",
-      "contract_id": "1793041707824-c2a7a978ee"
+      "contract_id": "1793114095970-a2d16b3cfb"
     },
     {
       "step": "data_reader",
       "capability": "data.read",
       "result": "granted",
-      "contract_id": "1793041707824-c2a7a978ee"
+      "contract_id": "1793114095970-a2d16b3cfb"
     },
     {
       "step": "action_strategist",
       "capability": "action.draft",
       "result": "granted",
-      "contract_id": "1793041707874-72d17fae92"
+      "contract_id": "1793114096017-44ecd4f7cc"
     },
     {
       "step": "memory_store",
       "capability": "memory.write",
       "result": "granted",
-      "contract_id": "1793041707824-c2a7a978ee"
+      "contract_id": "1793114096019-82d2661228"
     }
   ]
 }

@@ -942,7 +942,15 @@ def _check_h4(
     stock_history: pd.DataFrame,
 ) -> dict:
     """
-    H4 Demand surge: consumed this month vs 3-month rolling average.
+    H4 Demand surge: demand this month vs 3-month rolling average.
+
+    When the stock row reports stock-out days (0 < days < 30), issues were
+    capped by the days without stock, so demand is estimated as
+    consumed x 30 / (30 - reported_stockout_days) and ``demand_basis`` says
+    "stockout_adjusted". The issues-only figure is kept in
+    ``pct_change_issues_only``. The adjustment is only valid if the facility
+    really had no stock on those days; the Evaluator re-reads the row and
+    rejects it when closing stock is above zero (see agents/evaluator.py).
     """
     if stock_record.empty:
         return {
@@ -953,36 +961,41 @@ def _check_h4(
             "data_missing": True,
         }
 
-    consumed_this = _safe_float(stock_record.iloc[0]["consumed"])
+    row = stock_record.iloc[0]
+    consumed_this = _safe_float(row["consumed"])
+    stockout_days = _safe_float(row.get("reported_stockout_days"))
 
     # Last 3 months from history
     hist_sorted = stock_history.sort_values("month", ascending=False)
     last_3 = hist_sorted.head(3)
 
-    if last_3.empty:
-        avg_3m = None
-        pct_change = None
-        surge = False
-    else:
+    avg_3m = None
+    pct_issues = None
+    if not last_3.empty:
         avg_3m = float(
             last_3["consumed"].apply(
                 lambda x: pd.to_numeric(x, errors="coerce")
             ).mean()
         )
         if avg_3m and avg_3m > 0:
-            pct_change = round((consumed_this - avg_3m) / avg_3m * 100, 2)
-            surge = pct_change > 25  # >25% above 3-month average
-        else:
-            pct_change = None
-            surge = False
+            pct_issues = round((consumed_this - avg_3m) / avg_3m * 100, 2)
 
-    return {
+    out = {
         "consumed_this_month": consumed_this,
         "avg_consumed_3m": round(avg_3m, 2) if avg_3m is not None else None,
-        "pct_change": pct_change,
-        "surge": bool(surge),
-        "stock_id": f"stock#{stock_record.iloc[0]['id']}",
+        "reported_stockout_days": stockout_days,
+        "pct_change_issues_only": pct_issues,
+        "demand_basis": "issues_only",
+        "pct_change": pct_issues,
+        "stock_id": f"stock#{row['id']}",
     }
+    if pct_issues is not None and 0 < stockout_days < 30:
+        adjusted = consumed_this * 30.0 / (30.0 - stockout_days)
+        out["demand_basis"] = "stockout_adjusted"
+        out["adjusted_demand"] = round(adjusted, 2)
+        out["pct_change"] = round((adjusted - avg_3m) / avg_3m * 100, 2)
+    out["surge"] = bool(out["pct_change"] is not None and out["pct_change"] > 25)
+    return out
 
 
 def _check_h5(stock_record: pd.DataFrame) -> dict:
@@ -1022,8 +1035,6 @@ def _check_h5(stock_record: pd.DataFrame) -> dict:
         stockout_days_plausible = False
     elif stockout_days > 0 and reported_closing == 0 and consumed > 0:
         # Stockout with zero closing is internally consistent
-        daily_rate = consumed / 30.0
-        days_stock_would_last = opening / daily_rate if daily_rate > 0 else 30
         stockout_days_plausible = stockout_days <= 30
     elif stockout_days == 0:
         stockout_days_plausible = True

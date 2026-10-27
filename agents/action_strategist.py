@@ -7,10 +7,8 @@ With the LLM disabled (llm_client.llm_enabled) the ranking, actions and
 drafts are rule-based and cite the evaluations' row ids.
 """
 
-import re
-
 from agents import rules
-from llm_client import RULE_BASED, LLMCallCapReached, ask_agent, llm_enabled
+from llm_client import RULE_BASED, ask_agent, llm_enabled
 
 MEDICAL_DISCLAIMER = (
     "This system provides decision-support information only. "
@@ -22,7 +20,7 @@ MEDICAL_DISCLAIMER = (
 
 
 SYSTEM = """
-You are the StockyWhy Action Strategist.
+You are the StockWhy Action Strategist.
 
 ⚠️  CRITICAL SAFETY RULES — YOU MUST FOLLOW THESE WITHOUT EXCEPTION:
 1. NEVER place orders, initiate transfers, or make payments autonomously.
@@ -56,9 +54,8 @@ For each proposed action provide:
 Also draft three specific documents:
 1. emergency_requisition_memo: A formal request for emergency resupply if stock
    is critically low. Include commodity, quantity, justification, and urgency.
-2. transfer_request: If the nearest facility likely has surplus stock, draft a
-   transfer request noting the source facility, quantity, and rationale.
-   Set to null if not applicable.
+2. transfer_request: leave null. StockWhy computes any transfer from the
+   dataset itself (source facility, units, distance) and adds it for you.
 3. ordering_schedule_recommendation: A note for the next ordering cycle to prevent
    recurrence — adjusted timing, quantity, or process changes.
 
@@ -105,28 +102,56 @@ Return JSON:
 """
 
 
+# Causes that cut supply into the facility: a neighbour's surplus can bridge the gap.
+SUPPLY_CAUSES = ("H1", "H2", "H3", "H7")
+
+
 def recommend_actions(
     question: str,
     evaluations: dict,
+    facility_id: str = None,
+    commodity: str = None,
+    month: str = None,
+    transfer: dict = None,
+    facility_name: str = None,
 ) -> dict:
     """
     Produce ranked causes and actionable proposals from evidence evaluations.
     Every action includes pharmacist_review_required: true.
+
+    facility_id / commodity / month name the case in the drafts. `transfer` is
+    a candidate from rules.transfer_candidates; it becomes a "transfer_request"
+    action only when the top supported cause is a supply cause.
     """
+    case = {"facility_id": facility_id, "commodity": commodity, "month": month,
+            "facility_name": facility_name}
     if llm_enabled():
         try:
             result = ask_agent(
                 SYSTEM,
                 {
                     "research_question": question,
+                    "case": case,
                     "evidence_evaluations": evaluations,
                 },
             )
-        except LLMCallCapReached as exc:
-            result = recommend_actions_rule_based(question, evaluations)
-            result["_fallback_reason"] = str(exc)
+            _check_shape(result)
+            # Transfers come only from the dataset, never from the model.
+            result["actions"] = [a for a in result["actions"]
+                                 if a.get("type") != "transfer_request"]
+            result["transfer_request"] = None
+        except Exception as exc:  # LLMError or a reply in the wrong shape
+            result = recommend_actions_rule_based(question, evaluations, **case)
+            result["_fallback_reason"] = f"{type(exc).__name__}: {str(exc)[:200]}"
     else:
-        result = recommend_actions_rule_based(question, evaluations)
+        result = recommend_actions_rule_based(question, evaluations, **case)
+
+    top = _top_supported(evaluations)
+    if transfer and top in SUPPLY_CAUSES and not any(
+            a.get("type") == "transfer_request" for a in result["actions"]):
+        action = transfer_action(len(result["actions"]) + 1, transfer, top, case)
+        result["actions"].append(action)
+        result["transfer_request"] = action["draft"]
 
     # Enforce pharmacist_review_required on every action regardless of LLM output
     for action in result.get("actions", []):
@@ -137,6 +162,79 @@ def recommend_actions(
         result["medical_disclaimer"] = MEDICAL_DISCLAIMER
 
     return result
+
+
+def _check_shape(result) -> None:
+    if not isinstance(result, dict):
+        raise ValueError("LLM reply is not an object")
+    actions = result.get("actions")
+    if not isinstance(actions, list) or not all(isinstance(a, dict) and a.get("action") for a in actions):
+        raise ValueError("LLM reply needs an 'actions' list of objects with an 'action' text")
+    ranked = result.get("ranked_hypotheses")
+    if not isinstance(ranked, list) or not all(
+            isinstance(r, dict) and r.get("hypothesis_id") in rules.ID_ORDER for r in ranked):
+        raise ValueError("LLM reply needs 'ranked_hypotheses' with hypothesis_id H1-H7")
+
+
+def _top_supported(evaluations: dict):
+    """The Evaluator's top verified cause (root-cause order), else the best supported evaluation."""
+    ev = evaluations or {}
+    supported = ((ev.get("evaluator") or {}).get("supported")) or []
+    if supported:
+        return supported[0]
+    evals = [e for e in ev.get("evaluations", []) if e.get("verdict") == "supported"]
+    evals.sort(key=lambda e: rules.rank_key("supported", e.get("evidence_strength"), e.get("theory_id", "")))
+    return evals[0].get("theory_id") if evals else None
+
+
+def transfer_action(n: int, transfer: dict, top: str, case: dict) -> dict:
+    """A draft transfer request built only from the computed candidate and its rows."""
+    facility = (rules.facility_label(case["facility_id"], case.get("facility_name"))
+                if case.get("facility_id") else "the facility")
+    commodity = case.get("commodity") or "the commodity"
+    source_id = transfer["source_facility"]
+    source = rules.facility_label(source_id, transfer.get("source_facility_name"))
+    rule = rules.transfer_rule_text(transfer.get("k", 1.0))
+    basis = (
+        f"{source} closing {rules._num(transfer['source_closing'])} in {case.get('month')} "
+        f"({transfer['stock_row']}) minus its 3-month average use "
+        f"{rules._num(transfer['source_avg_consumed_3m'])} ({', '.join(transfer['history_rows'])}) "
+        f"leaves {transfer['units']} units; {transfer['distance_km']} km from {facility} "
+        f"(facilities#{case.get('facility_id')}, facilities#{source_id})."
+    )
+    draft = (
+        f"DRAFT — requires pharmacist approval before anyone is contacted.\n"
+        f"Transfer request: {transfer['units']} units of {commodity} from {source} to {facility} "
+        f"({transfer['distance_km']} km).\n"
+        f"Rule: {rule}.\nEvidence: {basis}"
+    )
+    action = {
+        "action_id": f"A{n}",
+        "type": "transfer_request",
+        "action": (f"Draft a transfer request for {transfer['units']} units of {commodity} from "
+                   f"{source} ({transfer['distance_km']} km away) to cover the gap."),
+        "linked_hypothesis_ids": [top],
+        "source_facility": source_id,
+        "units": transfer["units"],
+        "distance_km": transfer["distance_km"],
+        "k": transfer.get("k", 1.0),
+        "rule": rule,
+        "citations": list(transfer["citations"]),
+        "evidence_basis": basis,
+        "priority": "high",
+        "proposed_owner": "Sub-county pharmacist",
+        "timeframe": "within 48 hours",
+        "expected_outcome": f"{facility} has {commodity} until the next delivery.",
+        "success_measure": "Transfer received and recorded in both facilities' ledgers.",
+        "risks_and_caveats": (f"Leaves {source} with about one month of its own average use; "
+                              "confirm its current stock by phone first."),
+        "requires_pharmacist_approval": True,
+        "pharmacist_review_required": True,
+        "draft": draft,
+    }
+    if transfer.get("source_facility_name"):
+        action["source_facility_name"] = transfer["source_facility_name"]
+    return action
 
 
 # ---------------------------------------------------------------------------
@@ -215,16 +313,6 @@ INVESTIGATE_ACTION = (
     "Do not act on an inconclusive finding.",
 )
 
-_QUESTION = re.compile(r"facility\s+(\S+)\s+report a stockout of\s+(.+?)\s+in\s+(\d{4}-\d{2})", re.I)
-
-
-def _case_from_question(question: str) -> tuple:
-    m = _QUESTION.search(question or "")
-    if m:
-        return m.group(1), m.group(2), m.group(3)
-    return "the facility", "the commodity", "the reporting month"
-
-
 def _likelihood(verdict: str, position: int) -> str:
     if verdict == "supported":
         return "high" if position == 0 else "medium"
@@ -250,12 +338,16 @@ def _make_action(n: int, template: tuple, h_ids: list, basis: str, commodity: st
     }
 
 
-def recommend_actions_rule_based(question: str, evaluations: dict) -> dict:
+def recommend_actions_rule_based(question: str, evaluations: dict, facility_id: str = None,
+                                 commodity: str = None, month: str = None,
+                                 facility_name: str = None) -> dict:
     """
     Rank hypotheses by verdict then evidence strength, and draft proportionate,
     reviewable actions for supported causes only.
     """
-    facility, commodity, month = _case_from_question(question)
+    facility = rules.facility_label(facility_id, facility_name) if facility_id else "the facility"
+    commodity = commodity or "the commodity"
+    month = month or "the reporting month"
     evals = list((evaluations or {}).get("evaluations", []))
     evals.sort(key=lambda e: rules.rank_key(
         e.get("verdict"), e.get("evidence_strength"), e.get("theory_id", "")
@@ -312,11 +404,11 @@ def recommend_actions_rule_based(question: str, evaluations: dict) -> dict:
         if supported else "Cause not established by the computed checks."
     )
     memo = (
-        f"DRAFT — requires pharmacist sign-off.\n"
+        "DRAFT — requires pharmacist sign-off.\n"
         f"Subject: Emergency requisition, {commodity}, {facility}\n"
         f"{facility} reported a stockout of {commodity} in {month}. {cause_line}\n"
         f"Evidence: {cited}.\n"
-        f"Quantity: to be set by the pharmacist from current consumption records."
+        "Quantity: to be set by the pharmacist from current consumption records."
     )
     schedule = {
         "H1": "Submit the order before the cutoff date; set a reminder several days ahead.",
@@ -325,10 +417,10 @@ def recommend_actions_rule_based(question: str, evaluations: dict) -> dict:
         "H6": "Apply FEFO and review expiry dates monthly.",
     }.get(most_likely_id, "Keep the current ordering schedule and re-check after the next stock report.")
     communication = (
-        f"DRAFT — for pharmacist review.\nTo: County pharmacist\n"
+        "DRAFT — for pharmacist review.\nTo: County pharmacist\n"
         f"Re: {commodity} stockout at {facility}, {month}\n"
         f"{cause_line} Evidence: {cited}. Proposed actions are attached for review; "
-        f"none will be executed without approval."
+        "none will be executed without approval."
     )
 
     open_questions = [

@@ -1,12 +1,12 @@
 {
-  "run_id": "f756843a",
+  "run_id": "0c9f9008",
   "status": "complete",
   "facility_id": "FAC-015",
   "commodity": "iron-folate tab",
   "month": "2026-03",
   "question": "Why did facility FAC-015 report a stockout of iron-folate tab in 2026-03?",
   "dataset_dir": "data/cases/noisy/case_02",
-  "log_file": "run_f756843a_20261026T190827.jsonl",
+  "log_file": "run_0c9f9008_20261027T151456.jsonl",
   "llm_mode": "rule-based",
   "steps": {
     "data_reader": {
@@ -47,7 +47,7 @@
           "h1_late_order": "orders#2153 was placed 2026-02-09 against cutoff 2026-02-10 (1 days before the cutoff); delivery month 2026-03 vs expected 2026-03.",
           "h2_supplier_underfill": "orders#2153 fill rate 0.349 vs county average 0.4241 across 30 orders in the cycle (shortfall 0.0751; under-fill threshold 0.05).",
           "h3_payment_arrears": "County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144.",
-          "h4_demand_surge": "stock#2154: consumed 190 vs 3-month average 257.67 (-26.26%; surge threshold +25%).",
+          "h4_demand_surge": "stock#2154: consumed 190 with 7 reported stock-out days; stock-out-adjusted demand 190 x 30 / (30 - 7) = 247.83 vs 3-month average 257.67 (-3.82%; issues only -26.26%; surge threshold +25%).",
           "h5_record_error": "stock#2154: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 7 plausible.",
           "h6_expiry": "stock#2154: wastage 0 vs 3-month average 0, with average consumption 257.67 (high-wastage rule: >2x average and >10% of consumption).",
           "h7_national_disruption": "no public notice for this commodity in the window; county fill-rate drop vs previous month -0.0144."
@@ -86,9 +86,13 @@
         "h4_demand_surge": {
           "consumed_this_month": 190.0,
           "avg_consumed_3m": 257.67,
-          "pct_change": -26.26,
-          "surge": false,
-          "stock_id": "stock#2154"
+          "reported_stockout_days": 7.0,
+          "pct_change_issues_only": -26.26,
+          "demand_basis": "stockout_adjusted",
+          "pct_change": -3.82,
+          "stock_id": "stock#2154",
+          "adjusted_demand": 247.83,
+          "surge": false
         },
         "h5_record_error": {
           "computed_closing": 0.0,
@@ -897,9 +901,13 @@
           "h4_demand_surge": {
             "consumed_this_month": 190.0,
             "avg_consumed_3m": 257.67,
-            "pct_change": -26.26,
-            "surge": false,
-            "stock_id": "stock#2154"
+            "reported_stockout_days": 7.0,
+            "pct_change_issues_only": -26.26,
+            "demand_basis": "stockout_adjusted",
+            "pct_change": -3.82,
+            "stock_id": "stock#2154",
+            "adjusted_demand": 247.83,
+            "surge": false
           },
           "h5_record_error": {
             "computed_closing": 0.0,
@@ -951,7 +959,7 @@
         },
         "H4": {
           "signal": "none",
-          "reasoning": "stock#2154: consumed 190 vs 3-month average 257.67 (-26.26%; surge threshold +25%). Computed flag gives 'weakened'.",
+          "reasoning": "stock#2154: consumed 190 with 7 reported stock-out days; stock-out-adjusted demand 190 x 30 / (30 - 7) = 247.83 vs 3-month average 257.67 (-3.82%; issues only -26.26%; surge threshold +25%). Computed flag gives 'weakened'.",
           "evidence_ids": [
             "stock#2154"
           ]
@@ -1062,7 +1070,7 @@
             "Stock reaches zero mid-month despite a normal delivery"
           ],
           "lead_signal": "none",
-          "lead_reasoning": "stock#2154: consumed 190 vs 3-month average 257.67 (-26.26%; surge threshold +25%). Computed flag gives 'weakened'."
+          "lead_reasoning": "stock#2154: consumed 190 with 7 reported stock-out days; stock-out-adjusted demand 190 x 30 / (30 - 7) = 247.83 vs 3-month average 257.67 (-3.82%; issues only -26.26%; surge threshold +25%). Computed flag gives 'weakened'."
         },
         {
           "id": "H5",
@@ -1270,10 +1278,49 @@
           "verified_citations": [
             "orders#2153"
           ]
+        },
+        {
+          "action_id": "A3",
+          "type": "transfer_request",
+          "action": "Draft a transfer request for 3 units of iron-folate tab from FAC-026 (42.3 km away) to cover the gap.",
+          "linked_hypothesis_ids": [
+            "H3"
+          ],
+          "source_facility": "FAC-026",
+          "units": 3,
+          "distance_km": 42.3,
+          "k": 1.0,
+          "rule": "surplus beyond 1 month of the source's 3-month average use",
+          "citations": [
+            "stock#3738",
+            "stock#3735",
+            "stock#3736",
+            "stock#3737",
+            "facilities#FAC-015",
+            "facilities#FAC-026"
+          ],
+          "evidence_basis": "FAC-026 closing 88 in 2026-03 (stock#3738) minus its 3-month average use 84.67 (stock#3735, stock#3736, stock#3737) leaves 3 units; 42.3 km from FAC-015 (facilities#FAC-015, facilities#FAC-026).",
+          "priority": "high",
+          "proposed_owner": "Sub-county pharmacist",
+          "timeframe": "within 48 hours",
+          "expected_outcome": "FAC-015 has iron-folate tab until the next delivery.",
+          "success_measure": "Transfer received and recorded in both facilities' ledgers.",
+          "risks_and_caveats": "Leaves FAC-026 with about one month of its own average use; confirm its current stock by phone first.",
+          "requires_pharmacist_approval": true,
+          "pharmacist_review_required": true,
+          "draft": "DRAFT \u2014 requires pharmacist approval before anyone is contacted.\nTransfer request: 3 units of iron-folate tab from FAC-026 to FAC-015 (42.3 km).\nRule: surplus beyond 1 month of the source's 3-month average use.\nEvidence: FAC-026 closing 88 in 2026-03 (stock#3738) minus its 3-month average use 84.67 (stock#3735, stock#3736, stock#3737) leaves 3 units; 42.3 km from FAC-015 (facilities#FAC-015, facilities#FAC-026).",
+          "verified_citations": [
+            "stock#3738",
+            "stock#3735",
+            "stock#3736",
+            "stock#3737",
+            "facilities#FAC-015",
+            "facilities#FAC-026"
+          ]
         }
       ],
       "emergency_requisition_memo": "DRAFT \u2014 requires pharmacist sign-off.\nSubject: Emergency requisition, iron-folate tab, FAC-015\nFAC-015 reported a stockout of iron-folate tab in 2026-03. Most likely cause: payment_arrears (H3).\nEvidence: orders#2153.\nQuantity: to be set by the pharmacist from current consumption records.",
-      "transfer_request": null,
+      "transfer_request": "DRAFT \u2014 requires pharmacist approval before anyone is contacted.\nTransfer request: 3 units of iron-folate tab from FAC-026 to FAC-015 (42.3 km).\nRule: surplus beyond 1 month of the source's 3-month average use.\nEvidence: FAC-026 closing 88 in 2026-03 (stock#3738) minus its 3-month average use 84.67 (stock#3735, stock#3736, stock#3737) leaves 3 units; 42.3 km from FAC-015 (facilities#FAC-015, facilities#FAC-026).",
       "ordering_schedule_recommendation": "Keep the current ordering schedule and re-check after the next stock report.",
       "communication_draft": "DRAFT \u2014 for pharmacist review.\nTo: County pharmacist\nRe: iron-folate tab stockout at FAC-015, 2026-03\nMost likely cause: payment_arrears (H3). Evidence: orders#2153. Proposed actions are attached for review; none will be executed without approval.",
       "open_questions": [
@@ -1300,33 +1347,44 @@
     "suggestions": {}
   },
   "contract": {
-    "id": "1793041708075-a9986683cc",
+    "contractId": "1793114096236-fff581a62a",
+    "parentId": null,
+    "traceId": "47bbda8167514c83966fcf6cc19ae46a",
     "intent": "stockout.explain",
-    "capabilities": [
-      "data.read",
-      "llm.call",
-      "memory.read",
-      "memory.write"
-    ],
-    "expires_at": "2026-10-26T19:13:28.075270+00:00",
-    "issued_at": "2026-10-26T19:08:28.075270+00:00",
-    "parent_id": null,
-    "params": {
-      "facility_id": "FAC-015",
-      "commodity": "iron-folate tab",
-      "month": "2026-03"
+    "risk": {
+      "level": "low",
+      "flags": [
+        "memory.write"
+      ],
+      "approvals": []
     },
-    "role": "pharmacist",
-    "trace_id": "f3128fe4ed214aa8bea9bcc7da3d52dc",
-    "approvals": [],
-    "registry_version": 3,
-    "policy_pack": "stockwhy-default-2",
-    "signature": "5c237fe96221462e574ddb45650883658e7c0f1806b1c6433fa3673a22337a76"
+    "scope": {
+      "capabilities": [
+        "data.read",
+        "llm.call",
+        "memory.read",
+        "memory.write"
+      ],
+      "params": {
+        "facility_id": "FAC-015",
+        "commodity": "iron-folate tab",
+        "month": "2026-03"
+      },
+      "role": "pharmacist"
+    },
+    "issuedAt": "2026-10-27T15:14:56.236217+00:00",
+    "expiresAt": "2026-10-27T15:19:56.236217+00:00",
+    "registryVersion": 3,
+    "policyPackVersion": "stockwhy-default-2",
+    "signature": "dda3f94d285d1676bdcdb07a55035c6c0035e6a2c8aae20aab80915e5b4ddf72",
+    "signedBy": "scout"
   },
+  "canonical_question": "Why did facility FAC-015 report a stockout of iron-folate tab in 2026-03?",
   "memory": {
     "recalled": [],
     "prioritised": [],
-    "stored_id": "f12acf7a37d0466fbcd6f23a9f046ab7",
+    "dataset_key": "data/cases/noisy/case_02",
+    "stored_id": "89b1f6fd9de947c498030b9f85889088",
     "stored_status": "pending_approval"
   },
   "wave_plan": {
@@ -1354,6 +1412,46 @@
     "H5",
     "H6",
     "H7"
+  ],
+  "hypotheses_not_investigated": [
+    {
+      "id": "H1",
+      "name": "late_order",
+      "computed_verdict": "weakened",
+      "rows": [
+        "orders#2153"
+      ]
+    },
+    {
+      "id": "H4",
+      "name": "demand_surge",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#2154"
+      ]
+    },
+    {
+      "id": "H5",
+      "name": "record_error",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#2154"
+      ]
+    },
+    {
+      "id": "H6",
+      "name": "expiry",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#2154"
+      ]
+    },
+    {
+      "id": "H7",
+      "name": "national_disruption",
+      "computed_verdict": "weakened",
+      "rows": []
+    }
   ],
   "coverage": {
     "verdict": "explained",
@@ -1456,58 +1554,283 @@
       "verified_citations": [
         "orders#2153"
       ]
+    },
+    {
+      "action_id": "A3",
+      "type": "transfer_request",
+      "action": "Draft a transfer request for 3 units of iron-folate tab from FAC-026 (42.3 km away) to cover the gap.",
+      "linked_hypothesis_ids": [
+        "H3"
+      ],
+      "source_facility": "FAC-026",
+      "units": 3,
+      "distance_km": 42.3,
+      "k": 1.0,
+      "rule": "surplus beyond 1 month of the source's 3-month average use",
+      "citations": [
+        "stock#3738",
+        "stock#3735",
+        "stock#3736",
+        "stock#3737",
+        "facilities#FAC-015",
+        "facilities#FAC-026"
+      ],
+      "evidence_basis": "FAC-026 closing 88 in 2026-03 (stock#3738) minus its 3-month average use 84.67 (stock#3735, stock#3736, stock#3737) leaves 3 units; 42.3 km from FAC-015 (facilities#FAC-015, facilities#FAC-026).",
+      "priority": "high",
+      "proposed_owner": "Sub-county pharmacist",
+      "timeframe": "within 48 hours",
+      "expected_outcome": "FAC-015 has iron-folate tab until the next delivery.",
+      "success_measure": "Transfer received and recorded in both facilities' ledgers.",
+      "risks_and_caveats": "Leaves FAC-026 with about one month of its own average use; confirm its current stock by phone first.",
+      "requires_pharmacist_approval": true,
+      "pharmacist_review_required": true,
+      "draft": "DRAFT \u2014 requires pharmacist approval before anyone is contacted.\nTransfer request: 3 units of iron-folate tab from FAC-026 to FAC-015 (42.3 km).\nRule: surplus beyond 1 month of the source's 3-month average use.\nEvidence: FAC-026 closing 88 in 2026-03 (stock#3738) minus its 3-month average use 84.67 (stock#3735, stock#3736, stock#3737) leaves 3 units; 42.3 km from FAC-015 (facilities#FAC-015, facilities#FAC-026).",
+      "verified_citations": [
+        "stock#3738",
+        "stock#3735",
+        "stock#3736",
+        "stock#3737",
+        "facilities#FAC-015",
+        "facilities#FAC-026"
+      ]
     }
   ],
+  "investigate_further": [],
   "removed_actions": [],
   "contracts": {
     "main": {
-      "id": "1793041708075-a9986683cc",
+      "contractId": "1793114096236-fff581a62a",
+      "parentId": null,
+      "traceId": "47bbda8167514c83966fcf6cc19ae46a",
       "intent": "stockout.explain",
-      "capabilities": [
-        "data.read",
-        "llm.call",
-        "memory.read",
-        "memory.write"
-      ],
-      "expires_at": "2026-10-26T19:13:28.075270+00:00",
-      "issued_at": "2026-10-26T19:08:28.075270+00:00",
-      "parent_id": null,
-      "params": {
-        "facility_id": "FAC-015",
-        "commodity": "iron-folate tab",
-        "month": "2026-03"
+      "risk": {
+        "level": "low",
+        "flags": [
+          "memory.write"
+        ],
+        "approvals": []
       },
-      "role": "pharmacist",
-      "trace_id": "f3128fe4ed214aa8bea9bcc7da3d52dc",
-      "approvals": [],
-      "registry_version": 3,
-      "policy_pack": "stockwhy-default-2",
-      "signature": "5c237fe96221462e574ddb45650883658e7c0f1806b1c6433fa3673a22337a76"
+      "scope": {
+        "capabilities": [
+          "data.read",
+          "llm.call",
+          "memory.read",
+          "memory.write"
+        ],
+        "params": {
+          "facility_id": "FAC-015",
+          "commodity": "iron-folate tab",
+          "month": "2026-03"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T15:14:56.236217+00:00",
+      "expiresAt": "2026-10-27T15:19:56.236217+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "dda3f94d285d1676bdcdb07a55035c6c0035e6a2c8aae20aab80915e5b4ddf72",
+      "signedBy": "scout"
     },
     "child": {
-      "id": "1793041708147-7432901295",
+      "contractId": "1793114096286-bce9881a9d",
+      "parentId": "1793114096236-fff581a62a",
+      "traceId": "47bbda8167514c83966fcf6cc19ae46a",
       "intent": "action.draft",
-      "capabilities": [
-        "action.draft",
-        "data.read"
-      ],
-      "expires_at": "2026-10-26T19:13:28.147018+00:00",
-      "issued_at": "2026-10-26T19:08:28.147018+00:00",
-      "parent_id": "1793041708075-a9986683cc",
-      "params": {
-        "facility_id": "FAC-015",
-        "commodity": "iron-folate tab",
-        "month": "2026-03"
+      "risk": {
+        "level": "medium",
+        "flags": [
+          "action.draft"
+        ],
+        "approvals": [
+          "pharmacist-confirm"
+        ]
       },
-      "role": "pharmacist",
-      "trace_id": "f3128fe4ed214aa8bea9bcc7da3d52dc",
-      "approvals": [
-        "pharmacist-confirm"
-      ],
-      "registry_version": 3,
-      "policy_pack": "stockwhy-default-2",
-      "signature": "d00f69712c36b50510ef36022cd11378fbe5fd7950446f7b53e8e217c4182c82"
+      "scope": {
+        "capabilities": [
+          "action.draft",
+          "data.read"
+        ],
+        "params": {
+          "facility_id": "FAC-015",
+          "commodity": "iron-folate tab",
+          "month": "2026-03"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T15:14:56.286894+00:00",
+      "expiresAt": "2026-10-27T15:19:56.286894+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "07a9808f014e2cb270aa08582917625bde7fc7475827b08ce3eb512ea225d6eb",
+      "signedBy": "scout"
     },
+    "phases": [
+      {
+        "phase": "read",
+        "contract": {
+          "contractId": "1793114096237-f14fa9b4b9",
+          "parentId": "1793114096236-fff581a62a",
+          "traceId": "47bbda8167514c83966fcf6cc19ae46a",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call",
+              "memory.read"
+            ],
+            "params": {
+              "facility_id": "FAC-015",
+              "commodity": "iron-folate tab",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.237554+00:00",
+          "expiresAt": "2026-10-27T15:19:56.237554+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "b1a1be62b474928ed43bdbb1aa3987d218f44c6d4f79ded3df5a2b9bf3a10851",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "analyse",
+        "contract": {
+          "contractId": "1793114096275-c78e0be8fe",
+          "parentId": "1793114096236-fff581a62a",
+          "traceId": "47bbda8167514c83966fcf6cc19ae46a",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "llm.call"
+            ],
+            "params": {
+              "facility_id": "FAC-015",
+              "commodity": "iron-folate tab",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.275472+00:00",
+          "expiresAt": "2026-10-27T15:19:56.275472+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "41737ae441b4179f70a332a0f463d07ea74d9da60498d17e9704cd0ef6042e81",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "investigate",
+        "contract": {
+          "contractId": "1793114096276-fe174e2cd9",
+          "parentId": "1793114096236-fff581a62a",
+          "traceId": "47bbda8167514c83966fcf6cc19ae46a",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call"
+            ],
+            "params": {
+              "facility_id": "FAC-015",
+              "commodity": "iron-folate tab",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.276989+00:00",
+          "expiresAt": "2026-10-27T15:19:56.276989+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "67898e34777914d377b98323a34825f6d8c4555e295f6df68cfef94d3eb03ad6",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "draft",
+        "contract": {
+          "contractId": "1793114096286-bce9881a9d",
+          "parentId": "1793114096236-fff581a62a",
+          "traceId": "47bbda8167514c83966fcf6cc19ae46a",
+          "intent": "action.draft",
+          "risk": {
+            "level": "medium",
+            "flags": [
+              "action.draft"
+            ],
+            "approvals": [
+              "pharmacist-confirm"
+            ]
+          },
+          "scope": {
+            "capabilities": [
+              "action.draft",
+              "data.read"
+            ],
+            "params": {
+              "facility_id": "FAC-015",
+              "commodity": "iron-folate tab",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.286894+00:00",
+          "expiresAt": "2026-10-27T15:19:56.286894+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "07a9808f014e2cb270aa08582917625bde7fc7475827b08ce3eb512ea225d6eb",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "memory",
+        "contract": {
+          "contractId": "1793114096354-2637edca0d",
+          "parentId": "1793114096236-fff581a62a",
+          "traceId": "47bbda8167514c83966fcf6cc19ae46a",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [
+              "memory.write"
+            ],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "memory.write"
+            ],
+            "params": {
+              "facility_id": "FAC-015",
+              "commodity": "iron-folate tab",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T15:14:56.354709+00:00",
+          "expiresAt": "2026-10-27T15:19:56.354709+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "cfa54ca192c5b208715e77fc35a6e84cc731e5790203f086f60715d08baf629c",
+          "signedBy": "scout"
+        }
+      }
+    ],
     "checks": 4,
     "granted": 4,
     "skipped": 0,
@@ -1547,12 +1870,36 @@
       "summary": "no injection text found"
     },
     {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096237-f14fa9b4b9 for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_recall",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793114096237-f14fa9b4b9 signature, expiry and capability verified"
+    },
+    {
       "agent": "memory",
       "action": "memory_recall",
       "target_agent": "data_reader",
       "retry_count": 0,
       "status": "ok",
-      "summary": "0 prior finding(s); prioritise none"
+      "summary": "0 prior finding(s); prioritise approved none"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "data_reader",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793114096237-f14fa9b4b9 signature, expiry and capability verified"
     },
     {
       "agent": "data_reader",
@@ -1561,6 +1908,14 @@
       "retry_count": 0,
       "status": "ok",
       "summary": "Profile complete. Warnings: 0"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096275-c78e0be8fe for stockout.explain (['llm.call'])"
     },
     {
       "agent": "data_analyst",
@@ -1585,6 +1940,14 @@
       "retry_count": 0,
       "status": "ok",
       "summary": "wave 1: ['H2', 'H3']; held back: ['H1', 'H4', 'H5', 'H6', 'H7']; H2: computed flags -> supported; H3: computed flags -> supported"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096276-fe174e2cd9 for stockout.explain (['data.read', 'llm.call'])"
     },
     {
       "agent": "evidence_investigator",
@@ -1627,12 +1990,36 @@
       "summary": "explained: verified supported cause(s): H3, H2"
     },
     {
-      "agent": "orchestrator",
-      "action": "child_contract",
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096286-bce9881a9d for action.draft (['action.draft', 'data.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
       "target_agent": "action_strategist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793041708147-7432901295 for action.draft (['action.draft', 'data.read'])"
+      "summary": "contract 1793114096286-bce9881a9d signature, expiry and capability verified"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "transfer_candidates",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "4 facility(ies) with surplus; nearest FAC-026 42.3 km, closing 88 - avg 84.67 -> 3 units (stock#3738, stock#3735, stock#3736, stock#3737, facilities#FAC-015, facilities#FAC-026)"
+    },
+    {
+      "agent": "evaluator",
+      "action": "verify_transfer",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "6 row(s) re-read; units and distance recomputed and match"
     },
     {
       "agent": "action_strategist",
@@ -1640,7 +2027,23 @@
       "target_agent": "pharmacist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "Most likely: payment_arrears (H3): County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (thres. 2 action(s) drafted for pharmacist approval"
+      "summary": "Most likely: payment_arrears (H3): County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (thres. 3 action(s) drafted for pharmacist approval"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793114096354-2637edca0d for stockout.explain (['memory.write'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_store",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793114096354-2637edca0d signature, expiry and capability verified"
     },
     {
       "agent": "memory",
@@ -1648,7 +2051,7 @@
       "target_agent": "pharmacist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "stored f12acf7a37d0466fbcd6f23a9f046ab7 as pending_approval"
+      "summary": "stored 89b1f6fd9de947c498030b9f85889088 as pending_approval"
     },
     {
       "agent": "orchestrator",
@@ -1672,25 +2075,25 @@
       "step": "memory_recall",
       "capability": "memory.read",
       "result": "granted",
-      "contract_id": "1793041708075-a9986683cc"
+      "contract_id": "1793114096237-f14fa9b4b9"
     },
     {
       "step": "data_reader",
       "capability": "data.read",
       "result": "granted",
-      "contract_id": "1793041708075-a9986683cc"
+      "contract_id": "1793114096237-f14fa9b4b9"
     },
     {
       "step": "action_strategist",
       "capability": "action.draft",
       "result": "granted",
-      "contract_id": "1793041708147-7432901295"
+      "contract_id": "1793114096286-bce9881a9d"
     },
     {
       "step": "memory_store",
       "capability": "memory.write",
       "result": "granted",
-      "contract_id": "1793041708075-a9986683cc"
+      "contract_id": "1793114096354-2637edca0d"
     }
   ]
 }
