@@ -32,7 +32,7 @@ from engines.hmem import CaseMemory  # noqa: E402
 from llm_client import llm_enabled  # noqa: E402
 import orchestrator  # noqa: E402
 
-StockWhy = getattr(orchestrator, "StockWhy", None) or getattr(orchestrator, "StockyWhy")
+StockWhy = orchestrator.StockWhy
 
 
 

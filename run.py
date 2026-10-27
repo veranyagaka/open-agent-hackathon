@@ -492,7 +492,7 @@ def execute_request(payload: dict, interactive: bool = False, log_file: str = No
 
     if agent is None:
         import orchestrator
-        agent_cls = getattr(orchestrator, "StockWhy", None) or getattr(orchestrator, "StockyWhy")
+        agent_cls = orchestrator.StockWhy
         agent = agent_cls()
     _reset_llm_budget()
     result = agent.run(

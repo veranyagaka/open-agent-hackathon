@@ -18,7 +18,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import orchestrator  # noqa: E402
 from orchestrator import StockWhy  # noqa: E402
-StockyWhy = StockWhy
 from tests.test_evaluator import FAC, MED, MONTH, make_dataset, make_evidence  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
@@ -165,7 +164,7 @@ def env(tmp_path, monkeypatch):
 
 
 def _run(agent=None, log_file="t.jsonl", **kw):
-    agent = agent or StockyWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=FakeMemory(),
+    agent = agent or StockWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=FakeMemory(),
                                loader=lambda d: make_dataset())
     return agent.run(dataset_dir=kw.pop("dataset_dir", SAMPLE_DIR), facility_id=FAC, commodity=MED,
                      month=MONTH, log_file=log_file, interactive=kw.pop("interactive", False), **kw)
@@ -254,7 +253,7 @@ class TestLoop:
                              "computed_closing": 0.0, "discrepancy": -30.0},
         )
         fake = Agents(evidence=evidence, verdicts={"H4": "supported", "H5": "supported"}).install(monkeypatch)
-        agent = StockyWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=FakeMemory(),
+        agent = StockWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=FakeMemory(),
                           loader=lambda d: make_dataset(closing=30))
         result = _run(agent)
         h4 = next(e for e in result["steps"]["evidence_investigator"]["evaluations"]
@@ -272,7 +271,7 @@ class TestLoop:
         evidence = make_evidence(h1_late_order={"late": False, "delivery_slipped": False})
         fake = Agents(evidence=evidence, verdicts={}, signals={"H4": "weak"}).install(monkeypatch)
         memory = FakeMemory()
-        agent = StockyWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=memory,
+        agent = StockWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=memory,
                           loader=lambda d: make_dataset())
         result = _run(agent)
         assert [t["id"] for t in fake.investigate_calls[0]] == ["H4"]
@@ -290,7 +289,7 @@ class TestLoop:
         fake = Agents().install(monkeypatch)
         memory = FakeMemory(prior=[{"cause": "H6 expiry", "status": "approved"},
                                    {"cause": "H3 payment_arrears", "status": "rejected"}])
-        agent = StockyWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=memory,
+        agent = StockWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=memory,
                           loader=lambda d: make_dataset())
         result = _run(agent)
         assert result["wave_plan"]["wave1"][0] == "H6"
@@ -315,7 +314,7 @@ class TestGateAndContracts:
     @pytest.mark.parametrize("decision", ["clarify", "refuse", "block"])
     def test_non_allow_short_circuits(self, env, monkeypatch, decision):
         fake = Agents().install(monkeypatch)
-        agent = StockyWhy(scout=FakeScout(decision, reason="Which month?"), memory=FakeMemory(),
+        agent = StockWhy(scout=FakeScout(decision, reason="Which month?"), memory=FakeMemory(),
                           loader=lambda d: make_dataset())
         result = _run(agent)
         assert result["status"] == decision
@@ -329,14 +328,14 @@ class TestGateAndContracts:
     def test_gate_params_bind_the_run(self, env, monkeypatch):
         Agents().install(monkeypatch)
         scout = FakeScout(contract=FakeContract(ALL_CAPS), params={"facility_id": FAC, "commodity": MED})
-        agent = StockyWhy(scout=scout, memory=False, loader=lambda d: make_dataset())
+        agent = StockWhy(scout=scout, memory=False, loader=lambda d: make_dataset())
         result = agent.run(SAMPLE_DIR, "fac 9", "magnesium", MONTH, log_file="t.jsonl", interactive=False)
         assert result["facility_id"] == FAC and result["commodity"] == MED
         assert scout.requests[0]["role"] == "pharmacist"
 
     def test_missing_data_read_capability(self, env, monkeypatch):
         fake = Agents().install(monkeypatch)
-        agent = StockyWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS - {"data.read"})),
+        agent = StockWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS - {"data.read"})),
                           memory=FakeMemory(), loader=lambda d: make_dataset())
         result = _run(agent)
         assert result["status"] == "error"
@@ -347,7 +346,7 @@ class TestGateAndContracts:
     def test_strategist_needs_action_draft_in_child_contract(self, env, monkeypatch):
         fake = Agents().install(monkeypatch)
         contract = FakeContract(ALL_CAPS, child_caps={"action.draft": {"data.read"}})
-        agent = StockyWhy(scout=FakeScout(contract=contract), memory=FakeMemory(),
+        agent = StockWhy(scout=FakeScout(contract=contract), memory=FakeMemory(),
                           loader=lambda d: make_dataset())
         result = _run(agent)
         assert result["status"] == "error" and "action.draft" in result["error"]
@@ -357,7 +356,7 @@ class TestGateAndContracts:
     def test_child_contract_used_when_granted(self, env, monkeypatch):
         Agents().install(monkeypatch)
         contract = FakeContract(ALL_CAPS)
-        agent = StockyWhy(scout=FakeScout(contract=contract), memory=FakeMemory(),
+        agent = StockWhy(scout=FakeScout(contract=contract), memory=FakeMemory(),
                           loader=lambda d: make_dataset())
         result = _run(agent)
         assert result["status"] == "complete"
@@ -373,7 +372,7 @@ class TestGateAndContracts:
 
     def test_engines_absent_are_logged_as_skipped(self, env, monkeypatch):
         Agents().install(monkeypatch)
-        agent = StockyWhy(scout=False, memory=False, loader=lambda d: make_dataset())
+        agent = StockWhy(scout=False, memory=False, loader=lambda d: make_dataset())
         result = _run(agent)
         assert result["status"] == "complete"
         statuses = {r["action"]: r["status"] for r in _log(env)}
@@ -422,7 +421,7 @@ class TestLogsErrorsReview:
         answers = iter(["a", "y"])
         monkeypatch.setattr("builtins.input", lambda *a, **k: next(answers))
         memory = FakeMemory()
-        agent = StockyWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=memory,
+        agent = StockWhy(scout=FakeScout(contract=FakeContract(ALL_CAPS)), memory=memory,
                           loader=lambda d: make_dataset())
         result = _run(agent, interactive=True)
         assert len(result["approved_actions"]) == 1
@@ -435,7 +434,7 @@ class TestLogsErrorsReview:
         def boom(d):
             raise FileNotFoundError("Dataset directory not found: /nope\nsecond line")
 
-        agent = StockyWhy(scout=False, memory=False, loader=boom)
+        agent = StockWhy(scout=False, memory=False, loader=boom)
         result = _run(agent, dataset_dir="/nope")
         assert result["status"] == "error"
         assert result["error"] == "Data Reader failed: Dataset directory not found: /nope"
@@ -462,7 +461,7 @@ class TestLogsErrorsReview:
         monkeypatch.setenv("SAMPLE_MODE", "true")
         Agents().install(monkeypatch)
         seen = []
-        agent = StockyWhy(scout=False, memory=False,
+        agent = StockWhy(scout=False, memory=False,
                           loader=lambda d: seen.append(d) or make_dataset())
         result = agent.run(None, FAC, MED, MONTH, log_file="t.jsonl", interactive=False)
         assert result["dataset_dir"].replace("\\", "/").endswith("data/sample")

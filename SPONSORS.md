@@ -1,4 +1,4 @@
-# Sponsor technology in StockyWhy
+# Sponsor technology in StockWhy
 
 What each sponsor does in the build, where the code is, and how to see it working.
 

@@ -401,7 +401,7 @@ class StockWhy:
                                             {"memory.read", "data.read", "llm.call"})
                 self._require(ctx, read_contract, "memory.read", "memory_recall")
                 prior = list(_call_compat(self.memory.recall, facility_id, commodity, limit=5,
-                                          dataset_key=dataset_key) or [])
+                                          dataset_key=dataset_key, month=month) or [])
                 # Never recall the month being asked about (that would be the answer).
                 prior = [p for p in prior if not (isinstance(p, dict) and p.get("month") == month)]
                 memory_priority = self._memory_priority(prior)
@@ -1369,7 +1369,3 @@ class StockWhy:
         print(f"\n  Summary: {len(approved)} accepted, {len(rejected)} rejected, {len(pending)} pending."
               + (f" Memory decision: {decision}." if decision else ""))
         return result
-
-
-# Older name, kept so existing scripts and imports keep working.
-StockyWhy = StockWhy

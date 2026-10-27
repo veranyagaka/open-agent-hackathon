@@ -24,7 +24,7 @@ os.environ.pop("STOCKWHY_USE_LLM", None)
 from engines.hmem import CaseMemory  # noqa: E402
 import orchestrator  # noqa: E402
 
-StockWhy = getattr(orchestrator, "StockWhy", None) or getattr(orchestrator, "StockyWhy")
+StockWhy = orchestrator.StockWhy
 from run import execute_request  # noqa: E402
 
 
