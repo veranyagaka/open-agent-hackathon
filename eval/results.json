@@ -1,12 +1,12 @@
 {
   "summary": {
     "cases": 16,
-    "top1_accuracy": 0.938,
-    "contributing_cause_recall": "2/4",
-    "evaluator_revisions": 0,
+    "top1_accuracy": 1.0,
+    "contributing_cause_recall": "4/4",
+    "evaluator_revisions": 2,
     "cases_needing_second_wave": 0,
     "escalations": 0,
-    "mean_wave1_investigators": 1.2,
+    "mean_wave1_investigators": 1.6,
     "llm": "off (rule-based reasoning)"
   },
   "cases": [
@@ -73,9 +73,9 @@
       ],
       "top1": true,
       "contributing_found": null,
-      "wave1": 1,
+      "wave1": 2,
       "second_wave": false,
-      "revisions": 0,
+      "revisions": 1,
       "escalated": false,
       "status": "complete"
     },
@@ -120,11 +120,12 @@
       "also": "demand_surge",
       "predicted": "late_order",
       "supported": [
-        "late_order"
+        "late_order",
+        "demand_surge"
       ],
       "top1": true,
-      "contributing_found": false,
-      "wave1": 1,
+      "contributing_found": true,
+      "wave1": 2,
       "second_wave": false,
       "revisions": 0,
       "escalated": false,
@@ -194,9 +195,9 @@
       ],
       "top1": true,
       "contributing_found": null,
-      "wave1": 2,
+      "wave1": 3,
       "second_wave": false,
-      "revisions": 0,
+      "revisions": 1,
       "escalated": false,
       "status": "complete"
     },
@@ -242,11 +243,12 @@
       "also": "demand_surge",
       "predicted": "late_order",
       "supported": [
-        "late_order"
+        "late_order",
+        "demand_surge"
       ],
       "top1": true,
-      "contributing_found": false,
-      "wave1": 1,
+      "contributing_found": true,
+      "wave1": 2,
       "second_wave": false,
       "revisions": 0,
       "escalated": false,
@@ -257,13 +259,14 @@
       "noise": "2.5",
       "expected": "demand_surge",
       "also": "",
-      "predicted": "supplier_underfill",
+      "predicted": "demand_surge",
       "supported": [
+        "demand_surge",
         "supplier_underfill"
       ],
-      "top1": false,
+      "top1": true,
       "contributing_found": null,
-      "wave1": 1,
+      "wave1": 2,
       "second_wave": false,
       "revisions": 0,
       "escalated": false,

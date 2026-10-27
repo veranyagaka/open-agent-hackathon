@@ -24,7 +24,6 @@ target_agent, model, confidence, retry_count and status.
 """
 
 import inspect
-import math
 import os
 import re
 import sys
