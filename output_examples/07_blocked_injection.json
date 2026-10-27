@@ -1,6 +1,6 @@
 {
   "status": "block",
-  "run_id": "1a20b857",
+  "run_id": "17d5ebdd",
   "message": "Blocked by Scout guard (instruction-override, exfiltration). StockWhy will not follow instructions embedded in a request or reveal keys, prompts or configuration.",
   "error": "Scout Intent blocked the request: Blocked by Scout guard (instruction-override, exfiltration). StockWhy will not follow instructions embedded in a request or reveal keys, prompts or configuration.",
   "hint": "Ask why a facility ran out of a medicine in a given month.",
@@ -11,7 +11,7 @@
     "reason": "Blocked by Scout guard (instruction-override, exfiltration). StockWhy will not follow instructions embedded in a request or reveal keys, prompts or configuration.",
     "trace": {
       "engine": "scout-intent",
-      "trace_id": "c083ba04a888477baa1ea243c0b548cc",
+      "trace_id": "38915cd7dd50409ebfa01e2dfb48133c",
       "registry_version": 3,
       "policy_pack": "stockwhy-default-2",
       "stage2": "skipped",
@@ -50,7 +50,7 @@
         }
       ],
       "band": "reject",
-      "latency_ms": 0.29
+      "latency_ms": 0.3
     },
     "params": {},
     "suggestions": {}

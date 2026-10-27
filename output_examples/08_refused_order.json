@@ -1,6 +1,6 @@
 {
   "status": "refuse",
-  "run_id": "3de7a63b",
+  "run_id": "a3e3c13a",
   "message": "StockWhy cannot send or place orders (no capability 'order.send' exists). It drafts actions for a pharmacist to approve and send through the normal channel.",
   "error": "Scout Intent refused the request: StockWhy cannot send or place orders (no capability 'order.send' exists). It drafts actions for a pharmacist to approve and send through the normal channel.",
   "hint": "Ask why a facility ran out of a medicine in a given month.",
@@ -11,7 +11,7 @@
     "reason": "StockWhy cannot send or place orders (no capability 'order.send' exists). It drafts actions for a pharmacist to approve and send through the normal channel.",
     "trace": {
       "engine": "scout-intent",
-      "trace_id": "f5e8c4717c414046889d98314759df4e",
+      "trace_id": "58063c1e5e144259a59b762bc0ee33c9",
       "registry_version": 3,
       "policy_pack": "stockwhy-default-2",
       "stage2": "skipped",
@@ -41,7 +41,7 @@
         }
       ],
       "band": "high",
-      "latency_ms": 0.44
+      "latency_ms": 0.25
     },
     "params": {},
     "suggestions": {}

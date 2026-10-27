@@ -556,6 +556,8 @@ def _print_results(result: dict) -> None:
         cites = [str(c) for c in (result.get("citations") or [])]
         if cites:
             print(f"  Rows : {', '.join(cites)}")
+        if result.get("hint"):
+            print(f"  Hint : {result['hint']}")
         print(f"\n  Log: {result.get('log_file', 'N/A')}")
         print("="*60)
         return

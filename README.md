@@ -246,9 +246,9 @@ python scripts/evaluate.py         # back-test on the 16 planted cases → eval/
 | `test_run.py` | 14 | question parsing (Swahili, conflicts), `--case`, HTTP server hardening, `/api/review`, UTF-8 output |
 | `test_zetaris_client.py` | 5 | Zetaris row shapes (headerless, upper-case), optional facility columns, timeout and 5xx retry |
 | `test_world_model.py` | 3 | World Model snapshots: stable ids with provenance, append-only and idempotent store, entities without a source rejected |
-| `test_agent_loop.py` | 15 | transfer draft computed and re-verified, H4 record-check revision, cross-facility citation rejection, no-stock-out month, LLM-failure fallback, signed child contracts per phase |
+| `test_agent_loop.py` | 16 | transfer draft computed and re-verified, H4 record-check revision, cross-facility citation rejection, no-stock-out month (only on a balanced row), LLM-failure fallback, signed child contracts per phase |
 
-338 tests in total.
+339 tests in total.
 
 Back-test (offline, rule-based): **16 of 16** planted cases get the right primary cause (8/8 normal, 8/8 noisy); contributing causes 4/4.
 The rules were written while looking at these same cases, so treat this as a regression check, not proof of
