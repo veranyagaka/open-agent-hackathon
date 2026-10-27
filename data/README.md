@@ -10,7 +10,7 @@ in `DATA_DICTIONARY.md`; real public sources we can cite are in `PUBLIC_DATA_SOU
 | `sample/zetaris_register.sql` | Registers that Postgres as a Zetaris datasource. Fill in the placeholders locally and never commit real values. |
 | `cases/normal/case_01..08/` | Eight stock-outs, one per cause type, normal noise. Same file layout as `sample/`. |
 | `cases/noisy/case_01..08/` | The same eight cause types with much messier data. |
-| `cases/questions.csv` | The question for each case: dataset, facility, medicine, month. This is the agent's input. |
+| `cases/questions.csv` | The question for each case: `dataset`, `facility_id`, `commodity`, `month`, and `noise_level` (how messy that case's data is: 1.0 for the normal set, 2.5 for the noisy set). This is the agent's input. |
 
 The true causes are in `../eval/answer_key.csv`. **The agent must never read that file.** Only the evaluation script
 does.
