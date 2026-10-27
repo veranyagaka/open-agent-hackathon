@@ -10,16 +10,22 @@ vectors (tests/fixtures/hmem_vectors.json, run by tests/test_engine_hmem.py).
 
 In StockWhy it is case memory (CaseMemory, at the bottom of this file): each finding is stored with the row IDs
 behind it and the run that produced it, recalled before the next investigation of the same facility and medicine,
-and the pharmacist's approve/reject is fed back as H-MEM `helpful` / `wrong` feedback. Every mutation is written
+and the pharmacist's approved/rejected/partial decision is fed back as H-MEM `helpful` / `wrong` / `not_helpful`
+feedback. Every mutation is written
 to an append-only JSONL ledger. Embeddings are a dependency-free hashed bag of words; the spec allows any embedder.
 Pure standard library, no network.
 """
 
+import contextlib
 import hashlib
 import json
 import math
+import os
 import re
+import tempfile
+import time
 import uuid
+import warnings
 from copy import deepcopy
 from pathlib import Path
 
@@ -341,29 +347,85 @@ class HMEM:
 # StockWhy case memory
 # ---------------------------------------------------------------------------
 
-DECISIONS = {"approve": ("helpful", "approved"), "reject": ("wrong", "rejected")}
+# decision -> (H-MEM feedback kind, stored status). "approve"/"reject" are accepted as older spellings.
+DECISIONS = {
+    "approved": ("helpful", "approved"),
+    "rejected": ("wrong", "rejected"),
+    "partial": ("not_helpful", "partial"),
+}
+_DECISION_ALIASES = {"approve": "approved", "reject": "rejected"}
+_STATUS_TAGS = ("pending_approval", "approved", "rejected", "partial")
+
+
+@contextlib.contextmanager
+def _file_lock(lock_path: Path):
+    """Exclusive inter-process lock: fcntl on POSIX, msvcrt on Windows."""
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(lock_path, "a+b") as fh:
+        if os.name == "nt":  # pragma: no cover - Windows only
+            import msvcrt
+            fh.seek(0)
+            while True:
+                try:
+                    msvcrt.locking(fh.fileno(), msvcrt.LK_LOCK, 1)
+                    break
+                except OSError:
+                    time.sleep(0.05)
+            try:
+                yield
+            finally:
+                fh.seek(0)
+                msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
 
 
 class CaseMemory:
     """
     Persistent H-MEM case memory for StockWhy findings.
 
-        recall(facility_id, commodity, limit=5) -> prior findings, newest first
-        store(finding, citations, run_id)       -> memory id (status "pending_approval")
-        feedback(memory_id, "approve"|"reject", note="") -> updated finding
+        recall(facility_id, commodity, limit=5, *, dataset_key=None, month=None)
+            -> prior findings, newest month first; the asked-about month is left
+               out, one record per (month, cause), rejected findings last
+        store(finding, citations, run_id, *, dataset_key=None)
+            -> memory id; upserts on (namespace, month, cause), status "pending_approval"
+        feedback(memory_id, "approved"|"rejected"|"partial", note="", *, action_decisions=None)
+            -> updated finding ("approve"/"reject" still accepted)
 
-    Records live in `path` (JSON); the append-only audit ledger sits next to it as `<stem>.ledger.jsonl`.
+    The namespace is facility|commodity, plus |dataset_key when one is given (the
+    dataset path relative to the repo, forward slashes), so findings from one
+    dataset are not recalled for another.
+
+    Records live in `path` (JSON); the append-only audit ledger sits next to it as
+    `<stem>.ledger.jsonl`. Every write takes a file lock, reloads the file, applies
+    the change and replaces the file atomically, so two processes (the CLI and the
+    web server) do not lose each other's writes. A corrupt file is moved aside to
+    `<name>.bad` and memory starts empty, with a warning.
     """
 
     def __init__(self, path: str | Path = "logs/memory/hmem.json", clock=None):
         self.path = Path(path)
         self.ledger_path = self.path.with_name(self.path.stem + ".ledger.jsonl")
+        self.lock_path = self.path.with_name(self.path.name + ".lock")
+        self.warnings: list[str] = []
         self.h = HMEM(clock=clock, ledger_path=self.ledger_path)
-        self.h.load(self.path)
+        with self._locked():
+            self._reload()
+
+    @staticmethod
+    def namespace(facility_id: str, commodity: str, dataset_key: str | None = None) -> str:
+        base = f"{str(facility_id or '').strip()}|{str(commodity or '').strip()}"
+        key = str(dataset_key or "").strip().replace("\\", "/").rstrip("/")
+        return f"{base}|{key}" if key else base
 
     # -- writes -------------------------------------------------------------------
-    def store(self, finding: dict, citations: list, run_id: str) -> str:
-        """Store a finding as a pending memory. `finding` needs facility_id, commodity, month and a cause."""
+    def store(self, finding: dict, citations: list, run_id: str, *, dataset_key: str | None = None) -> str:
+        """Store (or update) a finding as a pending memory. Needs facility_id, commodity, month and a cause."""
         finding = dict(finding or {})
         facility = str(finding.get("facility_id") or "").strip()
         commodity = str(finding.get("commodity") or "").strip()
@@ -380,61 +442,104 @@ class CaseMemory:
         if not citations:
             raise ValueError("a finding without cited evidence rows is not stored")
 
-        now = self.h.clock()
+        namespace = self.namespace(facility, commodity, dataset_key)
         confidence = finding.get("confidence")
         confidence = float(confidence) if isinstance(confidence, (int, float)) and 0 <= confidence <= 1 else 0.6
         content = f"{facility} {commodity} {month}: {cause}. {summary}".strip()
-        m = self.h.add({
-            "content": content,
-            "source": f"stockwhy-run:{run_id}",
-            "type": "factual",
-            "layer": "working",
-            "domain": "stockout",
-            "namespace": f"{facility}|{commodity}",
-            "entities": [facility, commodity, month, cause],
-            "tags": ["pending_approval", cause],
-            "confidence": confidence,
-            "provenance": {"origin": "stockwhy", "run_id": run_id, "citations": citations, "learnedAt": now,
-                           "label": f"StockWhy run {run_id}"},
-        })
-        m.update({"facility_id": facility, "commodity": commodity, "month": month, "cause": cause,
-                  "summary": summary, "citations": citations, "status": "pending_approval"})
-        self._save()
+        with self._locked():
+            self._reload()
+            now = self.h.clock()
+            provenance = {"origin": "stockwhy", "run_id": run_id, "citations": citations, "learnedAt": now,
+                          "label": f"StockWhy run {run_id}"}
+            existing = [m for m in self.h.store.all() if m.get("namespace") == namespace
+                        and m.get("month") == month and m.get("cause") == cause]
+            if existing:
+                m = max(existing, key=lambda r: r["timestamp"])
+                previous = {"status": m.get("status"), "run_id": (m.get("provenance") or {}).get("run_id")}
+                m.update({"content": content, "embedding": embed(content), "summary": summary,
+                          "citations": citations, "provenance": provenance, "source": f"stockwhy-run:{run_id}",
+                          "status": "pending_approval", "lastAccessed": now})
+                m["tags"] = [t for t in m["tags"] if t not in _STATUS_TAGS] + ["pending_approval"]
+                self.h.ledger.log(m["id"], "update", actor="stockwhy", previous=previous,
+                                  new={"status": "pending_approval", "run_id": run_id}, reason="upsert")
+            else:
+                m = self.h.add({
+                    "content": content,
+                    "source": f"stockwhy-run:{run_id}",
+                    "type": "factual",
+                    "layer": "working",
+                    "domain": "stockout",
+                    "namespace": namespace,
+                    "entities": [facility, commodity, month, cause],
+                    "tags": ["pending_approval", cause],
+                    "confidence": confidence,
+                    "provenance": provenance,
+                })
+                m.update({"facility_id": facility, "commodity": commodity, "month": month, "cause": cause,
+                          "summary": summary, "citations": citations, "status": "pending_approval"})
+                if dataset_key:
+                    m["dataset_key"] = str(dataset_key).replace("\\", "/").rstrip("/")
+            self._save()
         return m["id"]
 
-    def feedback(self, memory_id: str, decision: str, note: str = "") -> dict:
-        """Record the pharmacist's decision: approve -> H-MEM `helpful`, reject -> `wrong` (adds review tag)."""
+    def feedback(self, memory_id: str, decision: str, note: str = "", *, action_decisions: dict | None = None) -> dict:
+        """
+        Record the pharmacist's decision: approved -> H-MEM `helpful`, rejected -> `wrong`
+        (adds the review tag), partial -> `not_helpful`. action_decisions maps action ids to
+        accepted/rejected and is kept with the record.
+        """
+        decision = _DECISION_ALIASES.get(decision, decision)
         if decision not in DECISIONS:
-            raise ValueError(f"decision must be 'approve' or 'reject', not {decision!r}")
-        m = self.h.store.get(memory_id)
-        if m is None:
-            raise KeyError(memory_id)
-        kind, status = DECISIONS[decision]
-        self.h.feedback(memory_id, kind, actor="pharmacist")
-        previous = m.get("status")
-        m["status"] = status
-        m["tags"] = [t for t in m["tags"] if t not in ("pending_approval", "approved", "rejected")] + [status]
-        if note:
-            m["note"] = note
-        self.h.ledger.log(memory_id, "update", actor="pharmacist", previous={"status": previous},
-                          new={"status": status}, decision=decision, note=note)
-        self._save()
+            raise ValueError(f"decision must be 'approved', 'rejected' or 'partial', not {decision!r}")
+        with self._locked():
+            self._reload()
+            m = self.h.store.get(memory_id)
+            if m is None:
+                raise KeyError(memory_id)
+            kind, status = DECISIONS[decision]
+            self.h.feedback(memory_id, kind, actor="pharmacist")
+            previous = m.get("status")
+            m["status"] = status
+            m["tags"] = [t for t in m["tags"] if t not in _STATUS_TAGS] + [status]
+            if note:
+                m["note"] = note
+            if action_decisions:
+                m["action_decisions"] = {str(k): str(v) for k, v in dict(action_decisions).items()}
+            self.h.ledger.log(memory_id, "update", actor="pharmacist", previous={"status": previous},
+                              new={"status": status}, decision=decision, note=note)
+            self._save()
         return self._view(m)
 
     # -- reads -------------------------------------------------------------------
-    def recall(self, facility_id: str, commodity: str, limit: int = 5) -> list:
-        """Prior findings for this facility and medicine, newest month first (ties: most recently stored)."""
-        namespace = f"{facility_id}|{commodity}"
-        hits = [m for m in self.h.store.all() if m.get("namespace") == namespace and m.get("cause")]
-        hits.sort(key=lambda m: (m.get("month", ""), m["timestamp"]), reverse=True)
-        hits = hits[: max(0, int(limit))]
-        now = self.h.clock()
-        for m in hits:
-            m["lastAccessed"] = now
-            m["accessCount"] += 1
-            self.h.ledger.log(m["id"], "read", actor="stockwhy", reason="recall")
-        if hits:
-            self._save()
+    def recall(self, facility_id: str, commodity: str, limit: int = 5, *,
+               dataset_key: str | None = None, month: str | None = None) -> list:
+        """
+        Prior findings for this facility and medicine (and dataset, when dataset_key is given):
+        newest month first (ties: most recently stored), rejected findings after the rest,
+        the month being asked about left out, one record per (month, cause).
+        """
+        namespace = self.namespace(facility_id, commodity, dataset_key)
+        exclude = str(month or "").strip()
+        with self._locked():
+            self._reload()
+            hits = [m for m in self.h.store.all() if m.get("namespace") == namespace and m.get("cause")
+                    and not (exclude and m.get("month") == exclude)]
+            hits.sort(key=lambda m: (m.get("month", ""), m["timestamp"]), reverse=True)
+            seen, unique = set(), []
+            for m in hits:
+                key = (m.get("month"), m.get("cause"))
+                if key not in seen:
+                    seen.add(key)
+                    unique.append(m)
+            unique.sort(key=lambda m: m.get("status") == "rejected")  # stable: keeps newest-first
+            hits = unique[: max(0, int(limit))]
+            now = self.h.clock()
+            for m in hits:
+                m["lastAccessed"] = now
+                m["accessCount"] += 1
+                self.h.ledger.log(m["id"], "read", actor="stockwhy", reason="recall")
+            if hits:
+                self._save()
         return [self._view(m) for m in hits]
 
     def get(self, memory_id: str) -> dict | None:
@@ -445,8 +550,13 @@ class CaseMemory:
         """Ledger entries from disk (all processes), optionally for one memory."""
         if not self.ledger_path.exists():
             return []
-        entries = [json.loads(line) for line in self.ledger_path.read_text(encoding="utf-8").splitlines() if line]
-        return [e for e in entries if memory_id is None or e["memoryId"] == memory_id]
+        entries = []
+        for line in self.ledger_path.read_text(encoding="utf-8").splitlines():
+            try:
+                entries.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+        return [e for e in entries if memory_id is None or e.get("memoryId") == memory_id]
 
     # -- internals -----------------------------------------------------------------
     @staticmethod
@@ -455,7 +565,42 @@ class CaseMemory:
                 "month": m.get("month"), "cause": m.get("cause"), "summary": m.get("summary", ""),
                 "citations": list(m.get("citations") or []), "status": m.get("status"),
                 "confidence": m["confidence"], "note": m.get("note", ""), "provenance": m.get("provenance"),
-                "stored_at": m["timestamp"]}
+                "stored_at": m["timestamp"], "dataset_key": m.get("dataset_key"),
+                "action_decisions": dict(m.get("action_decisions") or {})}
+
+    def _locked(self):
+        return _file_lock(self.lock_path)
+
+    def _reload(self) -> None:
+        """Merge the file into memory (the file wins for ids it holds). Call with the lock held."""
+        if not self.path.exists():
+            return
+        try:
+            records = json.loads(self.path.read_text(encoding="utf-8"))
+            if not isinstance(records, list) or not all(isinstance(r, dict) and "id" in r and "content" in r
+                                                        for r in records):
+                raise ValueError("expected a JSON list of memory records")
+        except (ValueError, UnicodeDecodeError) as exc:
+            bad = self.path.with_name(self.path.name + ".bad")
+            os.replace(self.path, bad)
+            message = f"case memory file {self.path} was unreadable ({str(exc)[:80]}); moved to {bad.name}, starting empty"
+            self.warnings.append(message)
+            warnings.warn(message, RuntimeWarning, stacklevel=3)
+            return
+        for m in records:
+            m["embedding"] = embed(m["content"])
+            self.h.store.put(m)
 
     def _save(self) -> None:
-        self.h.save(self.path)
+        """Atomic write: temp file in the same folder, then os.replace. Call with the lock held."""
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        records = [{k: v for k, v in m.items() if k != "embedding"} for m in self.h.store.all()]
+        fd, tmp = tempfile.mkstemp(prefix=self.path.name + ".", suffix=".tmp", dir=str(self.path.parent))
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(json.dumps(records, indent=1, default=str))
+            os.replace(tmp, self.path)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp)
+            raise

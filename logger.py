@@ -1,7 +1,7 @@
 """
 logger.py
 
-Append-only JSONL event logger for StockyWhy pipeline steps.
+Append-only JSONL event logger for StockWhy pipeline steps.
 Each call writes one JSON object per line to <logs dir>/<log_file>.
 The logs directory is STOCKWHY_LOGS_DIR (default "logs"), read on every call.
 """
@@ -41,6 +41,8 @@ def log_event(
     status: str = "ok",
     target_agent: str = None,
     retry_count: int = 0,
+    requested_model: str = None,
+    served_model: str = None,
     **kwargs,
 ) -> None:
     """
@@ -59,6 +61,8 @@ def log_event(
     status         : "ok", "warning", "error"
     target_agent   : agent this event is addressed to (delegation/critique)
     retry_count    : how many retries this step needed
+    requested_model: model/lane asked for (e.g. "meterless/deep"); recorded when given
+    served_model   : model the provider reported serving; recorded when given
     **kwargs       : any extra fields to include in the record
     """
     directory = _ensure_logs_dir()
@@ -76,6 +80,10 @@ def log_event(
         "retry_count": retry_count,
         "status": status,
     }
+    if requested_model:
+        record["requested_model"] = requested_model
+    if served_model:
+        record["served_model"] = served_model
     record.update(kwargs)
 
     log_path = directory / log_file

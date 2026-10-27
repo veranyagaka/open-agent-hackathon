@@ -13,7 +13,7 @@ BANNER = r"""
 
 def show_help():
     print(BANNER)
-    print("StockyWhy — Investigate drug stockouts in health facilities.")
+    print("StockWhy — Investigate drug stockouts in health facilities.")
     print("Agents investigate, an Evaluator re-checks every cited row, and only")
     print("verified causes reach the pharmacist, who approves any action.")
 
@@ -41,7 +41,9 @@ def show_help():
     print("  --commodity NAME       Medicine name, e.g. 'ORS sachet'")
     print("  --month YYYY-MM        Reporting month, e.g. 2026-03")
     print("  --case PATH            Run a case from data/cases/ or questions.csv")
-    print("  --serve                Start HTTP server on port 8000 (/run endpoint)")
+    print("  --serve                Start the web UI and HTTP API (/run, /api/review)")
+    print("  --host HOST            Address for --serve (default 127.0.0.1)")
+    print("  --port PORT            Port for --serve (default 8000)")
     print("  --no-review            Skip pharmacist review step")
     print("  --output PATH          Write full JSON result to file")
     print("  --log-file NAME        JSONL log filename (written to logs/)")
@@ -65,6 +67,7 @@ def show_help():
     print("  GET  /                 Web page")
     print("  GET  /health, /api/facilities, /api/commodities, /api/cases")
     print("  POST /run              Same JSON as --input; returns the same result")
+    print("  POST /api/review       {memory_id, decision: approved|rejected|partial, note?}")
 
     print("\nEXIT CODES")
     print("  0  complete, clarify, refuse, block or insufficient evidence")
@@ -93,6 +96,6 @@ def show_help():
 
     print("\nSAFETY")
     print("  All actions require pharmacist/supply-chain officer review.")
-    print("  StockyWhy NEVER executes orders, transfers, or payments autonomously.")
+    print("  StockWhy NEVER executes orders, transfers, or payments autonomously.")
 
-    print("\nStockyWhy | Open Agent Hackathon 2026")
+    print("\nStockWhy | Open Agent Hackathon 2026")

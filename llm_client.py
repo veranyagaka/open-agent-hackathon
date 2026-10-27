@@ -29,19 +29,31 @@ Nemotron reasons before it answers. With a small token budget it spends the
 whole budget reasoning and returns content=null with finish_reason="length".
 We therefore send a generous max_tokens and retry once with double the budget
 when the answer is empty. HTTP 429/5xx get a bounded backoff (max 2 retries).
-Every HTTP request counts against a per-process budget
+Every HTTP request counts against a per-run budget
 (STOCKWHY_MAX_LLM_CALLS, default 30) to respect free-endpoint rate limits;
-reset_call_budget() starts a fresh budget for a new run.
+reset_call_budget() starts a fresh budget and is called at the start of
+every run (orchestrator, run.py CLI and each /run request). One call to
+ask_agent() also has an overall deadline (STOCKWHY_LLM_DEADLINE_S, default
+300 s) covering retries and backoff.
+
+Answers may start with a <think>...</think> block (or an unclosed leading
+<think>); it is stripped before the JSON object is recovered.
 
 Offline mode
 ------------
 llm_enabled() is the one switch: STOCKWHY_USE_LLM if set, otherwise
-"not SAMPLE_MODE". When it is False the agents run their rule-based logic on
-the computed evidence and never call this module's network code.
+"not SAMPLE_MODE". SAMPLE_MODE=true always forces it off (judges' offline run), even when
+STOCKWHY_USE_LLM=true. When it is False the agents run their rule-based
+logic on the computed evidence and never call this module's network code.
 
 Every answer carries metadata the orchestrator can log:
   _provider, _requested_model, _served_model, _lane, _retries, _latency_ms,
-  _finish_reason, _reasoning_chars, _max_tokens, _produced_by
+  _finish_reason, _reasoning_chars, _max_tokens, _produced_by,
+  _route_headers (meterless-* / x-* response headers)
+and the same facts without the underscore: "model" (the served model as the
+response reported it, or "unreported"), "requested_model", "route_headers".
+_served_model / _produced_by fall back to the requested model so traces
+still name a lane when the response omits "model".
 """
 
 import json
@@ -64,6 +76,9 @@ RULE_BASED = "rule-based"
 DEFAULT_BASE_URL = "http://127.0.0.1:8088/v1"
 DEFAULT_MAX_TOKENS = 4096
 DEFAULT_MAX_CALLS = 30
+DEFAULT_DEADLINE_S = 300.0
+PLACEHOLDER_TOKENS = {"replace_with_your_runtime_token"}
+UNREPORTED = "unreported"
 MAX_HTTP_RETRIES = 2
 _TRUE = {"1", "true", "yes", "on"}
 
@@ -79,7 +94,7 @@ class LLMError(RuntimeError):
 
 
 class LLMCallCapReached(LLMError):
-    """The per-process LLM call budget is spent."""
+    """The per-run LLM call budget is spent."""
 
 
 def _setting(*names, default=None):
@@ -103,13 +118,15 @@ def llm_enabled() -> bool:
     """
     The single on/off switch for LLM calls.
 
-    STOCKWHY_USE_LLM wins when set (true/false); otherwise the LLM is on
-    unless SAMPLE_MODE=true (judges' offline run).
+    SAMPLE_MODE=true always means off (judges' offline run). Otherwise
+    STOCKWHY_USE_LLM wins when set (true/false), and the default is on.
     """
+    if os.getenv("SAMPLE_MODE", "false").strip().lower() in _TRUE:
+        return False
     explicit = os.getenv("STOCKWHY_USE_LLM")
     if explicit is not None and explicit.strip():
         return explicit.strip().lower() in _TRUE
-    return os.getenv("SAMPLE_MODE", "false").strip().lower() not in _TRUE
+    return True
 
 
 def max_llm_calls() -> int:
@@ -143,6 +160,36 @@ def _take_call() -> None:
         _calls_made += 1
 
 
+def base_url() -> str:
+    """METERLESS_BASE_URL normalised to <scheme://host[:port]>/v1 (never /v1/v1)."""
+    raw = _setting("METERLESS_BASE_URL", default=DEFAULT_BASE_URL).rstrip("/")
+    for suffix in ("/chat/completions", "/chat"):
+        if raw.endswith(suffix):
+            raw = raw[: -len(suffix)].rstrip("/")
+    while raw.endswith("/v1/v1"):
+        raw = raw[:-3]
+    if not raw.endswith("/v1"):
+        raw += "/v1"
+    return raw
+
+
+def _deadline_seconds() -> float:
+    try:
+        return max(1.0, float(_setting("STOCKWHY_LLM_DEADLINE_S", default=DEFAULT_DEADLINE_S)))
+    except ValueError:
+        return DEFAULT_DEADLINE_S
+
+
+def _route_headers(headers) -> dict:
+    """Routing facts Nightshift reports in response headers (meterless-* and x-*)."""
+    out = {}
+    for key, value in (headers.items() if headers else []):
+        low = key.lower()
+        if low.startswith("meterless-") or low.startswith("x-"):
+            out[low] = _one_line(value, 200)
+    return out
+
+
 def model_for_lane(lane: str = "deep") -> str:
     lane = (lane or "deep").strip().lower()
     if lane == "deep":
@@ -171,10 +218,11 @@ def _backoff_seconds(attempt: int, retry_after) -> float:
     return min(base * (2 ** attempt), 20.0)
 
 
-def _post(url: str, body: dict, headers: dict) -> tuple:
+def _post(url: str, body: dict, headers: dict, deadline: float = None) -> tuple:
     """
     POST the request, retrying HTTP 429/5xx up to MAX_HTTP_RETRIES times.
-    Returns (response_json, http_retries).
+    `deadline` is a time.monotonic() value no request or backoff may pass.
+    Returns (response_json, http_retries, route_headers).
     """
     try:
         timeout = float(_setting("STOCKWHY_LLM_TIMEOUT_S", default="180"))
@@ -183,17 +231,31 @@ def _post(url: str, body: dict, headers: dict) -> tuple:
     data = json.dumps(body).encode("utf-8")
     retries = 0
     while True:
+        remaining = None if deadline is None else deadline - time.monotonic()
+        if remaining is not None and remaining <= 0:
+            raise LLMError(
+                f"Nightshift call deadline passed ({_deadline_seconds():.0f}s, "
+                "STOCKWHY_LLM_DEADLINE_S); giving up on this step."
+            )
         _take_call()
         request = urllib.request.Request(url, data=data, headers=headers, method="POST")
         try:
-            with urllib.request.urlopen(request, timeout=timeout) as response:
+            with urllib.request.urlopen(
+                request, timeout=timeout if remaining is None else max(1.0, min(timeout, remaining))
+            ) as response:
                 raw = response.read().decode("utf-8")
+                route = _route_headers(response.headers)
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             transient = exc.code == 429 or 500 <= exc.code < 600
             if transient and retries < MAX_HTTP_RETRIES:
                 retry_after = exc.headers.get("Retry-After") if exc.headers else None
                 wait = _backoff_seconds(retries, retry_after)
+                if deadline is not None and time.monotonic() + wait > deadline:
+                    raise LLMError(
+                        f"Nightshift returned HTTP {exc.code} and the retry would pass the "
+                        f"{_deadline_seconds():.0f}s deadline (STOCKWHY_LLM_DEADLINE_S)."
+                    ) from None
                 log.warning("nightshift HTTP %s; retry %d in %.1fs", exc.code, retries + 1, wait)
                 retries += 1
                 _sleep(wait)
@@ -213,11 +275,14 @@ def _post(url: str, body: dict, headers: dict) -> tuple:
                 "timeout. Retry; StockWhy does not switch providers silently."
             ) from None
         try:
-            return json.loads(raw), retries
+            parsed = json.loads(raw)
         except json.JSONDecodeError:
             raise LLMError(
                 f"Nightshift sent a non-JSON response: {_one_line(raw, 120)!r}"
             ) from None
+        if not isinstance(parsed, dict):
+            raise LLMError(f"Nightshift sent a {type(parsed).__name__}, not a JSON object.")
+        return parsed, retries, route
 
 
 # ---------------------------------------------------------------------------
@@ -225,27 +290,59 @@ def _post(url: str, body: dict, headers: dict) -> tuple:
 # ---------------------------------------------------------------------------
 
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.IGNORECASE | re.DOTALL)
+_THINK = re.compile(r"<think>.*?</think>", re.IGNORECASE | re.DOTALL)
 
 
-def parse_json_object(content: str, served_model: str = "?") -> dict:
-    """Recover one JSON object from a model answer (fences or prose allowed)."""
-    text = content.strip()
-    candidates = [text]
-    candidates += [m.group(1).strip() for m in _FENCE.finditer(text)]
-    start, end = text.find("{"), text.rfind("}")
-    if 0 <= start < end:
-        candidates.append(text[start:end + 1])
+def strip_think(text: str) -> str:
+    """Drop <think>...</think> blocks, and an unclosed leading <think> up to the first '{'."""
+    text = _THINK.sub("", text)
+    stripped = text.lstrip()
+    if stripped.lower().startswith("<think>"):
+        brace = stripped.find("{")
+        text = stripped[brace:] if brace >= 0 else ""
+    return text.replace("</think>", "").strip()
 
-    for candidate in candidates:
-        try:
-            parsed = json.loads(candidate)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(parsed, dict):
-            return parsed
+
+def parse_json_object(content, served_model: str = "?") -> dict:
+    """Recover one JSON object from a model answer (think blocks, fences or prose allowed)."""
+    if not isinstance(content, str):
+        raise LLMError(
+            f"Nightshift answer from {served_model} was a {type(content).__name__}, not text."
+        )
+    text = strip_think(content)
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        parsed = None
+    if parsed is not None and not isinstance(parsed, dict):
         raise LLMError(
             f"Expected a JSON object from {served_model}, received {type(parsed).__name__}."
         )
+    if isinstance(parsed, dict):
+        return parsed
+    for block in _FENCE.finditer(text):
+        try:
+            fenced = json.loads(block.group(1).strip())
+        except json.JSONDecodeError:
+            continue
+        if isinstance(fenced, dict):
+            return fenced
+
+    # Decode at every "{" and keep the last object that parses (the answer
+    # usually follows any prose or echoed braces).
+    decoder = json.JSONDecoder()
+    last = None
+    pos = text.find("{")
+    while pos >= 0:
+        try:
+            obj, _end = decoder.raw_decode(text, pos)
+        except json.JSONDecodeError:
+            obj = None
+        if isinstance(obj, dict):
+            last = obj
+        pos = text.find("{", pos + 1)
+    if last is not None:
+        return last
     raise LLMError(
         f"Nightshift answer from {served_model} was not valid JSON; "
         f"answer begins: {_one_line(text, 120)!r}"
@@ -268,7 +365,6 @@ def ask_agent(
 
     Raises LLMError (one-line message) on any failure.
     """
-    base_url = _setting("METERLESS_BASE_URL", default=DEFAULT_BASE_URL)
     token = _setting("METERLESS_RUNTIME_TOKEN")
     model = model_for_lane(lane)
     if not token:
@@ -276,12 +372,17 @@ def ask_agent(
             "METERLESS_RUNTIME_TOKEN is not set. Copy it from Nightshift into .env, "
             "or run offline with SAMPLE_MODE=true."
         )
+    if token in PLACEHOLDER_TOKENS:
+        raise LLMError(
+            "METERLESS_RUNTIME_TOKEN still holds the .env.example placeholder. Paste the "
+            "real token from Nightshift, or run offline with SAMPLE_MODE=true."
+        )
     try:
         budget = int(max_tokens or _setting("STOCKWHY_LLM_MAX_TOKENS", default=DEFAULT_MAX_TOKENS))
     except ValueError:
         budget = DEFAULT_MAX_TOKENS
 
-    url = base_url.rstrip("/") + "/chat/completions"
+    url = base_url() + "/chat/completions"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -302,11 +403,13 @@ def ask_agent(
     ]
 
     started = time.monotonic()
+    deadline = started + _deadline_seconds()
+    route = {}
     retries = 0
     empty_retry_used = False
     while True:
         body = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": budget}
-        result, http_retries = _post(url, body, headers)
+        result, http_retries, route = _post(url, body, headers, deadline)
         retries += http_retries
 
         choices = result.get("choices") or []
@@ -316,7 +419,9 @@ def ask_agent(
         message = choice.get("message") or {}
         content = message.get("content")
         finish_reason = choice.get("finish_reason")
-        served = result.get("model") or model
+        reported = result.get("model")
+        reported = reported.strip() if isinstance(reported, str) and reported.strip() else None
+        served = reported or model
         reasoning_chars = len(message.get("reasoning_content") or "")
 
         log.info(
@@ -325,7 +430,11 @@ def ask_agent(
             lane, model, served, finish_reason, reasoning_chars, budget,
         )
 
-        if content and content.strip():
+        if content is not None and not isinstance(content, str):
+            raise LLMError(
+                f"Nightshift answer from {served} was a {type(content).__name__}, not text."
+            )
+        if content and strip_think(content):
             break
         if empty_retry_used:
             raise LLMError(
@@ -349,4 +458,8 @@ def ask_agent(
     parsed["_reasoning_chars"] = reasoning_chars
     parsed["_max_tokens"] = budget
     parsed["_produced_by"] = served
+    parsed["_route_headers"] = route
+    parsed["model"] = reported or UNREPORTED
+    parsed["requested_model"] = model
+    parsed["route_headers"] = route
     return parsed

@@ -52,6 +52,9 @@ TABLE_COLUMNS = {
     "payments": ["id", "month", "county_arrears_flag", "amount_owed_kes"],
     "facilities": ["facility_id", "lat", "lon"],
 }
+# Facility columns some datasets carry (real names and locations). Selected
+# when the Zetaris table has them; the loader falls back to the required ones.
+FACILITY_OPTIONAL_COLUMNS = ["facility_name", "facility_type", "county", "sub_county", "osm_id"]
 TABLE_ORDER_BY = {"stock": "id", "orders": "id", "payments": "id",
                   "facilities": "facility_id"}
 WEB_NOTE_COLUMNS = ["id", "month", "commodity", "source", "title", "url"]
@@ -187,8 +190,18 @@ def _coerce_dataset(dataset: dict) -> dict:
     return dataset
 
 
-def _zetaris_rows(response: dict) -> list:
-    """Normalize common Zetaris SQL-editor row response shapes."""
+def _lower_keys(rows: list) -> list:
+    """Column names compared case-insensitively: Zetaris/Spark may upper-case them."""
+    return [{str(k).lower(): v for k, v in row.items()} for row in rows]
+
+
+def _zetaris_rows(response: dict, expected: Optional[list] = None) -> list:
+    """
+    Normalize common Zetaris SQL-editor row response shapes to a list of
+    dicts with lower-case keys. *expected* is the explicit column list the
+    SELECT asked for; positional rows without column metadata are zipped
+    against it.
+    """
     if not isinstance(response, dict):
         raise RuntimeError("Unexpected Zetaris response: expected a JSON object")
     data = response.get("data")
@@ -196,7 +209,7 @@ def _zetaris_rows(response: dict) -> list:
         if not data:
             return []
         if all(isinstance(row, dict) for row in data):
-            return data
+            return _lower_keys(data)
         # Zetaris SQL-editor commonly returns positional rows in ``data``
         # and the matching column names in ``headers``. Other deployments or
         # endpoints may use ``columns`` / ``columnNames`` instead.
@@ -223,12 +236,19 @@ def _zetaris_rows(response: dict) -> list:
                     "Zetaris row width does not match returned column metadata: "
                     f"{len(names)} columns, row widths {[len(row) for row in data[:3]]}"
                 )
-            return [dict(zip(names, row)) for row in data]
+            return _lower_keys([dict(zip(names, row)) for row in data])
+        if expected and all(isinstance(row, (list, tuple)) for row in data):
+            if any(len(row) != len(expected) for row in data):
+                raise RuntimeError(
+                    "Zetaris returned rows without column names whose width does not match "
+                    f"the {len(expected)} selected columns (row widths {[len(r) for r in data[:3]]})"
+                )
+            return [dict(zip([c.lower() for c in expected], row)) for row in data]
     for key in ("rows", "results"):
         rows = response.get(key)
         if isinstance(rows, list):
             if not rows or all(isinstance(row, dict) for row in rows):
-                return rows
+                return _lower_keys(rows)
     if data is None:
         raise RuntimeError(
             "Zetaris SQL response did not contain a 'data' row list; "
@@ -319,10 +339,15 @@ class _ZetarisReader:
         self.page_size = page_size or ZETARIS_PAGE_SIZE
         self.queries: list = []
 
-    def rows(self, sql: str, limit: Optional[int] = None) -> list:
+    def rows(self, sql: str, limit: Optional[int] = None, columns: Optional[list] = None) -> list:
         start = time.monotonic()
-        response = self._run_sql(sql, limit=limit or self.page_size)
-        rows = _zetaris_rows(response)
+        try:
+            response = self._run_sql(sql, limit=limit or self.page_size)
+            rows = _zetaris_rows(response, columns)
+        except Exception as exc:
+            self.queries.append({"sql": sql, "rows": 0, "error": str(exc)[:200],
+                                 "ms": round((time.monotonic() - start) * 1000, 1)})
+            raise
         self.queries.append({
             "sql": sql,
             "rows": len(rows),
@@ -330,7 +355,7 @@ class _ZetarisReader:
         })
         return rows
 
-    def table(self, sql_base: str, order_by: str) -> list:
+    def table(self, sql_base: str, order_by: str, columns: Optional[list] = None) -> list:
         """Read every row of *sql_base*, a page of ``page_size`` rows per call."""
         rows: list = []
         offset = 0
@@ -338,7 +363,7 @@ class _ZetarisReader:
             sql = f"{sql_base} ORDER BY {order_by} LIMIT {self.page_size}"
             if offset:
                 sql += f" OFFSET {offset}"
-            page = self.rows(sql)
+            page = self.rows(sql, columns=columns)
             rows.extend(page)
             if len(page) < self.page_size:
                 return rows
@@ -353,7 +378,8 @@ def _load_zetaris_web_notes(reader: _ZetarisReader, dataset_dir: Path,
     web_schema = _schema_name("ZETARIS_WEB_SCHEMA", "stockwhy_web")
     try:
         rows = reader.table(
-            f"SELECT {', '.join(WEB_NOTE_COLUMNS)} FROM {web_schema}.web_notes", "id"
+            f"SELECT {', '.join(WEB_NOTE_COLUMNS)} FROM {web_schema}.web_notes", "id",
+            WEB_NOTE_COLUMNS,
         )
         notes = [
             {k: (None if row.get(k) is None else str(row.get(k))) for k in WEB_NOTE_COLUMNS}
@@ -398,9 +424,23 @@ def load_zetaris_dataset(
     warnings: list = []
     scoped = facility_id is not None or commodity is not None
 
+    def select(table: str, columns: Optional[list] = None, where: str = "") -> list:
+        columns = columns or TABLE_COLUMNS[table]
+        sql = f"SELECT {', '.join(columns)} FROM {schema}.{table}"
+        if where:
+            sql += f" WHERE {where}"
+        return reader.table(sql, TABLE_ORDER_BY[table], columns)
+
     def full(table: str) -> pd.DataFrame:
-        rows = reader.table(f"SELECT * FROM {schema}.{table}", TABLE_ORDER_BY[table])
-        return _to_frame(rows, TABLE_COLUMNS[table], table)
+        return _to_frame(select(table), TABLE_COLUMNS[table], table)
+
+    def facilities() -> pd.DataFrame:
+        # Names and locations when the table has them, else the required columns.
+        try:
+            rows = select("facilities", TABLE_COLUMNS["facilities"] + FACILITY_OPTIONAL_COLUMNS)
+        except RuntimeError:
+            rows = select("facilities")
+        return _to_frame(rows, TABLE_COLUMNS["facilities"], "facilities")
 
     def empty(table: str) -> pd.DataFrame:
         return _to_frame([], TABLE_COLUMNS[table])
@@ -412,16 +452,16 @@ def load_zetaris_dataset(
         com_lit = sql_literal(commodity, "commodity")
         known = {
             str(r.get("commodity"))
-            for r in reader.rows(f"SELECT DISTINCT commodity FROM {schema}.stock", limit=1000)
+            for r in reader.rows(f"SELECT DISTINCT commodity FROM {schema}.stock", limit=1000,
+                                 columns=["commodity"])
         }
         if commodity not in known:
             # Same outcome as the CSV path: no rows for an unknown commodity.
             warnings.append(f"Commodity {commodity!r} is not in {schema}.stock")
             stock, orders = empty("stock"), empty("orders")
         else:
-            stock = _to_frame(reader.table(
-                f"SELECT * FROM {schema}.stock WHERE facility_id = {fac_lit} "
-                f"AND commodity = {com_lit}", "id"), TABLE_COLUMNS["stock"], "stock")
+            stock = _to_frame(select("stock", where=f"facility_id = {fac_lit} AND commodity = {com_lit}"),
+                              TABLE_COLUMNS["stock"], "stock")
             order_filter = f"commodity = {com_lit}"
             if month is not None:
                 month_lit = sql_literal(month, "month")
@@ -434,9 +474,7 @@ def load_zetaris_dataset(
                     f" AND (month IN ({prev2_lit}, {prev_lit}, {month_lit})"
                     f" OR delivery_month IN ({prev_lit}, {month_lit}))"
                 )
-            orders = _to_frame(reader.table(
-                f"SELECT * FROM {schema}.orders WHERE {order_filter}", "id"),
-                TABLE_COLUMNS["orders"], "orders")
+            orders = _to_frame(select("orders", where=order_filter), TABLE_COLUMNS["orders"], "orders")
     else:
         stock, orders = full("stock"), full("orders")
 
@@ -444,7 +482,7 @@ def load_zetaris_dataset(
         "stock": stock,
         "orders": orders,
         "payments": full("payments"),
-        "facilities": full("facilities"),
+        "facilities": facilities(),
     }
     required_rows = ("payments", "facilities") if scoped else tuple(TABLE_COLUMNS)
     for table in TABLE_COLUMNS:

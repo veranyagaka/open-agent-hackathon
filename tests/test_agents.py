@@ -489,7 +489,7 @@ class TestLLMSwitch:
         from llm_client import llm_enabled
         monkeypatch.setenv("SAMPLE_MODE", "true")
         monkeypatch.setenv("STOCKWHY_USE_LLM", "true")
-        assert llm_enabled() is True
+        assert llm_enabled() is False  # SAMPLE_MODE=true always means offline
         monkeypatch.setenv("SAMPLE_MODE", "false")
         monkeypatch.setenv("STOCKWHY_USE_LLM", "0")
         assert llm_enabled() is False

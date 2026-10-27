@@ -222,3 +222,101 @@ def test_unreachable_is_clear_error(nightshift, monkeypatch):
 def test_unknown_lane_rejected(nightshift):
     with pytest.raises(ValueError):
         ask_agent("s", {}, lane="turbo")
+
+
+# ---------------------------------------------------------------------------
+# Think blocks, model reporting, URL normalisation, deadline, switch
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("content", [
+    '<think>I weigh {H1} and {"a": 2} first.</think>\n{"x": 1}',
+    '<think>still thinking about {braces} {"x": 0}\n{"x": 1}',
+    'Prose {not json} then {"y": {"z": 2}} and finally {"x": 1}',
+])
+def test_think_blocks_and_last_object(nightshift, content):
+    with nightshift(completion(content)):
+        assert ask_agent("s", {})["x"] == 1
+
+
+def test_think_only_answer_counts_as_empty(nightshift):
+    with nightshift(completion("<think>only reasoning</think>"), completion('{"x": 1}')) as fake:
+        result = ask_agent("s", {}, max_tokens=500)
+    assert result["x"] == 1 and len(fake.requests) == 2
+
+
+def test_non_string_content_is_llm_error(nightshift):
+    with nightshift(completion(["not", "text"])):
+        with pytest.raises(LLMError, match="not text"):
+            ask_agent("s", {})
+
+
+def test_parse_json_object_rejects_non_string():
+    with pytest.raises(LLMError):
+        llm_client.parse_json_object({"x": 1})
+
+
+def test_model_reporting_and_route_headers(nightshift):
+    reply = (200, {"model": "nvidia/nemotron-x",
+                   "choices": [{"message": {"content": '{"ok": 1}'}, "finish_reason": "stop"}]},
+             {"meterless-route": "deep->nvidia", "X-Request-Id": "abc", "Server-Extra": "no"})
+    with nightshift(reply):
+        result = ask_agent("s", {})
+    assert result["model"] == "nvidia/nemotron-x"
+    assert result["requested_model"] == "meterless/deep"
+    assert result["route_headers"]["meterless-route"] == "deep->nvidia"
+    assert result["route_headers"]["x-request-id"] == "abc"
+    assert "server-extra" not in result["route_headers"]
+
+
+def test_missing_model_is_unreported(nightshift):
+    reply = (200, {"choices": [{"message": {"content": '{"ok": 1}'}, "finish_reason": "stop"}]}, None)
+    with nightshift(reply):
+        result = ask_agent("s", {})
+    assert result["model"] == "unreported"
+    assert result["requested_model"] == "meterless/deep"
+
+
+@pytest.mark.parametrize("raw, want", [
+    ("http://h:8088", "http://h:8088/v1"),
+    ("http://h:8088/", "http://h:8088/v1"),
+    ("http://h:8088/v1", "http://h:8088/v1"),
+    ("http://h:8088/v1/", "http://h:8088/v1"),
+    ("http://h:8088/v1/v1", "http://h:8088/v1"),
+    ("http://h:8088/v1/chat/completions", "http://h:8088/v1"),
+])
+def test_base_url_normalised(monkeypatch, raw, want):
+    monkeypatch.setenv("METERLESS_BASE_URL", raw)
+    assert llm_client.base_url() == want
+
+
+def test_base_url_without_v1_reaches_v1_path(nightshift, monkeypatch):
+    with nightshift(completion('{"ok": 1}')) as fake:
+        monkeypatch.setenv("METERLESS_BASE_URL", fake.base_url[: -len("/v1")])
+        ask_agent("s", {})
+    assert fake.requests[0]["path"] == "/v1/chat/completions"
+
+
+def test_placeholder_token_rejected_before_sending(nightshift, monkeypatch):
+    monkeypatch.setenv("METERLESS_RUNTIME_TOKEN", "replace_with_your_runtime_token")
+    with nightshift() as fake:
+        with pytest.raises(LLMError, match="placeholder"):
+            ask_agent("s", {})
+    assert fake.requests == []
+
+
+def test_deadline_stops_retries(nightshift, monkeypatch):
+    monkeypatch.setenv("STOCKWHY_LLM_DEADLINE_S", "1")
+    with nightshift((503, {"error": "busy"}, {"Retry-After": "5"})) as fake:
+        with pytest.raises(LLMError, match="deadline"):
+            ask_agent("s", {})
+    assert len(fake.requests) == 1
+
+
+def test_sample_mode_forces_llm_off(monkeypatch):
+    monkeypatch.setenv("SAMPLE_MODE", "true")
+    monkeypatch.setenv("STOCKWHY_USE_LLM", "true")
+    assert llm_client.llm_enabled() is False
+    monkeypatch.setenv("SAMPLE_MODE", "false")
+    assert llm_client.llm_enabled() is True
+    monkeypatch.setenv("STOCKWHY_USE_LLM", "false")
+    assert llm_client.llm_enabled() is False

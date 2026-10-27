@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StockyWhy — Drug Stockout Investigation</title>
+  <title>StockWhy — Drug Stockout Investigation</title>
   <style>
     /* ── Reset & base ─────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -355,6 +355,17 @@
     .action-status-badge.edited   { background: var(--amber-lt); color: var(--amber); }
     .action-status-badge.rejected { background: var(--red-lt);   color: var(--red); }
 
+    .review-bar { margin-top: 14px; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--gray-50); }
+    .review-bar textarea { width: 100%; min-height: 48px; margin: 6px 0; font: inherit; font-size: 12px; padding: 6px; }
+    .review-bar .review-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .review-msg { font-size: 12px; margin-top: 6px; }
+    .review-msg.ok  { color: var(--green); }
+    .review-msg.err { color: var(--red); }
+    .transfer-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px;
+                    background: var(--amber-lt); color: var(--amber); }
+    .skipped-list { margin-top: 10px; font-size: 12px; color: var(--gray-600); }
+    .skipped-list li { margin: 2px 0 2px 16px; }
+
     .edit-form { margin-top: 10px; }
     .edit-form textarea {
       width: 100%;
@@ -475,7 +486,7 @@
 
 <!-- ── Top navigation bar ───────────────────────────────────────────── -->
 <header class="topbar">
-  <span class="topbar-logo">StockyWhy</span>
+  <span class="topbar-logo">StockWhy</span>
   <span class="topbar-sub">Drug Stockout Investigation System</span>
   <span class="topbar-spacer"></span>
   <span class="topbar-badge">KEMSA Demonstration</span>
@@ -616,6 +627,18 @@
         <div class="card-body">
           <div class="action-summary-bar" id="action-summary-bar"></div>
           <div class="action-list mt-8" id="action-list"></div>
+          <div id="further-list"></div>
+          <div class="review-bar" id="review-bar">
+            <div class="si-label">Pharmacist review of this finding</div>
+            <div class="text-muted" style="font-size:12px">Is the top cause correct? Your decision is saved in case memory
+              and shapes how this finding is recalled next time. Mixed action decisions are saved as "partial".</div>
+            <textarea id="review-note" maxlength="500" placeholder="Optional note (max 500 characters)"></textarea>
+            <div class="review-buttons">
+              <button class="btn-sm btn-accept" id="btn-review-approve" onclick="submitReview('approved')">✓ Approve finding</button>
+              <button class="btn-sm btn-reject" id="btn-review-reject" onclick="submitReview('rejected')">✗ Reject finding</button>
+            </div>
+            <div class="review-msg" id="review-msg"></div>
+          </div>
         </div>
       </div>
 
@@ -636,7 +659,7 @@
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════
-   StockyWhy Frontend — vanilla JS, no dependencies
+   StockWhy Frontend — vanilla JS, no dependencies
    Connects to the backend HTTP API running on the same origin.
    ═══════════════════════════════════════════════════════════════════════ */
 
@@ -644,6 +667,7 @@
 const state = {
   result: null,
   actionStatuses: {}, // action_id → { status: 'accepted'|'edited'|'rejected', note: '' }
+  cases: [],          // presets from /api/cases (buttons refer to them by index)
 };
 
 // ── Bootstrap ──────────────────────────────────────────────────────────
@@ -668,7 +692,7 @@ async function loadFacilities() {
     const data = await res.json();
     const sel = document.getElementById('sel-facility');
     sel.innerHTML = data.facilities.map(f =>
-      `<option value="${f}">${f}</option>`
+      `<option value="${esc(f)}">${esc(f)}</option>`
     ).join('');
   } catch (e) {
     document.getElementById('sel-facility').innerHTML = '<option value="FAC-011">FAC-011</option>';
@@ -681,7 +705,7 @@ async function loadCommodities() {
     const data = await res.json();
     const sel = document.getElementById('sel-commodity');
     sel.innerHTML = data.commodities.map(c =>
-      `<option value="${c}">${c}</option>`
+      `<option value="${esc(c)}">${esc(c)}</option>`
     ).join('');
   } catch (e) {
     document.getElementById('sel-commodity').innerHTML =
@@ -694,11 +718,12 @@ async function loadPresets() {
     const res = await fetch('/api/cases');
     const data = await res.json();
     const ul = document.getElementById('preset-list');
-    ul.innerHTML = data.cases.map(c => `
+    state.cases = Array.isArray(data.cases) ? data.cases : [];
+    ul.innerHTML = state.cases.map((c, i) => `
       <li>
-        <button onclick='fillPreset(${JSON.stringify(c)})'>
-          <strong>${c.facility_id}</strong> — ${c.commodity} (${c.month})
-          <span style="color:var(--gray-400);margin-left:4px">${c.dataset.split('/').slice(-2).join('/')}</span>
+        <button onclick="fillPreset(state.cases[${i}])">
+          <strong>${esc(c.facility_id)}</strong> — ${esc(c.commodity)} (${esc(c.month)})
+          <span style="color:var(--gray-400);margin-left:4px">${esc(String(c.dataset || '').split('/').slice(-2).join('/'))}</span>
         </button>
       </li>
     `).join('');
@@ -710,7 +735,15 @@ async function loadPresets() {
 
 // ── Preset fill ────────────────────────────────────────────────────────
 function fillPreset(c) {
-  document.getElementById('sel-dataset').value = c.dataset;
+  if (!c) return;
+  const ds = document.getElementById('sel-dataset');
+  if (![...ds.options].some(o => o.value === c.dataset)) {
+    const opt = document.createElement('option');
+    opt.value = c.dataset;
+    opt.textContent = c.dataset;   // textContent: never parsed as HTML
+    ds.appendChild(opt);
+  }
+  ds.value = c.dataset;
   document.getElementById('inp-month').value   = c.month;
   setSelectValue('sel-facility',  c.facility_id);
   setSelectValue('sel-commodity', c.commodity);
@@ -774,8 +807,12 @@ async function runInvestigation() {
 
     state.result = result;
     renderResults(result);
-    setStatus('done', '✓',
-      `Investigation complete — ${result.run_id} — Most likely: ${truncate(result.most_likely_cause, 80)}`);
+    if (result.status === 'no_stockout') {
+      setStatus('done', '✓', `No stock-out — ${result.run_id} — ${truncate(result.summary || '', 100)}`);
+    } else {
+      setStatus('done', '✓',
+        `Investigation complete — ${result.run_id} — Most likely: ${truncate(result.most_likely_cause, 80)}`);
+    }
 
   } catch (err) {
     setStatus('error', '✗', `Connection error: ${err.message}. Is the server running?`);
@@ -791,10 +828,12 @@ function renderResults(r) {
   document.getElementById('empty-state').classList.add('hidden');
 
   renderSummary(r);
-  renderRankedCauses(r.ranked_hypotheses || []);
+  renderRankedCauses(r.ranked_hypotheses || [], r.hypotheses_not_investigated || []);
   renderEvidence(r);
   renderDecision(r);
   renderActions(r.actions || []);
+  renderFurther(r);
+  renderReviewBar(r);
   renderGaps(r);
 }
 
@@ -805,13 +844,13 @@ function renderSummary(r) {
   const profile = (r.steps?.data_reader?._profile) || {};
   const stockRec = (profile.stock_record || [])[0] || {};
   const stockoutDays = stockRec.reported_stockout_days ?? '—';
-  const hasStockout = stockoutDays > 0;
+  const hasStockout = r.status === 'no_stockout' ? false : stockoutDays > 0;
 
   const grid = document.getElementById('summary-grid');
   grid.innerHTML = `
     <div class="summary-item">
       <div class="si-label">Facility</div>
-      <div class="si-value">${esc(r.facility_id)}</div>
+      <div class="si-value">${esc(facilityLabel(r))}</div>
     </div>
     <div class="summary-item">
       <div class="si-label">Medicine</div>
@@ -846,7 +885,16 @@ function renderSummary(r) {
 }
 
 // ── 2. Ranked causes ───────────────────────────────────────────────────
-function renderRankedCauses(hypotheses) {
+function renderSkipped(skipped) {
+  if (!Array.isArray(skipped) || !skipped.length) return '';
+  return `<div class="skipped-list"><div class="si-label">Not investigated (the computed checks already settled them)</div>
+    <ul>${skipped.map(h => `<li><strong>${esc(h.id)}</strong> ${esc(String(h.name || '').replace(/_/g, ' '))}
+      — ${esc(h.computed_verdict)}${(h.rows || []).length
+        ? ` <span class="monospace text-muted">(${(h.rows || []).slice(0, 6).map(esc).join(', ')})</span>` : ''}</li>`).join('')}
+    </ul></div>`;
+}
+
+function renderRankedCauses(hypotheses, skipped) {
   const NAMES = {
     late_order: 'Late Order', supplier_underfill: 'Supplier Underfill',
     payment_arrears: 'Payment Arrears', demand_surge: 'Demand Surge',
@@ -856,7 +904,7 @@ function renderRankedCauses(hypotheses) {
 
   const container = document.getElementById('hypothesis-list');
   if (!hypotheses.length) {
-    container.innerHTML = '<em class="text-muted">No hypothesis data available.</em>';
+    container.innerHTML = '<em class="text-muted">No hypothesis data available.</em>' + renderSkipped(skipped);
     return;
   }
 
@@ -865,16 +913,16 @@ function renderRankedCauses(hypotheses) {
     const isTop = i === 0;
     return `
       <div class="hyp-row ${isTop ? 'top' : ''}">
-        <span class="likelihood-pill ${h.likelihood}">${h.likelihood}</span>
+        <span class="likelihood-pill ${esc(h.likelihood)}">${esc(h.likelihood)}</span>
         <div class="hyp-name">
           ${esc(name)}
           <span>${esc(h.summary)}</span>
         </div>
         <span class="monospace" style="color:var(--gray-400)">${esc(h.hypothesis_id)}</span>
-        <span class="verdict-pill ${h.verdict}">${h.verdict}</span>
+        <span class="verdict-pill ${esc(h.verdict)}">${esc(h.verdict)}</span>
       </div>
     `;
-  }).join('');
+  }).join('') + renderSkipped(skipped);
 }
 
 // ── 3. Evidence reviewed ───────────────────────────────────────────────
@@ -949,7 +997,7 @@ function renderEvidence(r) {
         <dt>Arrears in reporting month</dt><dd>${h3.arrears_in_month ? '⚠ Yes' : '✓ No'}</dd>
         ${h3.amount_owed_kes != null ? `<dt>Amount owed</dt><dd>${fmtKES(h3.amount_owed_kes)}</dd>` : ''}
         ${h3.major_arrears != null ? `<dt>Major arrears (≥30M KES)</dt><dd>${h3.major_arrears ? '⚠ Yes' : 'No'}</dd>` : ''}
-        <dt>Payment records span</dt><dd>${paymentMonths[0]} → ${paymentMonths[paymentMonths.length-1]} (${paymentMonths.length} months)</dd>
+        <dt>Payment records span</dt><dd>${esc(paymentMonths[0])} → ${esc(paymentMonths[paymentMonths.length-1])} (${paymentMonths.length} months)</dd>
       </dl>
     </div>`;
   }
@@ -991,7 +1039,7 @@ function renderComputedEvidence(computed, narrative) {
         const fv = typeof v === 'boolean' ? (v ? '⚠ Yes' : 'No') :
                    typeof v === 'number'  ? (Number.isInteger(v) ? v : v.toFixed(4)) :
                    String(v ?? '—');
-        return `<dt>${esc(k.replace(/_/g,' '))}</dt><dd>${fv}</dd>`;
+        return `<dt>${esc(k.replace(/_/g,' '))}</dt><dd>${esc(fv)}</dd>`;
       }).join('');
 
     // Source references
@@ -1025,6 +1073,17 @@ function renderDecision(r) {
   const openQs = strategist.open_questions || [];
   const analysis = r.steps?.data_analyst?.analysis_summary || '';
 
+  if (r.status === 'no_stockout') {
+    const cites = (r.citations || []).map(esc).join(', ');
+    container.innerHTML = `
+      <div class="decision-box">
+        <div class="decision-label">No stock-out found</div>
+        <div class="decision-text">${esc(r.summary || r.message || 'The records show no stock-out for this month.')}</div>
+      </div>
+      ${cites ? `<div style="font-size:12px" class="monospace">Rows: ${cites}</div>` : ''}`;
+    return;
+  }
+
   let html = `
     <div class="decision-box">
       <div class="decision-label">Leading Explanation</div>
@@ -1044,7 +1103,7 @@ function renderDecision(r) {
   if (top.summary) {
     html += `
       <div style="margin-bottom:12px">
-        <div class="si-label" style="margin-bottom:4px">Primary evidence (${top.hypothesis_id})</div>
+        <div class="si-label" style="margin-bottom:4px">Primary evidence (${esc(top.hypothesis_id)})</div>
         <p style="font-size:13px;color:var(--gray-700)">${esc(top.summary)}</p>
       </div>
     `;
@@ -1054,8 +1113,8 @@ function renderDecision(r) {
     html += `<hr class="dashed"><div class="si-label" style="margin-bottom:6px">Alternative explanations considered</div>`;
     html += alternatives.map(h => `
       <div style="margin-bottom:6px;font-size:13px">
-        <span class="verdict-pill ${h.verdict}" style="margin-right:6px">${h.verdict}</span>
-        <strong>${esc(h.hypothesis_id)} ${esc(h.hypothesis_name.replace(/_/g,' '))}</strong>
+        <span class="verdict-pill ${esc(h.verdict)}" style="margin-right:6px">${esc(h.verdict)}</span>
+        <strong>${esc(h.hypothesis_id)} ${esc(String(h.hypothesis_name || '').replace(/_/g,' '))}</strong>
         — ${esc(h.summary)}
       </div>
     `).join('');
@@ -1107,7 +1166,18 @@ function renderActions(actions) {
 function buildActionCard(a) {
   const s = state.actionStatuses[a.action_id] || { status: 'pending', note: '' };
   const cardClass = s.status !== 'pending' ? `status-${s.status}` : '';
-  const prio = (a.priority || '').toLowerCase();
+  const prio = String(a.priority || '').toLowerCase();
+  const isTransfer = a.type === 'transfer_request';
+  const transferHtml = isTransfer ? `
+    <div class="action-text">Request ${esc(a.units ?? '?')} units from
+      ${esc(a.source_facility_name ? `${a.source_facility_name} (${a.source_facility || '?'})` : (a.source_facility || '?'))}${
+      a.distance_km != null ? `, ${esc(a.distance_km)} km away` : ''}</div>
+    <div class="action-meta">
+      ${a.rule ? `<span>📏 Rule: ${esc(a.rule)}</span>` : ''}
+      ${(a.citations || []).length ? `<span class="monospace">📎 ${(a.citations || []).map(esc).join(', ')}</span>` : ''}
+    </div>
+    <div style="font-size:12px;color:var(--amber);margin-bottom:8px">⚠ Needs pharmacist approval before any stock moves.</div>
+  ` : '';
 
   const noteHtml = s.note
     ? `<div class="pharmacist-note">📝 Note: ${esc(s.note)}</div>` : '';
@@ -1116,26 +1186,26 @@ function buildActionCard(a) {
     <div class="edit-form hidden" id="edit-form-${esc(a.action_id)}">
       <textarea id="edit-note-${esc(a.action_id)}" placeholder="Enter amendment note…">${esc(s.note)}</textarea>
       <div class="edit-actions">
-        <button class="btn-sm btn-accept" onclick="saveEdit('${esc(a.action_id)}')">Save amendment</button>
+        <button class="btn-sm btn-accept" data-id="${esc(a.action_id)}" onclick="saveEdit(this.dataset.id)">Save amendment</button>
         <button class="btn-sm" style="border-color:var(--border);background:var(--gray-50);color:var(--gray-700)"
-          onclick="cancelEdit('${esc(a.action_id)}')">Cancel</button>
+          data-id="${esc(a.action_id)}" onclick="cancelEdit(this.dataset.id)">Cancel</button>
       </div>
     </div>
   `;
 
   const controlsHtml = s.status === 'pending' ? `
     <div class="action-controls" id="controls-${esc(a.action_id)}">
-      <button class="btn-sm btn-accept"  onclick="acceptAction('${esc(a.action_id)}')">✓ Accept</button>
-      <button class="btn-sm btn-edit"    onclick="editAction('${esc(a.action_id)}')">✎ Edit</button>
-      <button class="btn-sm btn-reject"  onclick="rejectAction('${esc(a.action_id)}')">✗ Reject</button>
+      <button class="btn-sm btn-accept"  data-id="${esc(a.action_id)}" onclick="acceptAction(this.dataset.id)">✓ Accept</button>
+      <button class="btn-sm btn-edit"    data-id="${esc(a.action_id)}" onclick="editAction(this.dataset.id)">✎ Edit</button>
+      <button class="btn-sm btn-reject"  data-id="${esc(a.action_id)}" onclick="rejectAction(this.dataset.id)">✗ Reject</button>
     </div>
   ` : `
     <div class="action-controls">
-      <span class="action-status-badge ${s.status}">
+      <span class="action-status-badge ${esc(s.status)}">
         ${s.status === 'accepted' ? '✓ Accepted' : s.status === 'edited' ? '✎ Accepted with edit' : '✗ Rejected'}
       </span>
       <button class="btn-sm" style="border-color:var(--border);background:var(--gray-50);color:var(--gray-700);font-size:11px"
-        onclick="undoAction('${esc(a.action_id)}')">Undo</button>
+        data-id="${esc(a.action_id)}" onclick="undoAction(this.dataset.id)">Undo</button>
     </div>
   `;
 
@@ -1143,16 +1213,18 @@ function buildActionCard(a) {
     <div class="action-card ${cardClass}" id="action-card-${esc(a.action_id)}">
       <div class="action-card-header">
         <span class="action-id">${esc(a.action_id)}</span>
-        <span class="priority-pill ${prio}">${prio}</span>
+        <span class="priority-pill ${esc(prio)}">${esc(prio)}</span>
+        ${isTransfer ? '<span class="transfer-tag">Transfer request</span>' : ''}
         ${(a.linked_hypothesis_ids || []).map(h =>
           `<span class="monospace" style="color:var(--blue)">${esc(h)}</span>`
         ).join('')}
-        ${a.pharmacist_review_required
+        ${(a.pharmacist_review_required || a.requires_pharmacist_approval)
           ? '<span class="text-muted" style="font-size:11px;margin-left:auto">⚠ Pharmacist review required</span>'
           : ''}
       </div>
       <div class="action-card-body">
-        <div class="action-text">${esc(a.action)}</div>
+        ${transferHtml}
+        ${a.action ? `<div class="action-text">${esc(a.action)}</div>` : ''}
         <div class="action-meta">
           <span>👤 ${esc(a.proposed_owner || '—')}</span>
           <span>🕒 ${esc(a.timeframe || '—')}</span>
@@ -1216,6 +1288,97 @@ function refreshActions() {
   const container = document.getElementById('action-list');
   container.innerHTML = actions.map(a => buildActionCard(a)).join('');
   updateActionSummary(actions);
+}
+
+// Actions kept apart because their rows are not verified yet, CLI review
+// outcome (if the run was reviewed in a terminal) and per-phase contracts.
+function contractBrief(c) {
+  if (!c || typeof c !== 'object') return String(c ?? '');
+  const id = c.contractId || c.id || '?';
+  const caps = (c.scope && c.scope.capabilities) || c.capabilities || [];
+  const exp = c.expiresAt || c.expires_at;
+  return `${String(id).slice(0, 12)} [${caps.join(', ')}]${exp ? ` expires ${exp}` : ''}`;
+}
+
+function renderFurther(r) {
+  const box = document.getElementById('further-list');
+  let html = '';
+  const further = Array.isArray(r.investigate_further) ? r.investigate_further : [];
+  if (further.length) {
+    html += `<div class="skipped-list"><div class="si-label">Investigate further (not yet backed by verified rows)</div>
+      <ul>${further.map(a => `<li><strong>${esc(a.action_id)}</strong> ${esc(a.action)}</li>`).join('')}</ul></div>`;
+  }
+  const pending = Array.isArray(r.pending_actions) ? r.pending_actions : [];
+  const review = (r.review && typeof r.review === 'object') ? r.review : null;
+  if (review || pending.length) {
+    const correct = review ? (review.cause_correct === true ? 'yes' : review.cause_correct === false ? 'no' : 'not answered') : '—';
+    html += `<div class="skipped-list"><div class="si-label">Terminal review</div>
+      Top cause correct: ${esc(correct)}; memory decision: ${esc((review && review.decision) || 'none')}${
+      pending.length ? `; pending: ${pending.map(a => esc(a.action_id)).join(', ')}` : ''}</div>`;
+  }
+  const phases = (r.contracts && Array.isArray(r.contracts.phases)) ? r.contracts.phases : [];
+  if (phases.length) {
+    html += `<div class="skipped-list"><div class="si-label">Scout contracts per phase</div>
+      <ul>${phases.map(ph => `<li><strong>${esc(ph && ph.phase)}</strong>
+        <span class="monospace">${esc(contractBrief(ph && ph.contract))}</span></li>`).join('')}</ul></div>`;
+  }
+  box.innerHTML = html;
+}
+
+// ── Pharmacist review → POST /api/review (case memory) ─────────────────
+function renderReviewBar(r) {
+  const bar = document.getElementById('review-bar');
+  const msg = document.getElementById('review-msg');
+  const memoryId = r.memory?.stored_id;
+  document.getElementById('review-note').value = '';
+  msg.className = 'review-msg';
+  msg.textContent = '';
+  ['btn-review-approve', 'btn-review-reject'].forEach(id => {
+    document.getElementById(id).disabled = !memoryId;
+  });
+  if (!memoryId) {
+    msg.textContent = 'This run stored no finding in case memory, so there is nothing to approve or reject.';
+  }
+  bar.classList.toggle('hidden', r.status === 'no_stockout');
+}
+
+async function submitReview(choice) {
+  const r = state.result;
+  const msg = document.getElementById('review-msg');
+  const memoryId = r?.memory?.stored_id;
+  if (!memoryId) return;
+  const actionDecisions = {};
+  for (const a of (r.actions || [])) {
+    const st = state.actionStatuses[a.action_id]?.status;
+    if (st === 'accepted' || st === 'edited') actionDecisions[a.action_id] = 'accepted';
+    else if (st === 'rejected') actionDecisions[a.action_id] = 'rejected';
+  }
+  const values = Object.values(actionDecisions);
+  let decision = choice;
+  if (choice === 'approved' && values.includes('rejected')) decision = 'partial';
+  const note = (document.getElementById('review-note').value || '').trim().slice(0, 500);
+  const buttons = ['btn-review-approve', 'btn-review-reject'].map(id => document.getElementById(id));
+  buttons.forEach(b => { b.disabled = true; });
+  msg.className = 'review-msg';
+  msg.textContent = 'Saving…';
+  try {
+    const res = await fetch('/api/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memory_id: memoryId, decision, note, action_decisions: actionDecisions }),
+    });
+    let body = {};
+    try { body = await res.json(); } catch (e) { body = {}; }
+    if (!res.ok || !body.ok) {
+      throw new Error(body.error || `Server error ${res.status}`);
+    }
+    msg.className = 'review-msg ok';
+    msg.textContent = `Saved: finding ${body.memory_id} is now "${body.status}".`;
+  } catch (err) {
+    msg.className = 'review-msg err';
+    msg.textContent = `Could not save the review: ${err.message}`;
+    buttons.forEach(b => { b.disabled = false; });
+  }
 }
 
 function updateActionSummary(actions) {
@@ -1291,12 +1454,19 @@ function esc(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// "Katutu Dispensary (FAC-009)" when the result carries a facility name.
+function facilityLabel(r) {
+  const name = r.facility_name || r.steps?.data_reader?._profile?.facility?.facility_name;
+  return name ? `${name} (${r.facility_id})` : (r.facility_id || '');
 }
 
 function fmt(v) {
   if (v == null) return '—';
-  return Number.isFinite(v) ? v.toLocaleString() : String(v);
+  return Number.isFinite(v) ? v.toLocaleString() : esc(String(v));
 }
 
 function fmtKES(v) {
@@ -1314,6 +1484,7 @@ function fmtDate(s) {
 
 function truncate(s, n) {
   if (!s) return '';
+  s = String(s);
   return s.length > n ? s.slice(0, n) + '…' : s;
 }
 </script>

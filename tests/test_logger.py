@@ -175,3 +175,15 @@ class TestLoggerFields:
         assert obj["target_agent"] == "theory_generator"
         assert obj["retry_count"] == 1
         assert not (tmp_path / "logs").exists()
+
+
+def test_records_requested_and_served_model(tmp_path, monkeypatch):
+    monkeypatch.setenv("STOCKWHY_LOGS_DIR", str(tmp_path))
+    log_event(log_file="m.jsonl", run_id="r", agent_name="a", action="x", input_summary="i",
+              output_summary="o", model="nvidia/x", requested_model="meterless/deep",
+              served_model="nvidia/x")
+    log_event(log_file="m.jsonl", run_id="r", agent_name="a", action="y", input_summary="i",
+              output_summary="o")
+    first, second = [json.loads(l) for l in (tmp_path / "m.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert first["requested_model"] == "meterless/deep" and first["served_model"] == "nvidia/x"
+    assert "requested_model" not in second and "served_model" not in second

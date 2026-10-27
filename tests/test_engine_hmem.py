@@ -227,3 +227,71 @@ def test_ledger_is_append_only_audit(tmp_path):
     assert update["newState"] == {"status": "approved"}
     assert update["actor"] == "pharmacist"
     assert mem.ledger(mid2)[0]["action"] == "create"
+
+
+# ---------------------------------------------------------------------------
+# Namespace by dataset, month exclusion, upsert, partial, locking, corruption
+# ---------------------------------------------------------------------------
+
+def test_dataset_key_is_part_of_namespace(tmp_path):
+    mem = CaseMemory(tmp_path / "hmem.json")
+    mid = mem.store(FINDING, CITES, run_id="r1", dataset_key="data/cases/normal/case_01/")
+    assert mem.recall("FAC-016", "oxytocin 10IU inj") == []
+    assert mem.recall("FAC-016", "oxytocin 10IU inj", dataset_key="data/sample") == []
+    got = mem.recall("FAC-016", "oxytocin 10IU inj", dataset_key="data\\cases\\normal\\case_01")
+    assert [g["id"] for g in got] == [mid] and got[0]["dataset_key"] == "data/cases/normal/case_01"
+
+
+def test_recall_excludes_asked_month_and_store_upserts(tmp_path):
+    mem = CaseMemory(tmp_path / "hmem.json")
+    first = mem.store(FINDING, CITES, run_id="r1")
+    mem.feedback(first, "approved")
+    again = mem.store({**FINDING, "summary": "rerun"}, ["orders#1"], run_id="r2")
+    assert again == first  # same namespace, month and cause -> one record
+    rec = mem.get(first)
+    assert rec["status"] == "pending_approval" and rec["citations"] == ["orders#1"]
+    assert rec["provenance"]["run_id"] == "r2"
+    other = mem.store({**FINDING, "month": "2026-01"}, CITES, run_id="r3")
+    got = mem.recall("FAC-016", "oxytocin 10IU inj", month="2026-03")
+    assert [g["id"] for g in got] == [other]
+    assert len(mem.recall("FAC-016", "oxytocin 10IU inj")) == 2
+
+
+def test_partial_feedback_and_action_decisions(tmp_path):
+    mem = CaseMemory(tmp_path / "hmem.json")
+    mid = mem.store(FINDING, CITES, run_id="r1")
+    out = mem.feedback(mid, "partial", note="one action wrong",
+                       action_decisions={"A1": "accepted", "A2": "rejected"})
+    assert out["status"] == "partial" and approx(out["confidence"], 0.77)  # not_helpful: -0.03
+    assert CaseMemory(tmp_path / "hmem.json").get(mid)["action_decisions"] == {"A1": "accepted", "A2": "rejected"}
+    assert mem.feedback(mid, "rejected")["status"] == "rejected"
+
+
+def test_rejected_findings_recalled_last(tmp_path):
+    mem = CaseMemory(tmp_path / "hmem.json")
+    newer = mem.store({**FINDING, "month": "2026-02"}, CITES, run_id="r1")
+    older = mem.store({**FINDING, "month": "2025-12"}, CITES, run_id="r2")
+    mem.feedback(newer, "rejected")
+    assert [g["id"] for g in mem.recall("FAC-016", "oxytocin 10IU inj")] == [older, newer]
+
+
+def test_two_writers_do_not_lose_records(tmp_path):
+    path = tmp_path / "hmem.json"
+    a, b = CaseMemory(path), CaseMemory(path)
+    ida = a.store({**FINDING, "month": "2026-01"}, CITES, run_id="ra")
+    idb = b.store({**FINDING, "month": "2026-02"}, CITES, run_id="rb")
+    a.feedback(idb, "approved")  # a never stored idb itself; it reloads first
+    fresh = CaseMemory(path)
+    assert fresh.get(ida) and fresh.get(idb)["status"] == "approved"
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_corrupt_file_moved_aside(tmp_path):
+    path = tmp_path / "hmem.json"
+    path.write_text("{not json", encoding="utf-8")
+    with pytest.warns(RuntimeWarning):
+        mem = CaseMemory(path)
+    assert (tmp_path / "hmem.json.bad").read_text(encoding="utf-8") == "{not json"
+    assert mem.recall("FAC-016", "oxytocin 10IU inj") == []
+    mid = mem.store(FINDING, CITES, run_id="r1")
+    assert CaseMemory(path).get(mid)

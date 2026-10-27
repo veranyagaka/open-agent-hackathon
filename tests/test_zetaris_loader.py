@@ -102,8 +102,11 @@ def test_full_read_converts_types_and_records_source(fake_zetaris):
     assert pd.api.types.is_datetime64_any_dtype(dataset["orders"]["order_date"])
     assert pd.api.types.is_numeric_dtype(dataset["facilities"]["lat"])
     assert dataset["stock"]["id"].iloc[0] == "1"
-    # One call per table (no 100-row paging), plus the second datasource.
-    assert len(fake_zetaris.calls) == 5
+    # One call per table (no 100-row paging), plus the second datasource. The sample
+    # facilities table has no name columns, so that read falls back once.
+    assert len(fake_zetaris.calls) == 6
+    assert "facility_name" in fake_zetaris.calls[3] and "facility_name" not in fake_zetaris.calls[4]
+    assert not any("SELECT *" in sql for sql in fake_zetaris.calls)
     assert any("stockwhy_web.web_notes" in sql for sql in fake_zetaris.calls)
     assert [q["sql"] for q in dataset["_queries"]] == fake_zetaris.calls
 

@@ -1,7 +1,7 @@
 """
 scripts/evaluate.py
 
-Back-test StockyWhy on the 16 planted cases in data/cases/.
+Back-test StockWhy on the 16 planted cases in data/cases/.
 
 This is the ONLY code that reads eval/answer_key.csv. The agent runs on each
 case exactly as a user would ask it, with a fresh, empty case memory per case,
@@ -30,16 +30,27 @@ os.environ.setdefault("SAMPLE_MODE", "true")
 
 from engines.hmem import CaseMemory  # noqa: E402
 from llm_client import llm_enabled  # noqa: E402
-from orchestrator import StockyWhy  # noqa: E402
+import orchestrator  # noqa: E402
 
+StockWhy = getattr(orchestrator, "StockWhy", None) or getattr(orchestrator, "StockyWhy")
+
+
+
+def _utf8_stdio() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
 
 def main() -> int:
+    _utf8_stdio()
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", choices=["normal", "noisy", "all"], default="all")
     args = ap.parse_args()
 
-    questions = list(csv.DictReader((ROOT / "data/cases/questions.csv").open()))
-    truth = {r["dataset"]: r for r in csv.DictReader((ROOT / "eval/answer_key.csv").open())}
+    questions = list(csv.DictReader((ROOT / "data/cases/questions.csv").open(encoding="utf-8", newline="")))
+    truth = {r["dataset"]: r for r in csv.DictReader((ROOT / "eval/answer_key.csv").open(encoding="utf-8", newline=""))}
 
     rows = []
     for q in questions:
@@ -47,7 +58,7 @@ def main() -> int:
             continue
         # Fresh memory per case so no answer leaks between cases
         with tempfile.TemporaryDirectory() as tmp:
-            agent = StockyWhy(memory=CaseMemory(Path(tmp) / "hmem.json"))
+            agent = StockWhy(memory=CaseMemory(Path(tmp) / "hmem.json"))
             with contextlib.redirect_stdout(io.StringIO()):
                 r = agent.run(q["dataset"], q["facility_id"], q["commodity"],
                               q["month"], interactive=False)
@@ -85,7 +96,7 @@ def main() -> int:
         "llm": "Nightshift" if llm_enabled() else "off (rule-based reasoning)",
     }
     (ROOT / "eval/results.json").write_text(
-        json.dumps({"summary": summary, "cases": rows}, indent=2) + "\n"
+        json.dumps({"summary": summary, "cases": rows}, indent=2) + "\n", encoding="utf-8"
     )
     md = [
         "# Back-test results", "",
@@ -104,7 +115,7 @@ def main() -> int:
             f"{' + ' + r['also'] if r['also'] else ''} | {r['predicted']} | "
             f"{', '.join(r['supported'])} | {'yes' if r['top1'] else 'NO'} | {contrib} |"
         )
-    (ROOT / "eval/RESULTS.md").write_text("\n".join(md) + "\n")
+    (ROOT / "eval/RESULTS.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     print("\n".join(md))
     return 0
 
