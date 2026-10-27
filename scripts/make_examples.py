@@ -22,17 +22,28 @@ os.environ["SAMPLE_MODE"] = "true"
 os.environ.pop("STOCKWHY_USE_LLM", None)
 
 from engines.hmem import CaseMemory  # noqa: E402
-from orchestrator import StockyWhy  # noqa: E402
+import orchestrator  # noqa: E402
+
+StockWhy = getattr(orchestrator, "StockWhy", None) or getattr(orchestrator, "StockyWhy")
 from run import execute_request  # noqa: E402
 
 
+
+def _utf8_stdio() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
 def main() -> int:
+    _utf8_stdio()
     out_dir = ROOT / "output_examples"
     out_dir.mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
-        agent = StockyWhy(memory=CaseMemory(Path(tmp) / "hmem.json"))
+        agent = StockWhy(memory=CaseMemory(Path(tmp) / "hmem.json"))
         for path in sorted((ROOT / "input_examples").glob("*.json")):
-            payload = json.loads(path.read_text())
+            payload = json.loads(path.read_text(encoding="utf-8"))
             env = payload.get("_env", {})
             os.environ.update(env)
             try:
@@ -40,7 +51,8 @@ def main() -> int:
             finally:
                 for key in env:
                     os.environ.pop(key, None)
-            (out_dir / path.name).write_text(json.dumps(result, indent=2, default=str) + "\n")
+            (out_dir / path.name).write_text(json.dumps(result, indent=2, default=str) + "\n",
+                                             encoding="utf-8")
             cause = (result.get("verified_cause") or {}).get("hypothesis_name", "")
             print(f"{path.name:32s} {result.get('status'):12s} {cause}")
     return 0

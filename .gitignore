@@ -6,3 +6,6 @@ docs/datapack/
 docs/*.pdf
 .venv/
 logs/memory/
+logs/*.jsonl
+results/
+.pytest_cache/
