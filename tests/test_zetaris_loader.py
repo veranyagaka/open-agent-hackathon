@@ -33,11 +33,13 @@ _SQL_TYPES = {
 class FakeZetaris:
     """Answers SQL like the Zetaris SQL Editor REST endpoint, and records it."""
 
-    def __init__(self, with_web=True):
+    def __init__(self, with_web=True, facility_names=True):
         self.conn = sqlite3.connect(":memory:")
         self.conn.execute("ATTACH DATABASE ':memory:' AS stockwhy_pg")
         self.conn.execute("ATTACH DATABASE ':memory:' AS stockwhy_web")
         for table, cols in data_loader.TABLE_COLUMNS.items():
+            if table == "facilities" and facility_names:
+                cols = cols + data_loader.FACILITY_OPTIONAL_COLUMNS
             types = _SQL_TYPES[table]
             defs = ", ".join(f"{c} {types.get(c, 'TEXT')}" for c in cols)
             self.conn.execute(f"CREATE TABLE stockwhy_pg.{table} ({defs})")
@@ -102,10 +104,10 @@ def test_full_read_converts_types_and_records_source(fake_zetaris):
     assert pd.api.types.is_datetime64_any_dtype(dataset["orders"]["order_date"])
     assert pd.api.types.is_numeric_dtype(dataset["facilities"]["lat"])
     assert dataset["stock"]["id"].iloc[0] == "1"
-    # One call per table (no 100-row paging), plus the second datasource. The sample
-    # facilities table has no name columns, so that read falls back once.
-    assert len(fake_zetaris.calls) == 6
-    assert "facility_name" in fake_zetaris.calls[3] and "facility_name" not in fake_zetaris.calls[4]
+    # One call per table (no 100-row paging), plus the second datasource.
+    assert len(fake_zetaris.calls) == 5
+    assert "facility_name" in fake_zetaris.calls[3]
+    assert dataset["facilities"]["facility_name"].iloc[0] == "Ngieni Dispensary"
     assert not any("SELECT *" in sql for sql in fake_zetaris.calls)
     assert any("stockwhy_web.web_notes" in sql for sql in fake_zetaris.calls)
     assert [q["sql"] for q in dataset["_queries"]] == fake_zetaris.calls
@@ -288,3 +290,11 @@ def test_zetaris_rows_rejects_mismatched_header_width():
     response = {"headers": ["id", "month"], "data": [["1"]]}
     with pytest.raises(RuntimeError, match="row width does not match"):
         data_loader._zetaris_rows(response)
+
+
+def test_facility_name_columns_are_optional(monkeypatch):
+    fake = FakeZetaris(facility_names=False)
+    monkeypatch.setattr("scripts.check_zetaris.run_sql", fake.run_sql)
+    dataset = data_loader.load_zetaris_dataset(str(SAMPLE_DIR))
+    assert "facility_name" in fake.calls[3] and "facility_name" not in fake.calls[4]
+    assert list(dataset["facilities"].columns[:3]) == ["facility_id", "lat", "lon"]

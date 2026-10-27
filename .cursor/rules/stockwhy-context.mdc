@@ -27,7 +27,7 @@ Track: **"The Agent That Can Explain Why"**. Every answer must trace back to evi
    `POST {ZETARIS_REST_URL}/sql-editor/sqls/run` with headers `Authorization: Bearer`, `X-Org-ID`, `X-Request-ID`
    (a fresh UUID) and body `{"queryId","sql","source":"SqlEditor","limit"}`. One statement per call. Values come
    back as strings. Zetaris **cannot read local files**: data must sit in Postgres (or S3/Azure/GCS), registered
-   with `CREATE DATASOURCE` + `REGISTER DATASOURCE TABLES`. See `docs/datapack/01_demo_county_30/zetaris_register.sql`.
+   with `CREATE DATASOURCE` + `REGISTER DATASOURCE TABLES`. See `data/sample/zetaris_register.sql`.
 2. **Meterless Nightshift is the primary AI provider.** It's OpenAI-compatible at `METERLESS_BASE_URL`
    (default `http://127.0.0.1:8088/v1`), with `Authorization: Bearer $METERLESS_RUNTIME_TOKEN`, headers
    `meterless-app: stockwhy` and `meterless-scope: user`, model `meterless/auto` or a pinned `meterless/*` route.

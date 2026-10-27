@@ -33,7 +33,8 @@ Stock identity: `opening - wastage + received - consumed = closing`. A facility 
 `id`, `month`, `county_arrears_flag` (1 if the county owed the supplier), `amount_owed_kes`. Arrears of KES 30 million or more count as major.
 
 ## facilities.csv
-`facility_id`, `lat`, `lon` (fictional coordinates, used to find the nearest facility with spare stock).
+`facility_id`, `lat`, `lon`, `facility_name`, `facility_type` (dispensary, health centre, sub-county hospital), `county`, `sub_county`, `osm_id`.
+These are real public health facilities in Kitui County, Kenya, taken from OpenStreetMap. The action drafter uses them to name facilities and to find the nearest facility with spare stock. The stock, order and payment records attached to these facilities are synthetic and do not describe what really happened at them.
 
 ## web_notes.json
 Public-notice stand-ins: `month`, `commodity`, `source`, `title`, `url`, and `synthetic: true`. The live version of this comes from Bright Data.

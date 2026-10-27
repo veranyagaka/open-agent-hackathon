@@ -1,7 +1,16 @@
-# Data (all SYNTHETIC)
+# Data (synthetic records, real facility locations)
 
-Every file here is generated test data for StockWhy. No real facility, patient or supplier data. Column meanings are
-in `DATA_DICTIONARY.md`; real public sources we can cite are in `PUBLIC_DATA_SOURCES.md`.
+Stock, orders, payments and notices are generated test data. They are not real records of any facility, patient or supplier.
+Facility names, types and locations are real: 30 public dispensaries, health centres and sub-county hospitals in Kitui County, taken from OpenStreetMap. The synthetic events attached to them (late orders, stock-outs) are invented and say nothing about how these facilities actually perform. Column meanings are in `DATA_DICTIONARY.md`, and the public sources we cite are in `PUBLIC_DATA_SOURCES.md`.
+
+Facility data © OpenStreetMap contributors, available under the Open Database License (ODbL 1.0), via the HOT export on HDX (`hotosm_ken_health_facilities`). The facilities table is shared under the same licence.
+
+How the facilities were chosen:
+1. Take the OSM features tagged hospital, clinic or doctors in Kitui that are either tagged as public/government or named as a public facility type (dispensary, health centre, sub-county hospital).
+2. Remove duplicates within 300 m.
+3. Assign each FAC id to a distinct facility so that the original synthetic layout is kept as closely as possible: fixed scale, best rotation and shift, minimum total displacement.
+
+The same FAC id is the same facility in every dataset.
 
 | Path | What it is |
 |---|---|

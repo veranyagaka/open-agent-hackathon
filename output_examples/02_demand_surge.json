@@ -1,12 +1,12 @@
 {
-  "run_id": "11dcbbe9",
+  "run_id": "53aae887",
   "status": "complete",
   "facility_id": "FAC-011",
   "commodity": "ORS sachet",
   "month": "2026-03",
   "question": "Why did facility FAC-011 report a stockout of ORS sachet in 2026-03?",
   "dataset_dir": "data/cases/normal/case_01",
-  "log_file": "run_11dcbbe9_20261027T151455.jsonl",
+  "log_file": "run_53aae887_20261027T152308.jsonl",
   "llm_mode": "rule-based",
   "steps": {
     "data_reader": {
@@ -720,153 +720,303 @@
         "facilities": [
           {
             "facility_id": "FAC-001",
-            "lat": -1.4778,
-            "lon": 36.7697
+            "lat": -1.0174,
+            "lon": 38.3295,
+            "facility_name": "Ngieni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/14239550707"
           },
           {
             "facility_id": "FAC-002",
-            "lat": -1.4234,
-            "lon": 36.5885
+            "lat": -1.2527,
+            "lon": 38.2312,
+            "facility_name": "Itiko Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6303096758"
           },
           {
             "facility_id": "FAC-003",
-            "lat": -1.4853,
-            "lon": 36.979
+            "lat": -1.1222,
+            "lon": 38.2126,
+            "facility_name": "Mui Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798318295"
           },
           {
             "facility_id": "FAC-004",
-            "lat": -0.9048,
-            "lon": 36.7983
+            "lat": -0.7479,
+            "lon": 37.9798,
+            "facility_name": "Tyaa Kamuthale Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi North",
+            "osm_id": "way/1171234022"
           },
           {
             "facility_id": "FAC-005",
-            "lat": -0.8856,
-            "lon": 37.1892
+            "lat": -0.7799,
+            "lon": 38.0206,
+            "facility_name": "Katuluni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/10883742550"
           },
           {
             "facility_id": "FAC-006",
-            "lat": -1.1974,
-            "lon": 36.702
+            "lat": -0.8566,
+            "lon": 38.2555,
+            "facility_name": "Kamulewa Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798331031"
           },
           {
             "facility_id": "FAC-007",
-            "lat": -0.9643,
-            "lon": 37.2228
+            "lat": -1.0791,
+            "lon": 37.9143,
+            "facility_name": "Ngongoni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935335"
           },
           {
             "facility_id": "FAC-008",
-            "lat": -1.1552,
-            "lon": 36.396
+            "lat": -0.8509,
+            "lon": 38.2466,
+            "facility_name": "Enziu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/6244576623"
           },
           {
             "facility_id": "FAC-009",
-            "lat": -1.1225,
-            "lon": 36.3912
+            "lat": -1.1835,
+            "lon": 37.8214,
+            "facility_name": "Katutu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui West",
+            "osm_id": "way/1318131957"
           },
           {
             "facility_id": "FAC-010",
-            "lat": -1.3413,
-            "lon": 37.2617
+            "lat": -1.1757,
+            "lon": 38.2125,
+            "facility_name": "Yoonye Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333661"
           },
           {
             "facility_id": "FAC-011",
-            "lat": -0.8793,
-            "lon": 36.5316
+            "lat": -1.436,
+            "lon": 38.2444,
+            "facility_name": "Zombe Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6244567617"
           },
           {
             "facility_id": "FAC-012",
-            "lat": -1.3708,
-            "lon": 37.2135
+            "lat": -1.4597,
+            "lon": 38.2037,
+            "facility_name": "Kaumu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798331033"
           },
           {
             "facility_id": "FAC-013",
-            "lat": -1.3341,
-            "lon": 36.3838
+            "lat": -0.93,
+            "lon": 38.2659,
+            "facility_name": "Yumbu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798307186"
           },
           {
             "facility_id": "FAC-014",
-            "lat": -0.9299,
-            "lon": 36.8114
+            "lat": -0.9151,
+            "lon": 37.8612,
+            "facility_name": "Kyusyani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935320"
           },
           {
             "facility_id": "FAC-015",
-            "lat": -1.4391,
-            "lon": 37.1574
+            "lat": -0.8523,
+            "lon": 37.9696,
+            "facility_name": "Itongolani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935378"
           },
           {
             "facility_id": "FAC-016",
-            "lat": -1.0743,
-            "lon": 37.1365
+            "lat": -1.2274,
+            "lon": 38.1737,
+            "facility_name": "Mutito Sub-County Hospital",
+            "facility_type": "sub-county hospital",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333660"
           },
           {
             "facility_id": "FAC-017",
-            "lat": -1.591,
-            "lon": 36.7505
+            "lat": -1.2194,
+            "lon": 38.2989,
+            "facility_name": "Manyoeni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333662"
           },
           {
             "facility_id": "FAC-018",
-            "lat": -1.6497,
-            "lon": 36.4463
+            "lat": -0.8772,
+            "lon": 38.1777,
+            "facility_name": "Mutuangombe Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/6243798527"
           },
           {
             "facility_id": "FAC-019",
-            "lat": -1.4748,
-            "lon": 37.0282
+            "lat": -1.4182,
+            "lon": 38.1553,
+            "facility_name": "Inyuu Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798331035"
           },
           {
             "facility_id": "FAC-020",
-            "lat": -0.8662,
-            "lon": 37.0632
+            "lat": -0.9704,
+            "lon": 37.9194,
+            "facility_name": "Winzyeei Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796944524"
           },
           {
             "facility_id": "FAC-021",
-            "lat": -1.0622,
-            "lon": 36.7235
+            "lat": -1.088,
+            "lon": 38.2191,
+            "facility_name": "Muyuni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798307187"
           },
           {
             "facility_id": "FAC-022",
-            "lat": -0.8695,
-            "lon": 36.6118
+            "lat": -1.4736,
+            "lon": 37.8376,
+            "facility_name": "Kiusyani Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui Rural",
+            "osm_id": "node/7549451145"
           },
           {
             "facility_id": "FAC-023",
-            "lat": -1.1804,
-            "lon": 37.0649
+            "lat": -0.9343,
+            "lon": 37.9649,
+            "facility_name": "Kiio Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877939679"
           },
           {
             "facility_id": "FAC-024",
-            "lat": -0.9941,
-            "lon": 36.5001
+            "lat": -1.1119,
+            "lon": 37.9241,
+            "facility_name": "Nzawa Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796943125"
           },
           {
             "facility_id": "FAC-025",
-            "lat": -1.203,
-            "lon": 36.5252
+            "lat": -1.3841,
+            "lon": 38.2731,
+            "facility_name": "Ngelani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6244568075"
           },
           {
             "facility_id": "FAC-026",
-            "lat": -1.1125,
-            "lon": 36.7041
+            "lat": -1.5208,
+            "lon": 38.2481,
+            "facility_name": "Kasunguni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333663"
           },
           {
             "facility_id": "FAC-027",
-            "lat": -1.1962,
-            "lon": 36.8691
+            "lat": -1.0611,
+            "lon": 37.8733,
+            "facility_name": "Kakululo Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935301"
           },
           {
             "facility_id": "FAC-028",
-            "lat": -1.5924,
-            "lon": 36.544
+            "lat": -0.8435,
+            "lon": 37.9961,
+            "facility_name": "Kyethani Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2864248999"
           },
           {
             "facility_id": "FAC-029",
-            "lat": -1.7143,
-            "lon": 36.691
+            "lat": -0.7821,
+            "lon": 37.9519,
+            "facility_name": "Wikithuki Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796948428"
           },
           {
             "facility_id": "FAC-030",
-            "lat": -1.1844,
-            "lon": 36.5615
+            "lat": -1.3751,
+            "lon": 37.9952,
+            "facility_name": "Kanyangi Sub-County Hospital",
+            "facility_type": "sub-county hospital",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/1132558742"
           }
         ],
         "web_notes": [
@@ -1234,10 +1384,10 @@
           ]
         }
       ],
-      "emergency_requisition_memo": "DRAFT \u2014 requires pharmacist sign-off.\nSubject: Emergency requisition, ORS sachet, FAC-011\nFAC-011 reported a stockout of ORS sachet in 2026-03. Most likely cause: demand_surge (H4).\nEvidence: stock#1506.\nQuantity: to be set by the pharmacist from current consumption records.",
+      "emergency_requisition_memo": "DRAFT \u2014 requires pharmacist sign-off.\nSubject: Emergency requisition, ORS sachet, Zombe Health Centre (FAC-011)\nZombe Health Centre (FAC-011) reported a stockout of ORS sachet in 2026-03. Most likely cause: demand_surge (H4).\nEvidence: stock#1506.\nQuantity: to be set by the pharmacist from current consumption records.",
       "transfer_request": null,
       "ordering_schedule_recommendation": "Base the next order on the most recent month's consumption, not only the 3-month average.",
-      "communication_draft": "DRAFT \u2014 for pharmacist review.\nTo: County pharmacist\nRe: ORS sachet stockout at FAC-011, 2026-03\nMost likely cause: demand_surge (H4). Evidence: stock#1506. Proposed actions are attached for review; none will be executed without approval.",
+      "communication_draft": "DRAFT \u2014 for pharmacist review.\nTo: County pharmacist\nRe: ORS sachet stockout at Zombe Health Centre (FAC-011), 2026-03\nMost likely cause: demand_surge (H4). Evidence: stock#1506. Proposed actions are attached for review; none will be executed without approval.",
       "open_questions": [],
       "_produced_by": "rule-based"
     }
@@ -1260,9 +1410,9 @@
     "suggestions": {}
   },
   "contract": {
-    "contractId": "1793114095969-e4e734d0be",
+    "contractId": "1793114588738-e5df556e33",
     "parentId": null,
-    "traceId": "73e548ecfd694efea162729b1eb4cc23",
+    "traceId": "de7ae1d76894451ba559158704db2bba",
     "intent": "stockout.explain",
     "risk": {
       "level": "low",
@@ -1285,11 +1435,11 @@
       },
       "role": "pharmacist"
     },
-    "issuedAt": "2026-10-27T15:14:55.969288+00:00",
-    "expiresAt": "2026-10-27T15:19:55.969288+00:00",
+    "issuedAt": "2026-10-27T15:23:08.738752+00:00",
+    "expiresAt": "2026-10-27T15:28:08.738752+00:00",
     "registryVersion": 3,
     "policyPackVersion": "stockwhy-default-2",
-    "signature": "d1ea0e33dd1828d00832652b5291505bed7c490ebc11534723be98df008ad54e",
+    "signature": "89f704a9210924e78061246da1a5a9bf38be4764d3553296068508c7a0ca970e",
     "signedBy": "scout"
   },
   "canonical_question": "Why did facility FAC-011 report a stockout of ORS sachet in 2026-03?",
@@ -1297,7 +1447,7 @@
     "recalled": [],
     "prioritised": [],
     "dataset_key": "data/cases/normal/case_01",
-    "stored_id": "58d9c797af8f4a10a02b5e4c0a860e67",
+    "stored_id": "99bc88f92a384b539dd964aff97420e1",
     "stored_status": "pending_approval"
   },
   "wave_plan": {
@@ -1451,9 +1601,9 @@
   "removed_actions": [],
   "contracts": {
     "main": {
-      "contractId": "1793114095969-e4e734d0be",
+      "contractId": "1793114588738-e5df556e33",
       "parentId": null,
-      "traceId": "73e548ecfd694efea162729b1eb4cc23",
+      "traceId": "de7ae1d76894451ba559158704db2bba",
       "intent": "stockout.explain",
       "risk": {
         "level": "low",
@@ -1476,17 +1626,17 @@
         },
         "role": "pharmacist"
       },
-      "issuedAt": "2026-10-27T15:14:55.969288+00:00",
-      "expiresAt": "2026-10-27T15:19:55.969288+00:00",
+      "issuedAt": "2026-10-27T15:23:08.738752+00:00",
+      "expiresAt": "2026-10-27T15:28:08.738752+00:00",
       "registryVersion": 3,
       "policyPackVersion": "stockwhy-default-2",
-      "signature": "d1ea0e33dd1828d00832652b5291505bed7c490ebc11534723be98df008ad54e",
+      "signature": "89f704a9210924e78061246da1a5a9bf38be4764d3553296068508c7a0ca970e",
       "signedBy": "scout"
     },
     "child": {
-      "contractId": "1793114096017-44ecd4f7cc",
-      "parentId": "1793114095969-e4e734d0be",
-      "traceId": "73e548ecfd694efea162729b1eb4cc23",
+      "contractId": "1793114588797-888bd0bc9d",
+      "parentId": "1793114588738-e5df556e33",
+      "traceId": "de7ae1d76894451ba559158704db2bba",
       "intent": "action.draft",
       "risk": {
         "level": "medium",
@@ -1509,20 +1659,20 @@
         },
         "role": "pharmacist"
       },
-      "issuedAt": "2026-10-27T15:14:56.017916+00:00",
-      "expiresAt": "2026-10-27T15:19:56.017916+00:00",
+      "issuedAt": "2026-10-27T15:23:08.797258+00:00",
+      "expiresAt": "2026-10-27T15:28:08.797258+00:00",
       "registryVersion": 3,
       "policyPackVersion": "stockwhy-default-2",
-      "signature": "4ce3493ef23600db3cad963f187e669bce95f9917a344285ca2b6c9d0338c611",
+      "signature": "39a66f42da68131da4337d76f4ec54594f3c967e0dc68840238ae28f07f4b0e5",
       "signedBy": "scout"
     },
     "phases": [
       {
         "phase": "read",
         "contract": {
-          "contractId": "1793114095970-a2d16b3cfb",
-          "parentId": "1793114095969-e4e734d0be",
-          "traceId": "73e548ecfd694efea162729b1eb4cc23",
+          "contractId": "1793114588740-435b053ea9",
+          "parentId": "1793114588738-e5df556e33",
+          "traceId": "de7ae1d76894451ba559158704db2bba",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1542,20 +1692,20 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:14:55.970522+00:00",
-          "expiresAt": "2026-10-27T15:19:55.970522+00:00",
+          "issuedAt": "2026-10-27T15:23:08.740098+00:00",
+          "expiresAt": "2026-10-27T15:28:08.740098+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "5c2c4479a7e6ca362c8df751238f0c760b9b41b0ad599328b40b3687314fafb0",
+          "signature": "c5ab706146ecd346b4a581d71b1ffbd54b883720998a14569eadba2845e298f7",
           "signedBy": "scout"
         }
       },
       {
         "phase": "analyse",
         "contract": {
-          "contractId": "1793114096009-dd491e9359",
-          "parentId": "1793114095969-e4e734d0be",
-          "traceId": "73e548ecfd694efea162729b1eb4cc23",
+          "contractId": "1793114588788-7e72da4a49",
+          "parentId": "1793114588738-e5df556e33",
+          "traceId": "de7ae1d76894451ba559158704db2bba",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1573,20 +1723,20 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:14:56.009190+00:00",
-          "expiresAt": "2026-10-27T15:19:56.009190+00:00",
+          "issuedAt": "2026-10-27T15:23:08.788496+00:00",
+          "expiresAt": "2026-10-27T15:28:08.788496+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "03848e8b72125db43c28d198d731da562bcded0122e772a6cb5094f83b6135aa",
+          "signature": "6d0819dd024889c26b797abc20d705aca46a9e10329aa130e3ac0b5b5f5a2f9b",
           "signedBy": "scout"
         }
       },
       {
         "phase": "investigate",
         "contract": {
-          "contractId": "1793114096010-cd01dde66f",
-          "parentId": "1793114095969-e4e734d0be",
-          "traceId": "73e548ecfd694efea162729b1eb4cc23",
+          "contractId": "1793114588790-29bc477bf6",
+          "parentId": "1793114588738-e5df556e33",
+          "traceId": "de7ae1d76894451ba559158704db2bba",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1605,20 +1755,20 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:14:56.010809+00:00",
-          "expiresAt": "2026-10-27T15:19:56.010809+00:00",
+          "issuedAt": "2026-10-27T15:23:08.790010+00:00",
+          "expiresAt": "2026-10-27T15:28:08.790010+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "7aa9caa83fbc61335566ea8ca10d4a36100867c1f5c5efcb9ade4b831d2df918",
+          "signature": "305769b0c73c25959df1ea8f5822f01ebf167a1302a7ccae118d7e0d7148e07b",
           "signedBy": "scout"
         }
       },
       {
         "phase": "draft",
         "contract": {
-          "contractId": "1793114096017-44ecd4f7cc",
-          "parentId": "1793114095969-e4e734d0be",
-          "traceId": "73e548ecfd694efea162729b1eb4cc23",
+          "contractId": "1793114588797-888bd0bc9d",
+          "parentId": "1793114588738-e5df556e33",
+          "traceId": "de7ae1d76894451ba559158704db2bba",
           "intent": "action.draft",
           "risk": {
             "level": "medium",
@@ -1641,20 +1791,20 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:14:56.017916+00:00",
-          "expiresAt": "2026-10-27T15:19:56.017916+00:00",
+          "issuedAt": "2026-10-27T15:23:08.797258+00:00",
+          "expiresAt": "2026-10-27T15:28:08.797258+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "4ce3493ef23600db3cad963f187e669bce95f9917a344285ca2b6c9d0338c611",
+          "signature": "39a66f42da68131da4337d76f4ec54594f3c967e0dc68840238ae28f07f4b0e5",
           "signedBy": "scout"
         }
       },
       {
         "phase": "memory",
         "contract": {
-          "contractId": "1793114096019-82d2661228",
-          "parentId": "1793114095969-e4e734d0be",
-          "traceId": "73e548ecfd694efea162729b1eb4cc23",
+          "contractId": "1793114588799-c043db7475",
+          "parentId": "1793114588738-e5df556e33",
+          "traceId": "de7ae1d76894451ba559158704db2bba",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1674,11 +1824,11 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:14:56.019468+00:00",
-          "expiresAt": "2026-10-27T15:19:56.019468+00:00",
+          "issuedAt": "2026-10-27T15:23:08.799941+00:00",
+          "expiresAt": "2026-10-27T15:28:08.799941+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "68c3ca12d292d701a088f79bd4c5a5e363e76b2f2a81e7a75ef076239000f238",
+          "signature": "90e60a1bedb7cbc5067af2a5a920339a70be51aeee0fb3bb518eef1eb8460276",
           "signedBy": "scout"
         }
       }
@@ -1727,7 +1877,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114095970-a2d16b3cfb for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+      "summary": "child contract 1793114588740-435b053ea9 for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
     },
     {
       "agent": "scout",
@@ -1735,7 +1885,7 @@
       "target_agent": "memory_recall",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114095970-a2d16b3cfb signature, expiry and capability verified"
+      "summary": "contract 1793114588740-435b053ea9 signature, expiry and capability verified"
     },
     {
       "agent": "memory",
@@ -1751,7 +1901,7 @@
       "target_agent": "data_reader",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114095970-a2d16b3cfb signature, expiry and capability verified"
+      "summary": "contract 1793114588740-435b053ea9 signature, expiry and capability verified"
     },
     {
       "agent": "data_reader",
@@ -1767,7 +1917,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114096009-dd491e9359 for stockout.explain (['llm.call'])"
+      "summary": "child contract 1793114588788-7e72da4a49 for stockout.explain (['llm.call'])"
     },
     {
       "agent": "data_analyst",
@@ -1799,7 +1949,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114096010-cd01dde66f for stockout.explain (['data.read', 'llm.call'])"
+      "summary": "child contract 1793114588790-29bc477bf6 for stockout.explain (['data.read', 'llm.call'])"
     },
     {
       "agent": "evidence_investigator",
@@ -1847,7 +1997,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114096017-44ecd4f7cc for action.draft (['action.draft', 'data.read'])"
+      "summary": "child contract 1793114588797-888bd0bc9d for action.draft (['action.draft', 'data.read'])"
     },
     {
       "agent": "scout",
@@ -1855,7 +2005,7 @@
       "target_agent": "action_strategist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114096017-44ecd4f7cc signature, expiry and capability verified"
+      "summary": "contract 1793114588797-888bd0bc9d signature, expiry and capability verified"
     },
     {
       "agent": "action_strategist",
@@ -1871,7 +2021,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114096019-82d2661228 for stockout.explain (['memory.write'])"
+      "summary": "child contract 1793114588799-c043db7475 for stockout.explain (['memory.write'])"
     },
     {
       "agent": "scout",
@@ -1879,7 +2029,7 @@
       "target_agent": "memory_store",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114096019-82d2661228 signature, expiry and capability verified"
+      "summary": "contract 1793114588799-c043db7475 signature, expiry and capability verified"
     },
     {
       "agent": "memory",
@@ -1887,7 +2037,7 @@
       "target_agent": "pharmacist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "stored 58d9c797af8f4a10a02b5e4c0a860e67 as pending_approval"
+      "summary": "stored 99bc88f92a384b539dd964aff97420e1 as pending_approval"
     },
     {
       "agent": "orchestrator",
@@ -1911,25 +2061,25 @@
       "step": "memory_recall",
       "capability": "memory.read",
       "result": "granted",
-      "contract_id": "1793114095970-a2d16b3cfb"
+      "contract_id": "1793114588740-435b053ea9"
     },
     {
       "step": "data_reader",
       "capability": "data.read",
       "result": "granted",
-      "contract_id": "1793114095970-a2d16b3cfb"
+      "contract_id": "1793114588740-435b053ea9"
     },
     {
       "step": "action_strategist",
       "capability": "action.draft",
       "result": "granted",
-      "contract_id": "1793114096017-44ecd4f7cc"
+      "contract_id": "1793114588797-888bd0bc9d"
     },
     {
       "step": "memory_store",
       "capability": "memory.write",
       "result": "granted",
-      "contract_id": "1793114096019-82d2661228"
+      "contract_id": "1793114588799-c043db7475"
     }
   ]
 }

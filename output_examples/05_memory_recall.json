@@ -1,12 +1,12 @@
 {
-  "run_id": "1de61884",
+  "run_id": "8e3a38c9",
   "status": "no_stockout",
   "facility_id": "FAC-009",
   "commodity": "magnesium sulphate inj",
   "month": "2026-04",
   "question": "Why did FAC-009 run out of magnesium sulphate in April 2026?",
   "dataset_dir": "data/sample",
-  "log_file": "run_1de61884_20261027T151456.jsonl",
+  "log_file": "run_8e3a38c9_20261027T152309.jsonl",
   "llm_mode": "rule-based",
   "steps": {
     "data_reader": {
@@ -719,153 +719,303 @@
         "facilities": [
           {
             "facility_id": "FAC-001",
-            "lat": -1.4486,
-            "lon": 36.5058
+            "lat": -1.0174,
+            "lon": 38.3295,
+            "facility_name": "Ngieni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/14239550707"
           },
           {
             "facility_id": "FAC-002",
-            "lat": -1.1542,
-            "lon": 36.4352
+            "lat": -1.2527,
+            "lon": 38.2312,
+            "facility_name": "Itiko Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6303096758"
           },
           {
             "facility_id": "FAC-003",
-            "lat": -1.2577,
-            "lon": 36.6991
+            "lat": -1.1222,
+            "lon": 38.2126,
+            "facility_name": "Mui Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798318295"
           },
           {
             "facility_id": "FAC-004",
-            "lat": -1.6878,
-            "lon": 36.8267
+            "lat": -0.7479,
+            "lon": 37.9798,
+            "facility_name": "Tyaa Kamuthale Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi North",
+            "osm_id": "way/1171234022"
           },
           {
             "facility_id": "FAC-005",
-            "lat": -1.7063,
-            "lon": 36.7603
+            "lat": -0.7799,
+            "lon": 38.0206,
+            "facility_name": "Katuluni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/10883742550"
           },
           {
             "facility_id": "FAC-006",
-            "lat": -1.6771,
-            "lon": 36.4516
+            "lat": -0.8566,
+            "lon": 38.2555,
+            "facility_name": "Kamulewa Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798331031"
           },
           {
             "facility_id": "FAC-007",
-            "lat": -1.3579,
-            "lon": 37.1142
+            "lat": -1.0791,
+            "lon": 37.9143,
+            "facility_name": "Ngongoni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935335"
           },
           {
             "facility_id": "FAC-008",
-            "lat": -1.6286,
-            "lon": 36.5709
+            "lat": -0.8509,
+            "lon": 38.2466,
+            "facility_name": "Enziu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/6244576623"
           },
           {
             "facility_id": "FAC-009",
-            "lat": -1.1753,
-            "lon": 37.2229
+            "lat": -1.1835,
+            "lon": 37.8214,
+            "facility_name": "Katutu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui West",
+            "osm_id": "way/1318131957"
           },
           {
             "facility_id": "FAC-010",
-            "lat": -1.2206,
-            "lon": 36.727
+            "lat": -1.1757,
+            "lon": 38.2125,
+            "facility_name": "Yoonye Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333661"
           },
           {
             "facility_id": "FAC-011",
-            "lat": -0.8614,
-            "lon": 36.4119
+            "lat": -1.436,
+            "lon": 38.2444,
+            "facility_name": "Zombe Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6244567617"
           },
           {
             "facility_id": "FAC-012",
-            "lat": -0.9674,
-            "lon": 36.6306
+            "lat": -1.4597,
+            "lon": 38.2037,
+            "facility_name": "Kaumu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798331033"
           },
           {
             "facility_id": "FAC-013",
-            "lat": -1.6102,
-            "lon": 36.476
+            "lat": -0.93,
+            "lon": 38.2659,
+            "facility_name": "Yumbu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798307186"
           },
           {
             "facility_id": "FAC-014",
-            "lat": -1.4624,
-            "lon": 37.1045
+            "lat": -0.9151,
+            "lon": 37.8612,
+            "facility_name": "Kyusyani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935320"
           },
           {
             "facility_id": "FAC-015",
-            "lat": -1.5773,
-            "lon": 36.8934
+            "lat": -0.8523,
+            "lon": 37.9696,
+            "facility_name": "Itongolani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935378"
           },
           {
             "facility_id": "FAC-016",
-            "lat": -1.165,
-            "lon": 36.7052
+            "lat": -1.2274,
+            "lon": 38.1737,
+            "facility_name": "Mutito Sub-County Hospital",
+            "facility_type": "sub-county hospital",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333660"
           },
           {
             "facility_id": "FAC-017",
-            "lat": -1.247,
-            "lon": 36.4265
+            "lat": -1.2194,
+            "lon": 38.2989,
+            "facility_name": "Manyoeni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333662"
           },
           {
             "facility_id": "FAC-018",
-            "lat": -1.6864,
-            "lon": 36.5554
+            "lat": -0.8772,
+            "lon": 38.1777,
+            "facility_name": "Mutuangombe Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/6243798527"
           },
           {
             "facility_id": "FAC-019",
-            "lat": -1.1276,
-            "lon": 36.7548
+            "lat": -1.4182,
+            "lon": 38.1553,
+            "facility_name": "Inyuu Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798331035"
           },
           {
             "facility_id": "FAC-020",
-            "lat": -1.4573,
-            "lon": 36.897
+            "lat": -0.9704,
+            "lon": 37.9194,
+            "facility_name": "Winzyeei Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796944524"
           },
           {
             "facility_id": "FAC-021",
-            "lat": -1.3321,
-            "lon": 36.6398
+            "lat": -1.088,
+            "lon": 38.2191,
+            "facility_name": "Muyuni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798307187"
           },
           {
             "facility_id": "FAC-022",
-            "lat": -1.0251,
-            "lon": 36.9991
+            "lat": -1.4736,
+            "lon": 37.8376,
+            "facility_name": "Kiusyani Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui Rural",
+            "osm_id": "node/7549451145"
           },
           {
             "facility_id": "FAC-023",
-            "lat": -1.5203,
-            "lon": 36.887
+            "lat": -0.9343,
+            "lon": 37.9649,
+            "facility_name": "Kiio Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877939679"
           },
           {
             "facility_id": "FAC-024",
-            "lat": -1.2673,
-            "lon": 37.1576
+            "lat": -1.1119,
+            "lon": 37.9241,
+            "facility_name": "Nzawa Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796943125"
           },
           {
             "facility_id": "FAC-025",
-            "lat": -1.0835,
-            "lon": 36.6291
+            "lat": -1.3841,
+            "lon": 38.2731,
+            "facility_name": "Ngelani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6244568075"
           },
           {
             "facility_id": "FAC-026",
-            "lat": -0.8578,
-            "lon": 36.4763
+            "lat": -1.5208,
+            "lon": 38.2481,
+            "facility_name": "Kasunguni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333663"
           },
           {
             "facility_id": "FAC-027",
-            "lat": -1.3637,
-            "lon": 37.0514
+            "lat": -1.0611,
+            "lon": 37.8733,
+            "facility_name": "Kakululo Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935301"
           },
           {
             "facility_id": "FAC-028",
-            "lat": -1.6032,
-            "lon": 36.8101
+            "lat": -0.8435,
+            "lon": 37.9961,
+            "facility_name": "Kyethani Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2864248999"
           },
           {
             "facility_id": "FAC-029",
-            "lat": -1.7047,
-            "lon": 36.9714
+            "lat": -0.7821,
+            "lon": 37.9519,
+            "facility_name": "Wikithuki Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796948428"
           },
           {
             "facility_id": "FAC-030",
-            "lat": -1.0519,
-            "lon": 36.8857
+            "lat": -1.3751,
+            "lon": 37.9952,
+            "facility_name": "Kanyangi Sub-County Hospital",
+            "facility_type": "sub-county hospital",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/1132558742"
           }
         ],
         "web_notes": [],
@@ -952,9 +1102,9 @@
     "suggestions": {}
   },
   "contract": {
-    "contractId": "1793114096437-57db6a9906",
+    "contractId": "1793114589318-105d48997e",
     "parentId": null,
-    "traceId": "e96ad5a8c04c449b82d0a2a1bb623892",
+    "traceId": "d24b413413604db1b5847ae4587e42bc",
     "intent": "stockout.explain",
     "risk": {
       "level": "low",
@@ -977,18 +1127,18 @@
       },
       "role": "pharmacist"
     },
-    "issuedAt": "2026-10-27T15:14:56.437329+00:00",
-    "expiresAt": "2026-10-27T15:19:56.437329+00:00",
+    "issuedAt": "2026-10-27T15:23:09.318689+00:00",
+    "expiresAt": "2026-10-27T15:28:09.318689+00:00",
     "registryVersion": 3,
     "policyPackVersion": "stockwhy-default-2",
-    "signature": "d218d05efc1ae751a4bf67dcb2ec1ca9a5bdaccda2c07f6881a924f06373e4c4",
+    "signature": "d4ac2aff6189c1a0f97c68b12b1bfe7dd4322b7a6a99bc0950bbd6803a32a0b6",
     "signedBy": "scout"
   },
   "canonical_question": "Why did facility FAC-009 report a stockout of magnesium sulphate inj in 2026-04?",
   "memory": {
     "recalled": [
       {
-        "id": "da89651e884040c3900b53fcad46aaac",
+        "id": "c558ff85f44e430ca2f92743b176cc91",
         "facility_id": "FAC-009",
         "commodity": "magnesium sulphate inj",
         "month": "2026-03",
@@ -1002,14 +1152,16 @@
         "note": "",
         "provenance": {
           "origin": "stockwhy",
-          "run_id": "3ed32ddc",
+          "run_id": "1f350c5b",
           "citations": [
             "orders#1265"
           ],
-          "learnedAt": 1793114095912,
-          "label": "StockWhy run 3ed32ddc"
+          "learnedAt": 1793114588681,
+          "label": "StockWhy run 1f350c5b"
         },
-        "stored_at": 1793114095912
+        "stored_at": 1793114588681,
+        "dataset_key": "data/sample",
+        "action_decisions": {}
       }
     ],
     "prioritised": [],
@@ -1023,9 +1175,9 @@
   "actions": [],
   "contracts": {
     "main": {
-      "contractId": "1793114096437-57db6a9906",
+      "contractId": "1793114589318-105d48997e",
       "parentId": null,
-      "traceId": "e96ad5a8c04c449b82d0a2a1bb623892",
+      "traceId": "d24b413413604db1b5847ae4587e42bc",
       "intent": "stockout.explain",
       "risk": {
         "level": "low",
@@ -1048,11 +1200,11 @@
         },
         "role": "pharmacist"
       },
-      "issuedAt": "2026-10-27T15:14:56.437329+00:00",
-      "expiresAt": "2026-10-27T15:19:56.437329+00:00",
+      "issuedAt": "2026-10-27T15:23:09.318689+00:00",
+      "expiresAt": "2026-10-27T15:28:09.318689+00:00",
       "registryVersion": 3,
       "policyPackVersion": "stockwhy-default-2",
-      "signature": "d218d05efc1ae751a4bf67dcb2ec1ca9a5bdaccda2c07f6881a924f06373e4c4",
+      "signature": "d4ac2aff6189c1a0f97c68b12b1bfe7dd4322b7a6a99bc0950bbd6803a32a0b6",
       "signedBy": "scout"
     },
     "child": null,
@@ -1060,9 +1212,9 @@
       {
         "phase": "read",
         "contract": {
-          "contractId": "1793114096439-0cfe48c277",
-          "parentId": "1793114096437-57db6a9906",
-          "traceId": "e96ad5a8c04c449b82d0a2a1bb623892",
+          "contractId": "1793114589320-6087960a0d",
+          "parentId": "1793114589318-105d48997e",
+          "traceId": "d24b413413604db1b5847ae4587e42bc",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1082,11 +1234,11 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:14:56.439345+00:00",
-          "expiresAt": "2026-10-27T15:19:56.439345+00:00",
+          "issuedAt": "2026-10-27T15:23:09.320000+00:00",
+          "expiresAt": "2026-10-27T15:28:09.320000+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "e04bc379d72f43fd5c45040468edb9e8983296a6a884bf940a758f96ad3cc5a4",
+          "signature": "1050bbda08eb93c6b815f962a2786423ffe3ba8c2e8b7e5c4d7d10a03ef53264",
           "signedBy": "scout"
         }
       }
@@ -1135,7 +1287,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114096439-0cfe48c277 for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+      "summary": "child contract 1793114589320-6087960a0d for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
     },
     {
       "agent": "scout",
@@ -1143,7 +1295,7 @@
       "target_agent": "memory_recall",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114096439-0cfe48c277 signature, expiry and capability verified"
+      "summary": "contract 1793114589320-6087960a0d signature, expiry and capability verified"
     },
     {
       "agent": "memory",
@@ -1159,7 +1311,7 @@
       "target_agent": "data_reader",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114096439-0cfe48c277 signature, expiry and capability verified"
+      "summary": "contract 1793114589320-6087960a0d signature, expiry and capability verified"
     },
     {
       "agent": "data_reader",
@@ -1199,13 +1351,13 @@
       "step": "memory_recall",
       "capability": "memory.read",
       "result": "granted",
-      "contract_id": "1793114096439-0cfe48c277"
+      "contract_id": "1793114589320-6087960a0d"
     },
     {
       "step": "data_reader",
       "capability": "data.read",
       "result": "granted",
-      "contract_id": "1793114096439-0cfe48c277"
+      "contract_id": "1793114589320-6087960a0d"
     }
   ]
 }

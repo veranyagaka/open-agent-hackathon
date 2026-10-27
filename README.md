@@ -9,7 +9,7 @@ Explain Why".
 > ⚠️ **Medical disclaimer:** decision support only, not medical advice. No order, transfer, requisition or payment
 > is ever executed: the agents can only draft actions, and every action needs pharmacist approval.
 
-> ⚠️ **Synthetic data:** everything in `data/` is synthetic. It does not describe real patients or facilities.
+> ⚠️ **Synthetic data, real places:** stock, orders, payments and notices in `data/` are synthetic. The 30 facilities are real public health facilities in Kitui County, taken from OpenStreetMap (© OpenStreetMap contributors, ODbL). The stock-outs and late orders attached to them are invented and say nothing about how those facilities actually perform. See `data/README.md`.
 
 ---
 
@@ -289,7 +289,7 @@ accuracy on real data. Only `scripts/evaluate.py` reads `eval/answer_key.csv`; t
 
 ## Limitations
 
-- All data is synthetic; thresholds (25% surge, 30M KES arrears, 5% underfill) are illustrative.
+- All stock, order and payment data is synthetic (facility names and locations are real, from OpenStreetMap); thresholds (25% surge, 30M KES arrears, 5% underfill) are illustrative.
 - Zetaris holds one dataset (the demo county); the planted cases are read from CSV.
 - Public notices are synthetic placeholders for real KEMSA or ministry notices.
 - With the LLM on, explanation text can still be wrong; verdicts come from computed flags and every cited row is
