@@ -282,9 +282,21 @@ accuracy on real data. Only `scripts/evaluate.py` reads `eval/answer_key.csv`; t
 
 ---
 
+## Live verification
+
+Vera ran StockWhy live on her machine on 27 Oct 2026, against Zetaris and Nightshift together. She recorded these results in the README on `main` (commit `5dd36ff`):
+
+- **Question:** FAC-019, iron-folate tab, 2026-03.
+- **Settings:** `STOCKWHY_DATA_SOURCE=zetaris`, `ZETARIS_SCHEMA=STOCKWHY_PG`, `METERLESS_MODEL_DEEP=meterless/auto`.
+- **Zetaris:** `STOCKWHY_PG` returned 30 facilities, 4,320 stock rows, 4,320 order rows and 24 payment rows. Stock row 2730 (closing 0, 17 stock-out days) came back correctly.
+- **Pipeline:** all five stages completed.
+- **Nightshift:** reported the served model as `nvidia/nemotron-3.5-bolt-e4b` for the `meterless/auto` route. Nightshift picks the model, so the served model can change with its routing settings. The trace records the requested and served model for every call.
+
+These are her observations from that run. This environment cannot reach Zetaris or Nightshift, so they were not re-run here.
+
 ## Models, frameworks and tools
 
-- **AI provider:** Meterless Nightshift (OpenAI-compatible runtime) with two NVIDIA Nemotron models pinned in Nightshift: `nvidia/nemotron-3.5-super-vl-120b-a12b` (deep lane) and `nvidia/nemotron-3.5-lightning-30b-a3b` (fast lane).
+- **AI provider:** Meterless Nightshift (OpenAI-compatible runtime). Recommended Nemotron pins: `nvidia/nemotron-3.5-super-vl-120b-a12b` (deep lane) and `nvidia/nemotron-3.5-lightning-30b-a3b` (fast lane). In the recorded live run, `meterless/auto` was served by `nvidia/nemotron-3.5-bolt-e4b` (see Live verification).
   The NVIDIA key lives in Nightshift, never in this repo.
 - **Meterless engines:** Scout Intent and H-MEM, implemented in Python from the specs at
   https://github.com/meterless/meterless; their conformance fixtures are in `tests/fixtures/` (Apache-2.0).
