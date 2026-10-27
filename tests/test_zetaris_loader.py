@@ -104,9 +104,11 @@ def test_full_read_converts_types_and_records_source(fake_zetaris):
     assert pd.api.types.is_datetime64_any_dtype(dataset["orders"]["order_date"])
     assert pd.api.types.is_numeric_dtype(dataset["facilities"]["lat"])
     assert dataset["stock"]["id"].iloc[0] == "1"
-    # One call per table (no 100-row paging), plus the second datasource.
-    assert len(fake_zetaris.calls) == 5
-    assert "facility_name" in fake_zetaris.calls[3]
+    # Pages of 100: stock and orders take 44 calls each (4,320 rows), payments,
+    # facilities and the notices one each.
+    assert len(fake_zetaris.calls) == 44 + 44 + 1 + 1 + 1
+    assert all("LIMIT 100" in sql for sql in fake_zetaris.calls[:88])
+    assert any("facility_name" in sql for sql in fake_zetaris.calls)
     assert dataset["facilities"]["facility_name"].iloc[0] == "Ngieni Dispensary"
     assert not any("SELECT *" in sql for sql in fake_zetaris.calls)
     assert any("stockwhy_web.web_notes" in sql for sql in fake_zetaris.calls)
@@ -296,5 +298,21 @@ def test_facility_name_columns_are_optional(monkeypatch):
     fake = FakeZetaris(facility_names=False)
     monkeypatch.setattr("scripts.check_zetaris.run_sql", fake.run_sql)
     dataset = data_loader.load_zetaris_dataset(str(SAMPLE_DIR))
-    assert "facility_name" in fake.calls[3] and "facility_name" not in fake.calls[4]
+    fac = [sql for sql in fake.calls if "stockwhy_pg.facilities" in sql]
+    assert len(fac) == 2 and "facility_name" in fac[0] and "facility_name" not in fac[1]
     assert list(dataset["facilities"].columns[:3]) == ["facility_id", "lat", "lon"]
+
+
+def test_server_row_cap_does_not_truncate_tables(monkeypatch):
+    """If Zetaris returns at most 100 rows per call, every row is still read."""
+    fake = FakeZetaris()
+
+    def capped(sql, limit=100):
+        response = fake.run_sql(sql, limit=limit)
+        response["data"] = response["data"][:100]
+        return response
+
+    monkeypatch.setattr("scripts.check_zetaris.run_sql", capped)
+    dataset = data_loader.load_zetaris_dataset(str(SAMPLE_DIR))
+    assert len(dataset["stock"]) == 4320
+    assert len(dataset["orders"]) == 4320

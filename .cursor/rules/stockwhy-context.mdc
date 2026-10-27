@@ -68,7 +68,7 @@ Track: **"The Agent That Can Explain Why"**. Every answer must trace back to evi
 
 ## Current state (27 Oct)
 
-- See README.md (Architecture, Tests). 320 tests pass; back-test 16/16 on the planted cases.
+- See README.md (Architecture, Tests). 330 tests pass; back-test 16/16 on the planted cases.
 - `llm_client.py` talks to Meterless Nightshift only. Data goes through `tools/data_loader.py` (CSV in sample mode, Zetaris in live mode).
 - The loop: Scout contract per phase → H-MEM recall → wave-planned investigators → Evaluator re-check, retry and second wave → ranked causes → drafted actions (including a transfer draft) → pharmacist review into H-MEM.
 - `data/` holds synthetic stock, orders and payments on 30 real Kitui public facilities (OpenStreetMap, ODbL). See `data/README.md`.

@@ -57,18 +57,16 @@ def _analyst_response():
     return {
         "analysis_summary": "Strong demand surge signal; late order also possible.",
         "hypothesis_signals": {
-            "h1_late_order": "weak",
-            "h2_supplier_underfill": "none",
-            "h3_payment_arrears": "none",
-            "h4_demand_surge": "strong",
-            "h5_record_error": "none",
-            "h6_expiry": "none",
-            "h7_national_disruption": "none",
+            "H1": {"signal": "weak", "reasoning": "Order signal is weak."},
+            "H2": {"signal": "none", "reasoning": "No underfill signal."},
+            "H3": {"signal": "none", "reasoning": "No arrears signal."},
+            "H4": {"signal": "strong", "reasoning": "Demand increased."},
+            "H5": {"signal": "none", "reasoning": "Records are consistent."},
+            "H6": {"signal": "none", "reasoning": "No wastage signal."},
+            "H7": {"signal": "none", "reasoning": "No notice signal."},
         },
-        "data_quality_issues": [],
-        "observed_patterns": ["Consumption spike in 2026-03"],
-        "evidence_gaps": [],
-        "recommended_tests": [],
+        "primary_leads": ["H4"],
+        "data_limitations": [],
     }
 
 
@@ -146,7 +144,12 @@ class TestDataReaderAgent:
     @patch("agents.data_reader.load_dataset")
     @patch("agents.data_reader.profile_stockout")
     @patch("agents.data_reader.ask_agent")
-    def test_returns_required_structure(self, mock_ask, mock_profile, mock_load):
+    def test_returns_required_structure(
+        self, mock_ask, mock_profile, mock_load, tmp_path, monkeypatch
+    ):
+        monkeypatch.setenv(
+            "STOCKWHY_WORLD_MODEL_DB", str(tmp_path / "world-model.sqlite3")
+        )
         mock_load.return_value = {}
         mock_profile.return_value = {
             "stock_record": [], "order_record": [], "payments_history": [],
@@ -168,6 +171,7 @@ class TestDataReaderAgent:
         assert "evidence" in result
         assert "computed_evidence" in result
         assert "missing_data_warnings" in result
+        assert "world_model" in result
         assert result["facility_id"] == "FAC-011"
 
     @patch("agents.data_reader.load_dataset")
@@ -184,7 +188,10 @@ class TestDataReaderAgent:
     @patch("agents.data_reader.load_dataset")
     @patch("agents.data_reader.profile_stockout")
     @patch("agents.data_reader.ask_agent")
-    def test_llm_called_once(self, mock_ask, mock_profile, mock_load):
+    def test_llm_called_once(self, mock_ask, mock_profile, mock_load, tmp_path, monkeypatch):
+        monkeypatch.setenv(
+            "STOCKWHY_WORLD_MODEL_DB", str(tmp_path / "world-model.sqlite3")
+        )
         mock_load.return_value = {}
         mock_profile.return_value = {
             "stock_record": [], "order_record": [], "payments_history": [],
@@ -215,6 +222,40 @@ class TestDataAnalystAgent:
             "Why did FAC-011 run out of ORS sachet in 2026-03?"
         )
         assert "hypothesis_signals" in result or "analysis_summary" in result
+
+    # A malformed analyst reply is never patched up: the agent drops it and uses the rules,
+    # and _fallback_reason says why.
+    @patch("agents.data_analyst.llm_enabled", return_value=True)
+    @patch("agents.data_analyst.ask_agent")
+    def test_analyze_evidence_rejects_missing_fields_without_filling_them(self, mock_ask, _llm):
+        mock_ask.return_value = {"analysis_summary": "Partial response"}
+        from agents.data_analyst import analyze_evidence
+
+        result = analyze_evidence({}, "Why?")
+        assert "missing required fields" in result["_fallback_reason"]
+        assert result.get("analysis_summary") != "Partial response"
+
+    @patch("agents.data_analyst.llm_enabled", return_value=True)
+    @patch("agents.data_analyst.ask_agent")
+    def test_analyze_evidence_rejects_incomplete_hypothesis_signals(self, mock_ask, _llm):
+        response = _analyst_response()
+        response["hypothesis_signals"].pop("H7")
+        mock_ask.return_value = response
+        from agents.data_analyst import analyze_evidence
+
+        result = analyze_evidence({}, "Why?")
+        assert "missing hypothesis signals: H7" in result["_fallback_reason"]
+
+    @patch("agents.data_analyst.llm_enabled", return_value=True)
+    @patch("agents.data_analyst.ask_agent")
+    def test_analyze_evidence_rejects_invalid_signal_instead_of_substituting(self, mock_ask, _llm):
+        response = _analyst_response()
+        response["hypothesis_signals"]["H4"]["signal"] = "unsupported"
+        mock_ask.return_value = response
+        from agents.data_analyst import analyze_evidence
+
+        result = analyze_evidence({}, "Why?")
+        assert "H4 has an invalid or missing" in result["_fallback_reason"]
 
     @patch("agents.data_analyst.ask_agent")
     def test_original_analyze_still_works(self, mock_ask):
@@ -381,6 +422,10 @@ class TestEvidenceInvestigatorAgent:
             f"Expected deterministic verdict '{expected_verdict}' for H3 on failure, "
             f"got '{h3['verdict']}'"
         )
+        assert h3["explanation_source"] == "local_deterministic_fallback"
+        assert h3["_provider"] == "Local deterministic fallback"
+        assert h3["_served_model"] is None
+        assert "Simulated API failure" not in h3["reasoning"]
 
 
 # ---------------------------------------------------------------------------

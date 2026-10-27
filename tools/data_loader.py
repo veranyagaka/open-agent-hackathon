@@ -66,9 +66,9 @@ _MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 _COMMODITY_RE = re.compile(r"^[A-Za-z0-9 .%/()\-]{1,80}$")
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
 
-# Rows per Zetaris call. One page covers every table of the demo county
-# (stock and orders have 4,320 rows each).
-ZETARIS_PAGE_SIZE = 5000
+# Rows per Zetaris call. The live SQL Editor run read every table in pages of 100,
+# so that is the default; ZETARIS_PAGE_SIZE raises it once a larger page is confirmed.
+ZETARIS_PAGE_SIZE = 100
 
 
 def _display_path(path: Path) -> str:
@@ -106,7 +106,11 @@ def _load_csv_dataset(dataset_dir: str) -> dict:
         path = d / name
         if not path.exists():
             raise FileNotFoundError(f"Expected file not found: {path}")
-        return pd.read_csv(path, dtype=str)  # load as str, coerce below
+        frame = pd.read_csv(path, dtype=str)  # load as str, coerce below
+        missing = set(TABLE_COLUMNS.get(name[:-4], [])) - set(frame.columns)
+        if missing:
+            raise ValueError(f"{path.name} is missing required columns: {sorted(missing)}")
+        return frame
 
     stock = read_csv("stock.csv")
     orders = read_csv("orders.csv")
@@ -336,7 +340,7 @@ class _ZetarisReader:
         # Reuse the proven authentication, endpoint and request headers.
         from scripts.check_zetaris import run_sql
         self._run_sql = run_sql
-        self.page_size = page_size or ZETARIS_PAGE_SIZE
+        self.page_size = page_size or int(os.getenv("ZETARIS_PAGE_SIZE", "0") or 0) or ZETARIS_PAGE_SIZE
         self.queries: list = []
 
     def rows(self, sql: str, limit: Optional[int] = None, columns: Optional[list] = None) -> list:

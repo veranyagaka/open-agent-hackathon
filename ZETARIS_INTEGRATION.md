@@ -90,3 +90,23 @@ PowerShell: `$env:STOCKWHY_DATA_SOURCE = "zetaris"` before `python run.py ...`.
 
 Never commit `.env`, keys or passwords. `data/sample/zetaris_register.sql` holds placeholders only;
 `scripts/setup_live.py` fills them in memory and never prints them.
+
+## Live verification (27 Oct 2026)
+
+Vera tested the connection and the SQL Editor query path live, on her machine:
+- Zetaris listed `NY_TAXI` and `TPCDS_DB` as accessible Lightning databases.
+- StockWhy's registered source was the schema `STOCKWHY_PG` (set with `ZETARIS_SCHEMA=STOCKWHY_PG`).
+- Its tables returned these row counts: `facilities` 30, `stock` 4,320, `orders` 4,320 and `payments` 24.
+- Reads were paged at 100 rows per call. That is our default `ZETARIS_PAGE_SIZE`.
+- This case query returned stock row `2730` (closing `0`, 17 reported stock-out days). The previous-cycle order was `2729`.
+
+```sql
+SELECT id, facility_id, commodity, month, opening, received, wastage,
+       consumed, closing, reported_stockout_days
+FROM STOCKWHY_PG.stock
+WHERE facility_id = 'FAC-019' AND commodity = 'iron-folate tab' AND month = '2026-03';
+```
+
+The full workflow completed every agent stage through Meterless Nightshift. Nightshift reported the served model as `nvidia/nemotron-3.5-bolt-e4b`.
+
+The registered rows are synthetic project records. This run verifies connectivity, registration, query execution and workflow integration. It does not show access to real operational stock data.

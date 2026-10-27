@@ -192,8 +192,9 @@ run.py                       CLI, --input/--json, HTTP server (index.html, /run 
 orchestrator.py              the loop: Scout → memory → agents → Evaluator → retry/second wave → strategist
   engines/scout_intent.py    Meterless Scout Intent: guard, binding, signed contracts
   engines/hmem.py            Meterless H-MEM: case memory, feedback, append-only ledger
-  agents/data_reader.py      loads + profiles data
+  agents/data_reader.py      loads + profiles data; records a World Model snapshot
     tools/data_loader.py     deterministic evidence for H1–H7; CSV or Zetaris
+    tools/world_model.py     append-only SQLite snapshot of each investigation's entities, with sources
   agents/data_analyst.py     interprets the signals
   agents/theory_generator.py seven theories
   agents/evidence_investigator.py  parallel investigation
@@ -233,9 +234,9 @@ python scripts/evaluate.py         # back-test on the 16 planted cases → eval/
 
 | File | Tests | Covers |
 |---|---|---|
-| `test_data_loader.py` | 51 | H1–H7 checks, loading, known cases |
-| `test_zetaris_loader.py` | 26 | Zetaris path against an in-memory stand-in: CSV/Zetaris parity, SQL validation, notices fallback |
-| `test_agents.py` | 42 | every agent online (mocked) and rule-based |
+| `test_data_loader.py` | 54 | H1–H7 checks, loading, missing columns, known cases |
+| `test_zetaris_loader.py` | 27 | Zetaris path against an in-memory stand-in: CSV/Zetaris parity, 100-row paging and a server-side row cap, SQL validation, notices fallback |
+| `test_agents.py` | 45 | every agent online (mocked) and rule-based; malformed analyst replies fall back to rules; explanation source labels |
 | `test_llm_client.py` | 34 | Nightshift contract against a local fake server: lanes, empty-answer retry, 429 backoff, call cap, `<think>` stripping, model reporting, URL normalisation, deadline |
 | `test_evaluator.py` | 20 | citation re-check, consistency, cross-critique, coverage |
 | `test_orchestrator.py` | 33 | the loop, retries, waves, escalation, Scout and memory wiring, CLI |
@@ -244,9 +245,10 @@ python scripts/evaluate.py         # back-test on the 16 planted cases → eval/
 | `test_logger.py` | 10 | trace fields, requested/served model |
 | `test_run.py` | 14 | question parsing (Swahili, conflicts), `--case`, HTTP server hardening, `/api/review`, UTF-8 output |
 | `test_zetaris_client.py` | 5 | Zetaris row shapes (headerless, upper-case), optional facility columns, timeout and 5xx retry |
+| `test_world_model.py` | 3 | World Model snapshots: stable ids with provenance, append-only and idempotent store, entities without a source rejected |
 | `test_agent_loop.py` | 15 | transfer draft computed and re-verified, H4 record-check revision, cross-facility citation rejection, no-stock-out month, LLM-failure fallback, signed child contracts per phase |
 
-320 tests in total.
+330 tests in total.
 
 Back-test (offline, rule-based): **16 of 16** planted cases get the right primary cause (8/8 normal, 8/8 noisy); contributing causes 4/4.
 The rules were written while looking at these same cases, so treat this as a regression check, not proof of
@@ -273,10 +275,12 @@ accuracy on real data. Only `scripts/evaluate.py` reads `eval/answer_key.csv`; t
 | `ZETARIS_REST_URL`, `ZETARIS_API_KEY`, `ZETARIS_ORG_ID` | | Zetaris REST |
 | `ZETARIS_SCHEMA` / `ZETARIS_WEB_SCHEMA` | `stockwhy_pg` / `stockwhy_web` | Zetaris datasource names |
 | `ZETARIS_TIMEOUT_S` | `120` | one Zetaris request (5xx or reset retried once) |
+| `ZETARIS_PAGE_SIZE` | `100` | rows per Zetaris call (the live run read every table in pages of 100) |
 | `PG_HOST`, `PG_PORT`, `PG_USER`, `PG_PASSWORD`, `PG_DATABASE`, `PG_WEB_DATABASE`, `PG_JDBC_PARAMS` | | Postgres for `scripts/setup_live.py` |
 | `PG_ZETARIS_HOST` / `PG_ZETARIS_PORT` | `PG_HOST` / `5432` when the host is set | the Postgres address as Zetaris sees it |
 | `STOCKWHY_LOGS_DIR` | `<repo>/logs` | trace folder |
 | `STOCKWHY_MEMORY_PATH` | `<repo>/logs/memory/hmem.json` | case memory file |
+| `STOCKWHY_WORLD_MODEL_DB` | `<repo>/logs/stockwhy_world_model.sqlite3` | World Model snapshot store |
 | `SCOUT_SIGNING_KEY` | random per process | key that signs Scout contracts; set it only to keep contracts valid across processes |
 | `STOCKWHY_INJECT_FAULT` | | fault drill (`H1`…`H7`) |
 

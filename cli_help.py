@@ -82,6 +82,7 @@ def show_help():
     print("  STOCKWHY_DATA_SOURCE   csv (default) or zetaris")
     print("  STOCKWHY_LOGS_DIR      Where JSONL traces go (default: logs)")
     print("  STOCKWHY_MEMORY_PATH   Case memory file (default: logs/memory/hmem.json)")
+    print("  STOCKWHY_WORLD_MODEL_DB World Model snapshot store (default: logs/stockwhy_world_model.sqlite3)")
     print("  STOCKWHY_INJECT_FAULT  e.g. H4: corrupt one cited value on the first pass")
     print("                         (demo drill: the Evaluator catches it, the retry recovers)")
 

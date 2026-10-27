@@ -287,6 +287,7 @@ def _investigate_one(
         result["hypothesis_name"] = h_name
         result["verdict"] = deterministic  # authoritative
         result["verdict_source"] = "deterministic"
+        result["explanation_source"] = "llm"
         for key in ("supporting_evidence_ids", "contradicting_evidence_ids", "limitations",
                     "additional_analysis_needed"):
             if not isinstance(result.get(key), list):
@@ -297,6 +298,9 @@ def _investigate_one(
         result = _rule_based_evaluation(h_id, h_name, hypothesis_evidence, deterministic)
         result["limitations"] = result["limitations"] + ["Agent call error"]
         result["_fallback_reason"] = f"LLM explanation unavailable: {str(exc)[:200]}"
+        result["explanation_source"] = "local_deterministic_fallback"
+        result["_provider"] = "Local deterministic fallback"
+        result["_served_model"] = None
         return finish(result)
 
 

@@ -94,6 +94,35 @@ def analyze(profile: dict, question: str) -> dict:
     return analyze_rule_based(profile, question)
 
 
+_VALID_SIGNALS = {"strong", "weak", "none", "inconclusive"}
+
+
+def _validate_analysis(result) -> None:
+    """Raise ValueError unless the reply has every field and a valid signal for H1-H7."""
+    if not isinstance(result, dict):
+        raise ValueError("Data Analyst response must be a JSON object.")
+    required = {"analysis_summary": str, "hypothesis_signals": dict,
+                "primary_leads": list, "data_limitations": list}
+    missing = sorted(set(required) - set(result))
+    if missing:
+        raise ValueError("Data Analyst response is missing required fields: " + ", ".join(missing))
+    invalid = [name for name, kind in required.items() if not isinstance(result[name], kind)]
+    if invalid:
+        raise ValueError("Data Analyst response has invalid field types: " + ", ".join(invalid))
+    if not result["analysis_summary"].strip():
+        raise ValueError("Data Analyst response has an empty analysis_summary.")
+    signals = result["hypothesis_signals"]
+    missing_ids = sorted(set(rules.HYPOTHESIS_NAMES) - set(signals))
+    if missing_ids:
+        raise ValueError("Data Analyst response is missing hypothesis signals: " + ", ".join(missing_ids))
+    for h_id in sorted(rules.HYPOTHESIS_NAMES):
+        signal = signals[h_id]
+        if not isinstance(signal, dict) or signal.get("signal") not in _VALID_SIGNALS:
+            raise ValueError(f"Data Analyst signal {h_id} has an invalid or missing signal value.")
+        if not isinstance(signal.get("reasoning"), str):
+            raise ValueError(f"Data Analyst signal {h_id} is missing string reasoning.")
+
+
 def analyze_evidence(computed_evidence: dict, question: str) -> dict:
     """
     Interpret the deterministic computed_evidence from data_loader
@@ -108,9 +137,7 @@ def analyze_evidence(computed_evidence: dict, question: str) -> dict:
                     "computed_evidence": computed_evidence,
                 },
             )
-            signals = result.get("hypothesis_signals") if isinstance(result, dict) else None
-            if not isinstance(signals, dict):
-                raise ValueError("LLM reply has no 'hypothesis_signals' object")
+            _validate_analysis(result)
             return result
         except Exception as exc:  # LLMError or a reply in the wrong shape
             result = analyze_evidence_rule_based(computed_evidence, question)

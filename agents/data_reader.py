@@ -10,6 +10,7 @@ import math
 from agents import rules
 from llm_client import RULE_BASED, ask_agent, llm_enabled
 from tools.data_loader import _prev_months, load_dataset, profile_stockout
+from tools.world_model import persist_snapshot
 
 
 SYSTEM = """
@@ -127,6 +128,18 @@ def read_and_profile(
     else:
         interpretation = interpret_rule_based(profile)
 
+    # Record the investigation's entities and their sources in the World Model.
+    try:
+        snapshot = persist_snapshot(profile)
+        world_model = {
+            "snapshot_id": snapshot["snapshot_id"],
+            "schema_version": snapshot["schema_version"],
+            "entities": snapshot["entities"],
+            "relationships": snapshot["relationships"],
+        }
+    except Exception as exc:
+        world_model = {"error": f"{type(exc).__name__}: {str(exc)[:200]}"}
+
     return {
         "facility_id": facility_id,
         "commodity": commodity,
@@ -137,6 +150,7 @@ def read_and_profile(
         "missing_data_warnings": interpretation.get("missing_data_warnings", []),
         "_produced_by": interpretation.get("_produced_by", RULE_BASED),
         "_profile": profile,
+        "world_model": world_model,
     }
 
 

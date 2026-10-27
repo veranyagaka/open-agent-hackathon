@@ -22,6 +22,12 @@ os.environ["STOCKWHY_DATA_SOURCE"] = "csv"
 os.environ.pop("SAMPLE_MODE", None)
 
 
+@pytest.fixture(autouse=True)
+def _world_model_in_tmp(tmp_path, monkeypatch):
+    if not os.environ.get("STOCKWHY_WORLD_MODEL_DB"):
+        monkeypatch.setenv("STOCKWHY_WORLD_MODEL_DB", str(tmp_path / "world_model.sqlite3"))
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _force_csv_data_source():
     with pytest.MonkeyPatch.context() as mp:
