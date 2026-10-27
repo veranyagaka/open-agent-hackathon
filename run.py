@@ -1,20 +1,20 @@
 """
 run.py
 
-StockyWhy CLI entry point.
+StockWhy CLI entry point.
 
 Three ways in, one result shape out:
   python run.py --facility FAC-011 --commodity "ORS sachet" --month 2026-03
   python run.py --question "Why did FAC-009 run out of magnesium sulphate in March 2026?"
   python run.py --input request.json --json
-and POST /run on the --serve HTTP server (same JSON as --input).
+and POST /run on the --serve HTTP server (same JSON as --input);
+POST /api/review records the pharmacist's decision in case memory.
 
 Exit code is non-zero only for system or data errors (status "error").
 A clarify / refuse / block / insufficient-evidence result exits 0.
 """
 
 import argparse
-import calendar
 import contextlib
 import csv
 import json
@@ -24,13 +24,66 @@ import sys
 import uuid
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parent
+DATA_ROOT = REPO_ROOT / "data"
 SAMPLE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "sample")
+QUESTIONS_CSV = DATA_ROOT / "cases" / "questions.csv"
+_TRUE = {"1", "true", "yes", "on"}
+PLACEHOLDER_TOKENS = {"replace_with_your_runtime_token"}
+
+
+def _configure_stdio() -> None:
+    """UTF-8 output everywhere (Windows consoles default to cp1252)."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
+def _load_env() -> None:
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+    load_dotenv(REPO_ROOT / ".env")
+
+
+def _offline_fallback() -> str:
+    """
+    No runtime token and SAMPLE_MODE unset: run rule-based instead of failing
+    on every agent with "token is not set". Returns the notice to print, or "".
+    """
+    if os.environ.get("SAMPLE_MODE", "").strip():
+        return ""
+    if os.environ.get("STOCKWHY_USE_LLM", "").strip().lower() not in ("",) + tuple(_TRUE):
+        return ""  # LLM explicitly off already: rule-based, nothing to say
+    token = (os.environ.get("METERLESS_RUNTIME_TOKEN") or "").strip()
+    if token and token not in PLACEHOLDER_TOKENS:
+        return ""
+    if os.environ.get("STOCKWHY_DATA_SOURCE", "csv").strip().lower() == "zetaris":
+        os.environ["STOCKWHY_USE_LLM"] = "false"
+        return ("Note: METERLESS_RUNTIME_TOKEN is not set, so the agents run rule-based "
+                "(no LLM) on Zetaris data. Set the token to use Nightshift.")
+    os.environ["SAMPLE_MODE"] = "true"
+    return ("Note: METERLESS_RUNTIME_TOKEN is not set and SAMPLE_MODE is unset, so StockWhy "
+            "runs in sample mode (data/sample, rule-based agents, no network). Set "
+            "SAMPLE_MODE=true to silence this, or set the token to use Nightshift.")
+
+
+def _reset_llm_budget() -> None:
+    """Each run gets a fresh LLM call cap (STOCKWHY_MAX_LLM_CALLS)."""
+    try:
+        import llm_client
+        llm_client.reset_call_budget()
+    except Exception:
+        pass
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="stockywhy",
-        description="StockyWhy — Drug Stockout Investigation System",
+        prog="stockwhy",
+        description="StockWhy — Drug Stockout Investigation System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
@@ -42,7 +95,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  python run.py --question \"Why did FAC-009 run out of magnesium "
             "sulphate in March 2026?\"\n"
             "  python run.py --input request.json --json\n"
-            "  python run.py --serve\n"
+            "  python run.py --serve --port 8000\n"
         ),
     )
 
@@ -65,7 +118,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--serve",
         action="store_true",
-        help="Start HTTP server on port 8000 with /run endpoint",
+        help="Start the web UI and HTTP API (/run, /api/review)",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Address for --serve (default 127.0.0.1; use 0.0.0.0 to expose on the network)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port for --serve (default 8000)",
     )
     parser.add_argument(
         "--no-review",
@@ -109,57 +173,36 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _norm_path(path: str) -> str:
+    return str(path or "").strip().replace("\\", "/").rstrip("/")
+
+
 def _resolve_case(case_path: str) -> dict:
     """
     Resolve a --case argument to {dataset, facility_id, commodity, month}.
 
-    Accepts:
-    - A case directory path (contains stock.csv etc.)
-    - A row from data/cases/questions.csv matched by dataset path prefix
+    Accepts a case directory path, or a dataset path listed in
+    data/cases/questions.csv (exact match, or the same path seen from
+    another directory, e.g. ./data/cases/normal/case_01). A listed case
+    carries its facility, medicine and month; an unlisted directory needs
+    --facility, --commodity and --month.
     """
-    questions_csv = Path("data/cases/questions.csv")
-    case_p = Path(case_path)
-
-    # A case listed in questions.csv carries its facility, medicine and month.
-    if questions_csv.exists():
-        wanted = case_path.rstrip("/").replace("\\", "/")
-        with open(questions_csv, newline="") as f:
-            for row in csv.DictReader(f):
-                if row["dataset"].rstrip("/") == wanted or wanted.endswith(row["dataset"].rstrip("/")):
-                    return {
-                        "dataset": case_path,
-                        "facility_id": row["facility_id"],
-                        "commodity": row["commodity"],
-                        "month": row["month"],
-                    }
-
-    # If it looks like a directory that exists, use it directly
-    if case_p.is_dir():
-        # Try to load manifest.json for metadata, else require explicit args
-        manifest = case_p / "manifest.json"
-        if manifest.exists():
-            with open(manifest) as f:
-                m = json.load(f)
-        return {"dataset": str(case_p), "facility_id": None, "commodity": None, "month": None}
-
-    # Try matching against questions.csv
-    if questions_csv.exists():
-        with open(questions_csv, newline="") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if (
-                    row["dataset"] == case_path
-                    or row["dataset"].endswith(case_path)
-                    or case_path in row["dataset"]
-                ):
-                    return {
-                        "dataset": row["dataset"],
-                        "facility_id": row["facility_id"],
-                        "commodity": row["commodity"],
-                        "month": row["month"],
-                    }
-
-    # Treat the path as a dataset directory
+    wanted = _norm_path(case_path)
+    if QUESTIONS_CSV.exists():
+        with open(QUESTIONS_CSV, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        for row in rows:
+            listed = _norm_path(row.get("dataset"))
+            if listed and (wanted == listed or wanted.endswith("/" + listed)
+                           or _norm_path(str((REPO_ROOT / listed).resolve())) == _norm_path(
+                               str(Path(case_path).resolve()))):
+                dataset = case_path if Path(case_path).is_dir() else str(REPO_ROOT / listed)
+                return {
+                    "dataset": dataset,
+                    "facility_id": row["facility_id"],
+                    "commodity": row["commodity"],
+                    "month": row["month"],
+                }
     return {"dataset": case_path, "facility_id": None, "commodity": None, "month": None}
 
 
@@ -167,8 +210,13 @@ def _resolve_case(case_path: str) -> dict:
 # Plain-language questions
 # ---------------------------------------------------------------------------
 
-_MONTHS = {name.lower(): i for i, name in enumerate(calendar.month_name) if name}
-_MONTHS.update({name.lower(): i for i, name in enumerate(calendar.month_abbr) if name})
+try:  # one month table for English and Swahili, shared with Scout Intent
+    from engines.scout_intent import MONTHS as _SCOUT_MONTHS
+except Exception:  # pragma: no cover - Scout missing; English only
+    import calendar as _calendar
+    _SCOUT_MONTHS = {n.lower(): i for i, n in enumerate(_calendar.month_name) if n}
+    _SCOUT_MONTHS.update({n.lower(): i for i, n in enumerate(_calendar.month_abbr) if n})
+_MONTHS = dict(_SCOUT_MONTHS)
 _MONTHS["sept"] = 9
 _GENERIC_WORDS = {"inj", "injection", "tab", "tabs", "tablet", "tablets", "sachet", "sachets",
                   "dispersible", "caps", "capsule", "capsules", "syrup", "iu"}
@@ -281,6 +329,68 @@ def _clarify_result(question: str, parsed: dict) -> dict:
     }
 
 
+def _conflict_result(question: str, conflicts: dict, parsed: dict) -> dict:
+    labels = {"facility_id": "facility", "commodity": "medicine", "month": "month"}
+    parts = [f"the question says {labels[k]} {q!r} but the field says {f!r}"
+             for k, (q, f) in conflicts.items()]
+    message = "Please confirm: " + "; ".join(parts) + "."
+    return {
+        "status": "clarify",
+        "question": question,
+        "message": message,
+        "error": f"Clarify: {message}",
+        "hint": "Make the question and the facility/medicine/month fields agree, or send only one.",
+        "missing": [],
+        "conflicts": {k: {"question": q, "field": f} for k, (q, f) in conflicts.items()},
+        "candidates": {},
+        "parsed": parsed,
+    }
+
+
+def _same_value(key: str, a, b) -> bool:
+    a, b = str(a or "").strip(), str(b or "").strip()
+    if key == "commodity":
+        return _norm(a) == _norm(b)
+    return a.upper() == b.upper()
+
+
+def _safe_dataset(dataset: str):
+    """
+    Resolve a dataset path sent over HTTP. It must sit under <repo>/data;
+    returns the resolved path, or None for anything else.
+    """
+    try:
+        candidate = Path(str(dataset))
+        if not candidate.is_absolute():
+            candidate = REPO_ROOT / candidate
+        resolved = candidate.resolve()
+        return str(resolved) if resolved.is_relative_to(DATA_ROOT.resolve()) else None
+    except (OSError, ValueError, RuntimeError):
+        return None
+
+
+_LLM_WORDS = ("nightshift", "meterless", "llm", "runtime_token", "language model")
+
+
+def _refine_hint(result: dict) -> dict:
+    """Replace a generic data hint with a Zetaris- or LLM-specific one."""
+    if not isinstance(result, dict) or result.get("status") != "error":
+        return result
+    text = str(result.get("error") or "").lower()
+    if any(word in text for word in _LLM_WORDS):
+        result["hint"] = ("The LLM step failed. Check that Meterless Nightshift is running at "
+                          "METERLESS_BASE_URL and METERLESS_RUNTIME_TOKEN is set, or run offline "
+                          "with SAMPLE_MODE=true (rule-based agents).")
+    elif "zetaris" in text or (
+            os.environ.get("STOCKWHY_DATA_SOURCE", "csv").strip().lower() == "zetaris"
+            and "data reader" in text):
+        result["hint"] = ("Zetaris could not serve the data. Check ZETARIS_REST_URL, ZETARIS_API_KEY "
+                          "and ZETARIS_ORG_ID, run `python scripts/check_zetaris.py`, and register "
+                          "the datasources with `python scripts/setup_live.py`; or set "
+                          "STOCKWHY_DATA_SOURCE=csv to read the CSV files.")
+    return result
+
+
 def _invalid(message: str) -> dict:
     return {"status": "invalid_request", "error": message,
             "hint": "Send {question} or {facility_id, commodity, month}; dataset is optional."}
@@ -324,12 +434,14 @@ def _screen_request(payload: dict):
 
 
 def execute_request(payload: dict, interactive: bool = False, log_file: str = None,
-                    agent=None) -> tuple:
+                    agent=None, restrict_dataset: bool = False) -> tuple:
     """
     Run one JSON request (shared by --input, --question and POST /run).
 
     payload: {"question"} or {"facility_id"/"facility", "commodity", "month"},
              plus optional "dataset" and "role".
+    restrict_dataset: True for HTTP requests; "dataset" must then resolve
+             under <repo>/data.
     Returns (result, http_status). http_status is 400 for a malformed request,
     otherwise 200 (the result's own "status" says what happened).
     """
@@ -344,8 +456,10 @@ def execute_request(payload: dict, interactive: bool = False, log_file: str = No
             return _invalid(f"Field '{key}' is too long"), 400
 
     dataset = payload.get("dataset") or None
-    if not dataset and os.environ.get("SAMPLE_MODE", "false").lower() == "true":
-        dataset = SAMPLE_DIR
+    if dataset and restrict_dataset:
+        dataset = _safe_dataset(dataset)
+        if dataset is None:
+            return _invalid("Field 'dataset' must be a folder under data/"), 400
     dataset = dataset or SAMPLE_DIR
     question = (payload.get("question") or "").strip() or None
     facility_id = payload.get("facility_id") or payload.get("facility")
@@ -356,20 +470,31 @@ def execute_request(payload: dict, interactive: bool = False, log_file: str = No
     if screened is not None:
         return screened, 200
 
-    if question and not all([facility_id, commodity, month]):
+    if question:
         parsed = parse_question(question, dataset)
+        explicit = {"facility_id": facility_id, "commodity": commodity, "month": month}
+        bound = parsed.get("parsed", {}) if parsed.get("status") == "clarify" else parsed
         if parsed.get("status") == "clarify":
-            return _clarify_result(question, parsed), 200
-        facility_id = facility_id or parsed["facility_id"]
-        commodity = commodity or parsed["commodity"]
-        month = month or parsed["month"]
+            need = {"facility": "facility_id", "year": "month", "month": "month",
+                    "commodity": "commodity"}
+            if not all(explicit[need[m]] for m in parsed.get("missing", []) if m in need):
+                return _clarify_result(question, parsed), 200
+        conflicts = {k: (bound[k], explicit[k]) for k in explicit
+                     if explicit[k] and bound.get(k) and not _same_value(k, bound[k], explicit[k])}
+        if conflicts:
+            return _conflict_result(question, conflicts, bound), 200
+        facility_id = facility_id or bound.get("facility_id")
+        commodity = commodity or bound.get("commodity")
+        month = month or bound.get("month")
 
     if not all([facility_id, commodity, month]):
         return _invalid("Required: question, or facility_id, commodity and month"), 400
 
     if agent is None:
-        from orchestrator import StockyWhy
-        agent = StockyWhy()
+        import orchestrator
+        agent_cls = getattr(orchestrator, "StockWhy", None) or getattr(orchestrator, "StockyWhy")
+        agent = agent_cls()
+    _reset_llm_budget()
     result = agent.run(
         dataset_dir=dataset,
         facility_id=str(facility_id).strip(),
@@ -380,7 +505,7 @@ def execute_request(payload: dict, interactive: bool = False, log_file: str = No
         question=question,
         role=str(payload.get("role") or "pharmacist"),
     )
-    return result, 200
+    return _refine_hint(result), 200
 
 
 def exit_code(result: dict) -> int:
@@ -391,7 +516,7 @@ def exit_code(result: dict) -> int:
 def _print_results(result: dict) -> None:
     """Print a nicely formatted summary of the investigation result."""
     print("\n" + "="*60)
-    print("  STOCKYWHY INVESTIGATION RESULTS")
+    print("  STOCKWHY INVESTIGATION RESULTS")
     print("="*60)
     print(f"  Facility  : {result.get('facility_id', '')}")
     print(f"  Commodity : {result.get('commodity', '')}")
@@ -405,6 +530,15 @@ def _print_results(result: dict) -> None:
         if result.get("hint"):
             print(f"  Hint: {result['hint']}")
         print(f"\n  Log: {result.get('log_file', 'N/A')}")
+        return
+
+    if result.get("status") == "no_stockout":
+        print(f"\n  No stock-out: {result.get('summary') or result.get('message') or ''}")
+        cites = [str(c) for c in (result.get("citations") or [])]
+        if cites:
+            print(f"  Rows : {', '.join(cites)}")
+        print(f"\n  Log: {result.get('log_file', 'N/A')}")
+        print("="*60)
         return
 
     print(f"\n  Most Likely Cause: {result.get('most_likely_cause', 'Unknown')}")
@@ -430,13 +564,37 @@ def _print_results(result: dict) -> None:
                 f" — {h.get('verdict','?')}"
             )
 
+    skipped = result.get("hypotheses_not_investigated") or []
+    if skipped:
+        print("\n  Not investigated (rules already settled them):")
+        for h in skipped:
+            rows = ", ".join(str(r) for r in (h.get("rows") or [])[:6])
+            print(f"    {h.get('id', '?')} {h.get('name', '')} — {h.get('computed_verdict', '?')}"
+                  + (f" (rows {rows})" if rows else ""))
+
     actions = result.get("approved_actions") or result.get("actions", [])
     if actions:
         print(f"\n  Proposed Actions ({len(actions)}):")
         for a in actions:
             flag = " [AMENDED]" if "pharmacist_amendment" in a else ""
+            priority = str(a.get("priority") or "?").upper()
+            if a.get("type") == "transfer_request":
+                source = a.get("source_facility_name") or a.get("source_facility", "?")
+                if a.get("source_facility_name") and a.get("source_facility"):
+                    source = f"{a['source_facility_name']} ({a['source_facility']})"
+                distance = a.get("distance_km")
+                print(f"    {a.get('action_id','?')} [{priority}] TRANSFER REQUEST{flag}"
+                      f" — {a.get('units', '?')} units from {source}"
+                      + (f", {distance} km" if distance is not None else ""))
+                if a.get("rule"):
+                    print(f"         Rule : {a['rule']}")
+                cites = a.get("citations") or a.get("verified_citations") or []
+                if cites:
+                    print(f"         Rows : {', '.join(str(c) for c in cites)}")
+                print("         Needs pharmacist approval before anyone moves stock.")
+                continue
             print(
-                f"    {a.get('action_id','?')} [{a.get('priority','?').upper()}]{flag}"
+                f"    {a.get('action_id','?')} [{priority}]{flag}"
                 f" — {a.get('action','')}"
             )
             print(f"         Owner: {a.get('proposed_owner','')}  "
@@ -448,7 +606,7 @@ def _print_results(result: dict) -> None:
     if rejected:
         print(f"\n  Rejected Actions: {len(rejected)}")
 
-    strategist = result.get("steps", {}).get("action_strategist", {})
+    strategist = (result.get("steps") or {}).get("action_strategist") or {}
     comm = strategist.get("communication_draft", "")
     if comm:
         print("\n  Communication Draft:")
@@ -465,7 +623,7 @@ def _get_facilities() -> list:
     import csv as _csv
     facilities_path = Path(__file__).parent / "data" / "sample" / "facilities.csv"
     if facilities_path.exists():
-        with open(facilities_path, newline="") as f:
+        with open(facilities_path, newline="", encoding="utf-8") as f:
             reader = _csv.DictReader(f)
             return sorted({row["facility_id"] for row in reader if row.get("facility_id")})
     # Fallback: enumerate FAC-001..FAC-030
@@ -477,7 +635,7 @@ def _get_commodities() -> list:
     import csv as _csv
     stock_path = Path(__file__).parent / "data" / "sample" / "stock.csv"
     if stock_path.exists():
-        with open(stock_path, newline="") as f:
+        with open(stock_path, newline="", encoding="utf-8") as f:
             reader = _csv.DictReader(f)
             seen = set()
             commodities = []
@@ -493,10 +651,10 @@ def _get_commodities() -> list:
 def _get_cases() -> list:
     """Return list of case dicts from data/cases/questions.csv."""
     import csv as _csv
-    questions_path = Path(__file__).parent / "data" / "cases" / "questions.csv"
+    questions_path = QUESTIONS_CSV
     if not questions_path.exists():
         return []
-    with open(questions_path, newline="") as f:
+    with open(questions_path, newline="", encoding="utf-8") as f:
         reader = _csv.DictReader(f)
         return [
             {
@@ -510,20 +668,57 @@ def _get_cases() -> list:
         ]
 
 
-def _serve(port: int = 8000) -> None:
-    """Start a minimal HTTP server exposing a /run endpoint and the frontend."""
-    from http.server import BaseHTTPRequestHandler, HTTPServer
+_REVIEW_DECISIONS = ("approved", "rejected", "partial")
+_ACTION_DECISIONS = ("accepted", "rejected")
+MAX_BODY = 64_000
+REQUEST_TIMEOUT_S = 30
 
-    print(f"StockyWhy HTTP server starting on port {port}...")
-    print(f"  Frontend  : http://localhost:{port}/")
-    print(f"  API       : POST http://localhost:{port}/run  "
-          "{question} or {facility_id, commodity, month[, dataset]}")
-    print(f"  Metadata  : GET  http://localhost:{port}/api/facilities|commodities|cases")
-    print("Press Ctrl+C to stop.\n")
 
-    _base_dir = Path(__file__).parent
+def review_request(payload, memory=None) -> tuple:
+    """
+    POST /api/review: {memory_id, decision: approved|rejected|partial, note?,
+    action_decisions?: {action_id: accepted|rejected}} -> ({ok, memory_id, status}, http_status).
+    """
+    if not isinstance(payload, dict):
+        return {"ok": False, "error": "Request must be a JSON object"}, 400
+    memory_id = payload.get("memory_id")
+    decision = payload.get("decision")
+    note = payload.get("note") or ""
+    actions = payload.get("action_decisions") or {}
+    if not isinstance(memory_id, str) or not re.fullmatch(r"[A-Za-z0-9_\-]{1,64}", memory_id):
+        return {"ok": False, "error": "memory_id must be the id from result.memory.stored_id"}, 400
+    if decision not in _REVIEW_DECISIONS:
+        return {"ok": False, "error": "decision must be approved, rejected or partial"}, 400
+    if not isinstance(note, str) or len(note) > 500:
+        return {"ok": False, "error": "note must be text of at most 500 characters"}, 400
+    if not isinstance(actions, dict) or len(actions) > 50 or not all(
+            isinstance(k, str) and len(k) <= 40 and v in _ACTION_DECISIONS for k, v in actions.items()):
+        return {"ok": False, "error": "action_decisions must map action ids to accepted or rejected"}, 400
+    if memory is None:
+        from engines.hmem import CaseMemory
+        memory = CaseMemory(os.environ.get("STOCKWHY_MEMORY_PATH", "logs/memory/hmem.json"))
+    try:
+        try:
+            view = memory.feedback(memory_id, decision, note=note, action_decisions=actions or None)
+        except TypeError:  # an older CaseMemory without action_decisions
+            view = memory.feedback(memory_id, decision, note=note)
+    except KeyError:
+        return {"ok": False, "memory_id": memory_id, "error": "No stored finding with that memory_id"}, 404
+    except ValueError as exc:
+        return {"ok": False, "memory_id": memory_id, "error": str(exc).splitlines()[0]}, 400
+    status = (view or {}).get("status") if isinstance(view, dict) else None
+    return {"ok": True, "memory_id": memory_id, "status": status or decision}, 200
+
+
+def make_server(host: str = "127.0.0.1", port: int = 8000):
+    """Build the threaded HTTP server (the web UI, /run, /api/review and metadata)."""
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    _base_dir = REPO_ROOT
 
     class Handler(BaseHTTPRequestHandler):
+        timeout = REQUEST_TIMEOUT_S
+
         def log_message(self, format, *args):  # suppress default access log
             pass
 
@@ -546,7 +741,7 @@ def _serve(port: int = 8000) -> None:
 
             # ── Health check ───────────────────────────────────────
             if path == "/health":
-                body = json.dumps({"status": "ok", "service": "stockywhy"}).encode()
+                body = json.dumps({"status": "ok", "service": "stockwhy"}).encode()
                 self._json_response(200, body)
                 return
 
@@ -568,28 +763,41 @@ def _serve(port: int = 8000) -> None:
                 self._json_response(200, body)
                 return
 
-            self.send_response(404)
-            self.end_headers()
+            self._error(404, "Not found")
 
-        def do_POST(self):
-            if self.path != "/run":
-                self.send_response(404)
-                self.end_headers()
-                return
-
+        def _read_json(self):
+            """Parsed JSON body, or None after sending an error response."""
             try:
                 length = int(self.headers.get("Content-Length", 0))
-                if length > 64_000:
-                    self._error(413, "Request too large")
-                    return
-                body = self.rfile.read(length)
-                payload = json.loads(body)
+            except ValueError:
+                self._error(400, "Invalid Content-Length")
+                return None
+            if length < 0:
+                self._error(400, "Invalid Content-Length")
+                return None
+            if length > MAX_BODY:
+                self._error(413, "Request too large")
+                return None
+            try:
+                return json.loads(self.rfile.read(length) or b"null")
             except Exception as exc:
                 self._error(400, f"Invalid JSON: {str(exc).splitlines()[0]}")
-                return
+                return None
 
+        def do_POST(self):
+            path = self.path.split("?")[0]
+            if path not in ("/run", "/api/run", "/api/review"):
+                self._error(404, "Not found")
+                return
+            payload = self._read_json()
+            if payload is None:
+                return
             try:
-                result, code = execute_request(payload, interactive=False)
+                if path == "/api/review":
+                    result, code = review_request(payload)
+                else:
+                    result, code = execute_request(payload, interactive=False,
+                                                   restrict_dataset=True)
                 self._json_response(code, json.dumps(result, default=str).encode())
             except Exception as exc:
                 self._error(500, str(exc).splitlines()[0] if str(exc) else type(exc).__name__)
@@ -605,11 +813,31 @@ def _serve(port: int = 8000) -> None:
             body = json.dumps({"error": msg}).encode()
             self._json_response(code, body)
 
-    server = HTTPServer(("0.0.0.0", port), Handler)
+    server = ThreadingHTTPServer((host, port), Handler)
+    server.daemon_threads = True
+    return server
+
+
+def _serve(port: int = 8000, host: str = "127.0.0.1") -> None:
+    """Start the HTTP server exposing the frontend, /run and /api/review."""
+    server = make_server(host, port)
+    shown = "localhost" if host in ("127.0.0.1", "localhost") else host
+    print(f"StockWhy HTTP server on {host}:{port}")
+    print(f"  Frontend  : http://{shown}:{port}/")
+    print(f"  API       : POST http://{shown}:{port}/run  "
+          "{question} or {facility_id, commodity, month[, dataset under data/]}")
+    print(f"  Review    : POST http://{shown}:{port}/api/review  "
+          "{memory_id, decision: approved|rejected|partial[, note]}")
+    print(f"  Metadata  : GET  http://{shown}:{port}/api/facilities|commodities|cases")
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        print("  Warning   : listening beyond this machine; there is no login. Use only on a trusted network.")
+    print("Press Ctrl+C to stop.\n")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\nServer stopped.")
+    finally:
+        server.server_close()
 
 
 def _emit(result: dict, parsed) -> None:
@@ -628,6 +856,11 @@ def _emit(result: dict, parsed) -> None:
 
 
 def main():
+    _configure_stdio()
+    _load_env()
+    # Traces and case memory live in the repo, whatever directory run.py is started from.
+    os.environ.setdefault("STOCKWHY_LOGS_DIR", str(REPO_ROOT / "logs"))
+    os.environ.setdefault("STOCKWHY_MEMORY_PATH", str(REPO_ROOT / "logs" / "memory" / "hmem.json"))
     argv = sys.argv[1:]
 
     # Display the custom help screen for bare "help" command
@@ -639,9 +872,13 @@ def main():
     parser = build_parser()
     parsed = parser.parse_args(argv)
 
+    notice = _offline_fallback()
+    if notice:
+        print(notice, file=sys.stderr)
+
     # --serve mode
     if parsed.serve:
-        _serve(port=8000)
+        _serve(port=parsed.port, host=parsed.host)
         return
 
     sample_mode = os.environ.get("SAMPLE_MODE", "false").lower() == "true"
@@ -672,6 +909,10 @@ def main():
         facility_id = facility_id or resolved.get("facility_id")
         commodity = commodity or resolved.get("commodity")
         month = month or resolved.get("month")
+
+    # A relative path that is not under the current directory is read from the repo.
+    if dataset and not Path(dataset).exists() and (REPO_ROOT / dataset).exists():
+        dataset = str(REPO_ROOT / dataset)
 
     # Sample mode supplies the default dataset only; an explicit path is honoured.
     if sample_mode and not dataset:
@@ -712,8 +953,10 @@ def main():
         print("\nInvestigation cancelled.", file=sys.stderr)
         sys.exit(0)
     except Exception as exc:
-        result = {"status": "error", "error": f"StockyWhy failed: {str(exc).splitlines()[0] if str(exc) else type(exc).__name__}",
-                  "hint": "Run with PYTHONTRACEBACK=1 for details."}
+        result = _refine_hint({
+            "status": "error",
+            "error": f"StockWhy failed: {str(exc).splitlines()[0] if str(exc) else type(exc).__name__}",
+            "hint": "Run with PYTHONTRACEBACK=1 for details."})
         if os.environ.get("PYTHONTRACEBACK"):
             raise
 
