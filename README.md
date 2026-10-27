@@ -1,20 +1,19 @@
-# StockyWhy
+# StockWhy
 
 **A four-agent system that explains why a Kenyan health facility ran out of an essential medicine and drafts corrective actions for a pharmacist to approve.**
 
 Built for the [Open Agent Hackathon 2026](https://genai.works) (Track: "The Agent That Can Explain Why").
 
-> ⚠️ **Medical disclaimer:** This system provides decision-support information only. It does not constitute medical advice. No order, transfer, requisition, or payment will execute without explicit pharmacist approval.
-
-> ⚠️ **Synthetic data:** All data in `data/` is synthetically generated. It does not represent real patient or facility records.
+> **Medical disclaimer:** Decision-support only. No order or payment executes without explicit pharmacist approval.
+> **Synthetic data:** All data in `data/` is synthetically generated.
 
 ---
 
 ## What it does
 
-Given a question like *"Why did Facility FAC-011 run out of ORS sachets in March 2026?"*, StockyWhy:
+Given a question like *"Why did Facility FAC-011 run out of ORS sachets in March 2026?"*, StockWhy:
 
-1. **Loads and profiles** the CSV data for that facility/commodity/month
+1. **Loads and profiles** local CSV data or configured Zetaris tables
 2. **Calculates evidence deterministically** for seven hypotheses (no LLM for arithmetic)
 3. **Generates seven theories** — one per hypothesis — using an LLM
 4. **Investigates each theory in parallel** using the computed evidence
@@ -37,6 +36,47 @@ Given a question like *"Why did Facility FAC-011 run out of ORS sachets in March
 
 ---
 
+## Reasoning model: "LLMs explain, data decides"
+
+All arithmetic runs in `tools/data_loader.py` (pandas only — no LLM). Each hypothesis produces a boolean flag. `_deterministic_verdict()` in `evidence_investigator.py` converts those flags into `supported / weakened / inconclusive`. The LLM then receives the pre-decided verdict and explains *why*, citing actual row IDs. If the LLM disagrees, its verdict is discarded:
+
+```python
+result["verdict"] = deterministic  # always overwrites the LLM's verdict
+result["verdict_source"] = "deterministic"
+```
+
+Seven LLM explanation calls run concurrently via `ThreadPoolExecutor(max_workers=7)`.
+
+---
+
+## Sponsor integrations
+
+### Meterless Nightshift (LLM gateway)
+
+All four agents call `ask_agent()` in `llm_client.py`, which POSTs to `{METERLESS_BASE_URL}/chat/completions` with Bearer auth and the headers `meterless-app: stockwhy` and `meterless-scope: user`. The requested model is `METERLESS_MODEL_DEEP` (default `meterless/auto`); Nightshift selects the actual model. The live run reported served model `nvidia/nemotron-3.5-bolt-e4b`. Temperature is fixed at `0.2`.
+
+The response JSON in `choices[0].message.content` is repaired through a safe pipeline (strip fences → fix quotes/control chars → remove trailing commas → insert missing commas) before being parsed. Truncated responses fail explicitly — no fields are invented.
+
+When `SAMPLE_MODE=true`, `ask_agent()` routes to a local deterministic provider; no Nightshift call is made.
+
+### Zetaris (data source)
+
+`load_zetaris_dataset()` in `tools/data_loader.py` queries four registered tables — `facilities`, `stock`, `orders`, `payments` — in the configured `ZETARIS_SCHEMA` (default `STOCKWHY_PG`) via the SQL Editor REST API.
+
+- Uses explicit `SELECT col1, col2, ...` (not `SELECT *`) because Zetaris returns positional row arrays; column order must be known to map values correctly.
+- `_zetaris_rows()` handles both object rows and positional arrays; mixed or malformed rows fail explicitly.
+- Stock is scoped to the target facility/commodity + 7-month history. Orders stay county-wide for H2/H3 peer comparisons.
+- Paginates in batches of 100 rows (safety cap: 1M rows).
+- `web_notes.json` is always read locally — Zetaris cannot access local files.
+
+**Live verification (FAC-019 / iron-folate tab / 2026-03):** `STOCKWHY_PG` returned 30 facilities, 4,320 stock rows, 4,320 order rows, 24 payment rows. Stock row 2730 (closing 0, 17 stockout days) was returned correctly. All five pipeline stages completed; Nightshift reported served model `nvidia/nemotron-3.5-bolt-e4b`.
+
+### NVIDIA
+
+No direct NVIDIA client or API key is used. NVIDIA Nemotron is accessed through Nightshift's model routing only.
+
+---
+
 ## Setup
 
 ### 1. Python environment
@@ -49,118 +89,72 @@ source my_env/bin/activate        # Windows: my_env\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. API key
-
-Copy `.env.example` to `.env` and fill in your Groq API key:
+### 2. Configure
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
+Key variables:
 
-```
-GROQ_API_KEY=gsk_your_key_here
-GROQ_MODEL=openai/gpt-oss-120b
-SAMPLE_MODE=false
-```
-
-Get a free Groq API key at: https://console.groq.com/keys
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SAMPLE_MODE` | Offline mode — no external calls | `false` |
+| `METERLESS_BASE_URL` | Nightshift API base URL | required in live mode |
+| `METERLESS_RUNTIME_TOKEN` | Nightshift Runtime token | required in live mode |
+| `METERLESS_MODEL_DEEP` | Requested model route | `meterless/auto` |
+| `STOCKWHY_DATA_SOURCE` | `csv` or `zetaris` | `csv` |
+| `ZETARIS_REST_URL` | Zetaris REST API base URL | required for Zetaris mode |
+| `ZETARIS_API_KEY` | Zetaris API key | required for Zetaris mode |
+| `ZETARIS_ORG_ID` | Zetaris organization ID | required for Zetaris mode |
+| `ZETARIS_SCHEMA` | Registered source schema | `STOCKWHY_PG` |
 
 ### 3. Data
 
-The `data/` directory contains synthetic case data:
-
 ```
 data/
-  sample/           Demo county — 30 facilities, 6 medicines, 24 months
+  sample/       Demo county — 30 facilities, 6 medicines, 24 months
   cases/
-    normal/         8 cases at normal noise (case_01..case_08)
-    noisy/          Same 8 cause types with higher noise
-    questions.csv   Input questions for each case
+    normal/     8 cases at normal noise (case_01..case_08)
+    noisy/      Same 8 cause types with higher noise
+    questions.csv
 ```
-
-The `data/datapack/` directory has the original pack (larger datasets, PostgreSQL scripts).
 
 ---
 
 ## Running
 
-### Investigate a specific case
-
+**Offline (no credentials needed):**
 ```bash
-python run.py \
-  --dataset data/cases/normal/case_01 \
-  --facility FAC-011 \
-  --commodity "ORS sachet" \
-  --month 2026-03
+SAMPLE_MODE=true python run.py --facility FAC-011 --commodity "ORS sachet" --month 2026-03 --no-review
 ```
 
-### Use a case from questions.csv directly
-
+**Live CSV + Nightshift:**
 ```bash
-python run.py --case data/cases/normal/case_01
+SAMPLE_MODE=false python run.py --dataset data/cases/normal/case_01 --facility FAC-011 --commodity "ORS sachet" --month 2026-03 --no-review
 ```
 
-### Sample mode (no API key needed for data loading)
-
-```bash
-SAMPLE_MODE=true python run.py \
-  --facility FAC-011 \
-  --commodity "ORS sachet" \
-  --month 2026-03
+**Live Zetaris + Nightshift:**
+```powershell
+$env:SAMPLE_MODE = "false"
+$env:STOCKWHY_DATA_SOURCE = "zetaris"
+python run.py --dataset data/cases/noisy/case_01 --facility FAC-011 --commodity "ORS sachet" --month 2026-03 --no-review
 ```
 
-> `SAMPLE_MODE=true` automatically uses `data/sample/`. An API key is still needed for the LLM steps.
-
-### Skip pharmacist review (non-interactive / CI)
-
+**From questions.csv:**
 ```bash
-python run.py --dataset data/cases/normal/case_01 \
-  --facility FAC-011 --commodity "ORS sachet" --month 2026-03 \
-  --no-review
+python run.py --case data/cases/normal/case_01 --no-review
 ```
 
-### Save full JSON output
-
+**Save output / HTTP server:**
 ```bash
-python run.py --dataset data/cases/normal/case_01 \
-  --facility FAC-011 --commodity "ORS sachet" --month 2026-03 \
-  --no-review \
-  --output results/case_01.json
-```
-
-### HTTP server mode
-
-```bash
-python run.py --serve    # Starts on port 8000
-```
-
-Then POST:
-
-```bash
-curl -X POST http://localhost:8000/run \
-  -H "Content-Type: application/json" \
-  -d '{
-    "dataset": "data/cases/normal/case_01",
-    "facility_id": "FAC-011",
-    "commodity": "ORS sachet",
-    "month": "2026-03"
-  }'
-```
-
-### Help
-
-```bash
-python run.py help
-python run.py --help
+python run.py --dataset data/cases/normal/case_01 --facility FAC-011 --commodity "ORS sachet" --month 2026-03 --no-review --output results/case_01.json
+python run.py --serve    # POST to http://localhost:8000/run
 ```
 
 ---
 
 ## Example output
-
-Running case_01 (demand surge, FAC-011, ORS sachet, March 2026):
 
 ```
 [4/5] Evidence Investigator — evaluating theories in parallel...
@@ -168,138 +162,46 @@ Running case_01 (demand surge, FAC-011, ORS sachet, March 2026):
 
 Most Likely Cause: Demand surge (H4) – consumption was 72% above the 3-month average
 
-  Ranked Hypotheses:
-    [HIGH  ] H4 demand_surge — supported
-    [LOW   ] H1 late_order — weakened
-    ...
-
   Proposed Actions:
     A1 [CRITICAL] — Submit an emergency requisition for ORS sachets
     A2 [HIGH]     — Adjust buffer stock policy (+30% safety stock)
-    ...
 ```
 
-Sample inputs and their outputs are in `output_examples/`:
-
-- `output_examples/case_01_result.json` — demand surge
-- `output_examples/case_03_result.json` — expiry + supplier underfill
-- `output_examples/case_06_result.json` — late order
-
----
-
-## Running tests
-
-```bash
-# Install pytest if not present
-pip install pytest==8.3.5
-
-# Run all tests
-python -m pytest tests/ -v
-
-# Run specific test file
-python -m pytest tests/test_data_loader.py -v
-```
-
-**Test coverage** (88 tests):
-
-| File | Tests | What it covers |
-|------|-------|----------------|
-| `tests/test_data_loader.py` | 44 | All 7 hypothesis checks, load_dataset, profile_stockout, known-case integration |
-| `tests/test_logger.py` | 7 | JSONL format, appending, required fields, timestamps |
-| `tests/test_agents.py` | 19 | All four agents with LLM mocked, parallel investigation, error handling |
-| `tests/test_orchestrator.py` | 18 | Full pipeline, log files, SAMPLE_MODE, graceful failures, CLI args |
-
-All tests use mocked LLM calls (no API key required). No test reads `eval/answer_key.csv`.
+Sample outputs: `output_examples/case_01_result.json` (demand surge), `case_03_result.json` (expiry), `case_06_result.json` (late order).
 
 ---
 
 ## Architecture
 
 ```
-run.py                    ← CLI / HTTP entry point
-orchestrator.py           ← Pipeline coordinator
-  │
-  ├── agents/data_reader.py        ← Loads + profiles data; LLM interprets
-  │       └── tools/data_loader.py ← Deterministic 7-hypothesis calculations
-  │
-  ├── agents/data_analyst.py       ← Interprets computed evidence signals
-  ├── agents/theory_generator.py   ← Generates 7 theories (one per hypothesis)
-  ├── agents/evidence_investigator.py  ← Parallel evaluation of each theory
-  │       └── _deterministic_verdict() ← Verdicts from computed flags, not LLM
-  └── agents/action_strategist.py  ← Ranks causes, drafts actions
-
+run.py / orchestrator.py
+  ├── agents/data_reader.py        ← loads + profiles data
+  │       └── tools/data_loader.py ← deterministic hypothesis calculations (pandas)
+  ├── agents/data_analyst.py       ← interprets computed signals via LLM
+  ├── agents/theory_generator.py   ← generates 7 theories via LLM
+  ├── agents/evidence_investigator.py  ← 7 parallel LLM explanation calls
+  │       └── _deterministic_verdict() ← verdicts from flags, never from LLM
+  └── agents/action_strategist.py  ← ranks causes, drafts actions via LLM
+llm_client.py             ← Meterless Nightshift client + offline sample provider
+tools/world_model.py      ← provenance-backed SQLite World Model
 logger.py                 ← JSONL audit trail (logs/)
-llm_client.py             ← Groq API wrapper
-```
-
-### Design principles
-
-- **Deterministic calculations first**: All arithmetic (fill rates, consumption averages, stock identity) uses pandas. LLMs explain, not calculate.
-- **Verdicts from data**: `evidence_investigator._deterministic_verdict()` assigns supported/weakened/inconclusive from computed flags. The LLM writes the reasoning.
-- **Parallel investigation**: 7 LLM calls run concurrently via `ThreadPoolExecutor(max_workers=7)`.
-- **Traceable evidence**: Every finding cites actual row IDs (e.g. `stock#1506`, `orders#1505`).
-- **Human in the loop**: All proposed actions require pharmacist accept/edit/reject before any downstream action.
-
----
-
-## Logs
-
-Every run produces a JSONL trace in `logs/`. Each line is an event:
-
-```json
-{
-  "timestamp": "2026-10-25T09:12:34+00:00",
-  "run_id": "52739c1b",
-  "agent_name": "evidence_investigator",
-  "action": "investigate_parallel",
-  "input_summary": "7 theories + computed_evidence",
-  "output_summary": "verdicts: weakened, weakened, weakened, supported, ...",
-  "status": "ok"
-}
 ```
 
 ---
 
-## Configuration
+## Running tests
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GROQ_API_KEY` | Groq API key | — (required) |
-| `GROQ_MODEL` | Model name | `openai/gpt-oss-120b` |
-| `SAMPLE_MODE` | Use `data/sample/` automatically | `false` |
+```bash
+python -m pytest -q
+```
 
----
-
-## Models and frameworks
-
-- **LLM**: Groq API (`openai/gpt-oss-120b` or any Groq-compatible model)
-- **Data processing**: pandas, numpy
-- **HTTP server**: stdlib `http.server`
-- **Testing**: pytest (no external services)
-- **AI coding tool**: Kiro (by AWS), Claude Sonnet
+Tests cover CSV loading, Zetaris mocks, Nightshift mocks, the offline pipeline, World Model, orchestration, and logging. No test requires credentials or reads `eval/answer_key.csv`.
 
 ---
 
 ## Limitations
 
-- All data is synthetic. Thresholds (e.g. 25% demand surge, 30M KES arrears) are illustrative, not calibrated to real Kenyan pharmacy data.
-- The system cannot query live DHIS2, KEMSA, or county health systems.
+- All data is synthetic. Thresholds are illustrative, not calibrated to real Kenyan pharmacy data.
 - Web notes (`web_notes.json`) are synthetic placeholders for real public notices.
-- The LLM may hallucinate reasoning text — evidence citations are grounded in actual row IDs but explanations should be verified.
-- Rate limits on Groq may cause retries on parallel calls.
-
----
-
-## Evaluation
-
-To measure accuracy against known cases without the agent seeing the answer key:
-
-```bash
-# Run the agent on each case (questions.csv has the inputs)
-cat data/cases/questions.csv
-
-# Compare agent output to eval/answer_key.csv manually
-# Never point the agent at eval/answer_key.csv
-```
-
-The answer key has 16 cases (8 normal + 8 noisy). Ground truth causes: demand_surge, late_order, supplier_underfill, payment_arrears, record_error, expiry, national_disruption.
+- LLM reasoning text may hallucinate — row ID citations are grounded in actual data but explanations should be verified.
+- Live Nightshift availability and served model depend on the Runtime configuration; the reported model can vary.
