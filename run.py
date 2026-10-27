@@ -513,12 +513,21 @@ def exit_code(result: dict) -> int:
     return 1 if result.get("status") in ("error", "invalid_request") else 0
 
 
+def _facility_label(result: dict) -> str:
+    """'Katutu Dispensary (FAC-009)' when the result carries a facility name, else the id."""
+    fid = result.get("facility_id") or ""
+    profile = ((result.get("steps") or {}).get("data_reader") or {}).get("_profile") or {}
+    facility = profile.get("facility") if isinstance(profile.get("facility"), dict) else {}
+    name = result.get("facility_name") or facility.get("facility_name")
+    return f"{name} ({fid})" if name and fid else str(name or fid)
+
+
 def _print_results(result: dict) -> None:
     """Print a nicely formatted summary of the investigation result."""
     print("\n" + "="*60)
     print("  STOCKWHY INVESTIGATION RESULTS")
     print("="*60)
-    print(f"  Facility  : {result.get('facility_id', '')}")
+    print(f"  Facility  : {_facility_label(result)}")
     print(f"  Commodity : {result.get('commodity', '')}")
     print(f"  Month     : {result.get('month', '')}")
     print(f"  Run ID    : {result.get('run_id', '')}")

@@ -214,3 +214,9 @@ def test_cli_survives_cp1252_redirected_output(tmp_path):
                               stdout=fh, stderr=subprocess.PIPE, env=env, cwd=str(tmp_path), timeout=120)
     assert proc.returncode == 0, proc.stderr.decode("utf-8", "replace")[-500:]
     assert "STOCKWHY INVESTIGATION RESULTS" in out.read_text(encoding="utf-8")
+
+
+def test_facility_label():
+    assert run._facility_label({"facility_id": "FAC-009", "facility_name": "Katutu Dispensary"}) == \
+        "Katutu Dispensary (FAC-009)"
+    assert run._facility_label({"facility_id": "FAC-009"}) == "FAC-009"
