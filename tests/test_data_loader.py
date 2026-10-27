@@ -131,8 +131,26 @@ class TestLoadDataset:
         assert isinstance(sample_dataset["web_notes"], list)
 
     def test_missing_dir_raises(self):
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(FileNotFoundError, match="Dataset directory not found"):
             load_dataset("/nonexistent/path/to/data")
+
+    def test_missing_dataset_file_is_actionable(self, tmp_path):
+        with pytest.raises(FileNotFoundError, match="stock.csv"):
+            load_dataset(str(tmp_path))
+
+    def test_missing_csv_columns_are_reported(self, tmp_path):
+        (tmp_path / "stock.csv").write_text("id,facility_id\n1,FAC-001\n")
+        with pytest.raises(ValueError, match="missing required columns"):
+            load_dataset(str(tmp_path))
+
+    def test_sample_mode_never_attempts_zetaris(self, monkeypatch):
+        monkeypatch.setenv("SAMPLE_MODE", "true")
+        monkeypatch.setenv("STOCKWHY_DATA_SOURCE", "zetaris")
+        monkeypatch.setattr(
+            "tools.data_loader._load_csv_dataset",
+            lambda path: {"source": "local sample"},
+        )
+        assert load_dataset("data/sample") == {"source": "local sample"}
 
     def test_nonempty(self, sample_dataset):
         assert len(sample_dataset["stock"]) > 0
@@ -577,17 +595,21 @@ class TestH6Expiry:
 
 class TestH7NationalDisruption:
     def _make_orders(self, this_month_fill: float, prev_fill: float) -> pd.DataFrame:
+        # Orders deliver the month after they are placed: the 2026-02 cycle
+        # supplies the 2026-03 stock-out month, the 2026-01 cycle the month before.
         rows = []
         for fac in range(1, 6):
             rows.append({
                 "id": str(fac), "facility_id": f"FAC-{fac:03d}",
-                "commodity": "test", "month": "2026-03",
+                "commodity": "test", "month": "2026-02",
+                "delivery_month": "2026-03",
                 "qty_requested": "100",
                 "qty_delivered": str(int(this_month_fill * 100)),
             })
             rows.append({
                 "id": str(fac + 10), "facility_id": f"FAC-{fac:03d}",
-                "commodity": "test", "month": "2026-02",
+                "commodity": "test", "month": "2026-01",
+                "delivery_month": "2026-02",
                 "qty_requested": "100",
                 "qty_delivered": str(int(prev_fill * 100)),
             })

@@ -132,7 +132,7 @@ with `headers`. The renderer accepts both, so the exact form is not fixed.
 
 **Local files are not directly readable.** troubleshooting.md: "Put it in storage Zetaris can reach. A file on your laptop may be out of reach." Parquet/CSV HOWTO: "Zetaris cannot read this local cache by a documented `PATH`; move the file to reachable storage before registering it."
 
-### Option A: Postgres datasource (what `docs/datapack/01_demo_county_30/zetaris_register.sql` does)
+### Option A: Postgres datasource (what `data/sample/zetaris_register.sql` does)
 Command reference §4.1 / §4.3 (`docs/guides/zetaris-lightning-sql-commands.md`):
 ```sql
 CREATE DATASOURCE <name> [DESCRIBE BY '<desc>'] OPTIONS (key 'value', …)   -- "Administrators only."
@@ -142,7 +142,7 @@ DESCRIBE DATASOURCE TABLE <datasource>.<table>
 ```
 Documented example options: `jdbcdriver "org.postgresql.Driver"`, `jdbcurl "jdbc:postgresql://host:5432/db"`, `username`, `password`, `fetchsize "1000"`. "Registers an external source (JDBC, Cassandra, MongoDB or DynamoDB, detected from the options) after testing the connection."
 
-Our datapack's `zetaris_register.sql` matches this syntax. The instance must be able to reach the Postgres host (for example Neon). INFERRED: a local Docker Zetaris can reach a cloud Postgres.
+Our `data/sample/zetaris_register.sql` matches this syntax. The instance must be able to reach the Postgres host (for example Neon). INFERRED: a local Docker Zetaris can reach a cloud Postgres.
 
 ### Option B: CSV/Parquet on S3
 ```sql

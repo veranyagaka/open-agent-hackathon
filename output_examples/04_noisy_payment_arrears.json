@@ -1,0 +1,2265 @@
+{
+  "run_id": "5a16ce3b",
+  "status": "complete",
+  "facility_id": "FAC-015",
+  "commodity": "iron-folate tab",
+  "month": "2026-03",
+  "question": "Why did facility FAC-015 report a stockout of iron-folate tab in 2026-03?",
+  "dataset_dir": "data/cases/noisy/case_02",
+  "log_file": "run_5a16ce3b_20261027T182851.jsonl",
+  "llm_mode": "rule-based",
+  "steps": {
+    "data_reader": {
+      "facility_id": "FAC-015",
+      "commodity": "iron-folate tab",
+      "month": "2026-03",
+      "evidence": {
+        "dataset_summary": {
+          "stock_rows": 1,
+          "order_rows": 2,
+          "history_months_available": 6,
+          "has_payment_records": true,
+          "has_web_notes": false
+        },
+        "relevant_records": {
+          "stock_ids": [
+            "stock#2154",
+            "stock#2148",
+            "stock#2149",
+            "stock#2150",
+            "stock#2151",
+            "stock#2152",
+            "stock#2153"
+          ],
+          "order_ids": [
+            "orders#2153",
+            "orders#2154"
+          ],
+          "payment_months": [
+            "2025-12",
+            "2026-01",
+            "2026-02",
+            "2026-03"
+          ]
+        },
+        "data_quality_flags": [],
+        "evidence_for_hypotheses": {
+          "h1_late_order": "orders#2153 was placed 2026-02-09 against cutoff 2026-02-10 (1 days before the cutoff); delivery month 2026-03 vs expected 2026-03.",
+          "h2_supplier_underfill": "orders#2153 fill rate 0.349 vs county average 0.4241 across 30 orders in the cycle (shortfall 0.0751; under-fill threshold 0.05).",
+          "h3_payment_arrears": "County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144.",
+          "h4_demand_surge": "stock#2154: consumed 190 with 7 reported stock-out days; stock-out-adjusted demand 190 x 30 / (30 - 7) = 247.83 vs 3-month average 257.67 (-3.82%; issues only -26.26%; surge threshold +25%).",
+          "h5_record_error": "stock#2154: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 7 plausible.",
+          "h6_expiry": "stock#2154: wastage 0 vs 3-month average 0, with average consumption 257.67 (high-wastage rule: >2x average and >10% of consumption).",
+          "h7_national_disruption": "no public notice for this commodity in the window; county fill-rate drop vs previous month -0.0144."
+        },
+        "missing_data_warnings": [],
+        "_produced_by": "rule-based"
+      },
+      "computed_evidence": {
+        "h1_late_order": {
+          "order_date": "2026-02-09",
+          "cutoff_date": "2026-02-10",
+          "days_late": -1,
+          "late": false,
+          "delivery_month": "2026-03",
+          "expected_delivery_month": "2026-03",
+          "delivery_slipped": false,
+          "order_id": "orders#2153",
+          "order_month": "2026-02"
+        },
+        "h2_supplier_underfill": {
+          "facility_fill_rate": 0.349,
+          "county_avg_fill_rate": 0.4241,
+          "relative_shortfall": 0.0751,
+          "underfill": true,
+          "n_facilities_in_cycle": 30,
+          "order_id": "orders#2153"
+        },
+        "h3_payment_arrears": {
+          "arrears_in_month": true,
+          "amount_owed_kes": 111000000.0,
+          "major_arrears": true,
+          "fill_drop_vs_prev": -0.0144,
+          "county_fill_this_month": 0.4241046149820186,
+          "county_fill_prev_month": 0.40971913741515
+        },
+        "h4_demand_surge": {
+          "consumed_this_month": 190.0,
+          "avg_consumed_3m": 257.67,
+          "reported_stockout_days": 7.0,
+          "pct_change_issues_only": -26.26,
+          "demand_basis": "stockout_adjusted",
+          "pct_change": -3.82,
+          "stock_id": "stock#2154",
+          "adjusted_demand": 247.83,
+          "surge": false
+        },
+        "h5_record_error": {
+          "computed_closing": 0.0,
+          "reported_closing": 0.0,
+          "discrepancy": 0.0,
+          "identity_holds": true,
+          "stockout_days_plausible": true,
+          "reported_stockout_days": 7.0,
+          "stock_id": "stock#2154"
+        },
+        "h6_expiry": {
+          "wastage_this_month": 0.0,
+          "avg_wastage_3m": 0.0,
+          "avg_consumed_3m": 257.67,
+          "high_wastage": false,
+          "stock_id": "stock#2154"
+        },
+        "h7_national_disruption": {
+          "county_fill_drop": -0.0144,
+          "county_fill_this_month": 0.4241046149820186,
+          "county_fill_prev_month": 0.40971913741515,
+          "web_notice_found": false,
+          "notice_details": null
+        }
+      },
+      "data_quality": [],
+      "missing_data_warnings": [],
+      "_produced_by": "rule-based",
+      "_profile": {
+        "facility_id": "FAC-015",
+        "commodity": "iron-folate tab",
+        "month": "2026-03",
+        "stock_record": [
+          {
+            "id": "2154",
+            "facility_id": "FAC-015",
+            "commodity": "iron-folate tab",
+            "month": "2026-03",
+            "opening": 19,
+            "received": 171,
+            "wastage": 0,
+            "consumed": 190,
+            "closing": 0,
+            "reported_stockout_days": 7
+          }
+        ],
+        "order_record": [
+          {
+            "id": "2154",
+            "facility_id": "FAC-015",
+            "commodity": "iron-folate tab",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-08 00:00:00",
+            "qty_requested": 532,
+            "qty_delivered": 443,
+            "delivery_month": "2026-04"
+          }
+        ],
+        "prev_order_record": [
+          {
+            "id": "2153",
+            "facility_id": "FAC-015",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 490,
+            "qty_delivered": 171,
+            "delivery_month": "2026-03"
+          }
+        ],
+        "all_orders": [
+          {
+            "id": "137",
+            "facility_id": "FAC-001",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 146,
+            "qty_delivered": 63,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "281",
+            "facility_id": "FAC-002",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 235,
+            "qty_delivered": 111,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "425",
+            "facility_id": "FAC-003",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 197,
+            "qty_delivered": 95,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "569",
+            "facility_id": "FAC-004",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 435,
+            "qty_delivered": 149,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "713",
+            "facility_id": "FAC-005",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 136,
+            "qty_delivered": 57,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "857",
+            "facility_id": "FAC-006",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 373,
+            "qty_delivered": 183,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1001",
+            "facility_id": "FAC-007",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 628,
+            "qty_delivered": 258,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1145",
+            "facility_id": "FAC-008",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 145,
+            "qty_delivered": 64,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1289",
+            "facility_id": "FAC-009",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 250,
+            "qty_delivered": 97,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1433",
+            "facility_id": "FAC-010",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 352,
+            "qty_delivered": 133,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1577",
+            "facility_id": "FAC-011",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 447,
+            "qty_delivered": 207,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1721",
+            "facility_id": "FAC-012",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 507,
+            "qty_delivered": 229,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1865",
+            "facility_id": "FAC-013",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 231,
+            "qty_delivered": 73,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2009",
+            "facility_id": "FAC-014",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 433,
+            "qty_delivered": 166,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2153",
+            "facility_id": "FAC-015",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 490,
+            "qty_delivered": 171,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2297",
+            "facility_id": "FAC-016",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 638,
+            "qty_delivered": 265,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2441",
+            "facility_id": "FAC-017",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 223,
+            "qty_delivered": 102,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2585",
+            "facility_id": "FAC-018",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 497,
+            "qty_delivered": 230,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2729",
+            "facility_id": "FAC-019",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 226,
+            "qty_delivered": 112,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2873",
+            "facility_id": "FAC-020",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 212,
+            "qty_delivered": 101,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3017",
+            "facility_id": "FAC-021",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 440,
+            "qty_delivered": 218,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3161",
+            "facility_id": "FAC-022",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 752,
+            "qty_delivered": 316,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3305",
+            "facility_id": "FAC-023",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-04 00:00:00",
+            "qty_requested": 574,
+            "qty_delivered": 223,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3449",
+            "facility_id": "FAC-024",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 297,
+            "qty_delivered": 92,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3593",
+            "facility_id": "FAC-025",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 379,
+            "qty_delivered": 135,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3737",
+            "facility_id": "FAC-026",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 141,
+            "qty_delivered": 61,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3881",
+            "facility_id": "FAC-027",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 425,
+            "qty_delivered": 200,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "4025",
+            "facility_id": "FAC-028",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 190,
+            "qty_delivered": 83,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "4169",
+            "facility_id": "FAC-029",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 706,
+            "qty_delivered": 336,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "4313",
+            "facility_id": "FAC-030",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 461,
+            "qty_delivered": 189,
+            "delivery_month": "2026-03"
+          }
+        ],
+        "payments_history": [
+          {
+            "id": "1",
+            "month": "2024-10",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "2",
+            "month": "2024-11",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "3",
+            "month": "2024-12",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "4",
+            "month": "2025-01",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "5",
+            "month": "2025-02",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "6",
+            "month": "2025-03",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "7",
+            "month": "2025-04",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "8",
+            "month": "2025-05",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "9",
+            "month": "2025-06",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "10",
+            "month": "2025-07",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "11",
+            "month": "2025-08",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "12",
+            "month": "2025-09",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "13",
+            "month": "2025-10",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 5000000
+          },
+          {
+            "id": "14",
+            "month": "2025-11",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "15",
+            "month": "2025-12",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 77000000
+          },
+          {
+            "id": "16",
+            "month": "2026-01",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 91000000
+          },
+          {
+            "id": "17",
+            "month": "2026-02",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 65000000
+          },
+          {
+            "id": "18",
+            "month": "2026-03",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 111000000
+          },
+          {
+            "id": "19",
+            "month": "2026-04",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 3000000
+          },
+          {
+            "id": "20",
+            "month": "2026-05",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "21",
+            "month": "2026-06",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 8000000
+          },
+          {
+            "id": "22",
+            "month": "2026-07",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "23",
+            "month": "2026-08",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "24",
+            "month": "2026-09",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          }
+        ],
+        "stock_history": [
+          {
+            "id": "2148",
+            "facility_id": "FAC-015",
+            "commodity": "iron-folate tab",
+            "month": "2025-09",
+            "opening": 136,
+            "received": 246,
+            "wastage": 0,
+            "consumed": 225,
+            "closing": 157,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "2149",
+            "facility_id": "FAC-015",
+            "commodity": "iron-folate tab",
+            "month": "2025-10",
+            "opening": 157,
+            "received": 293,
+            "wastage": 0,
+            "consumed": 281,
+            "closing": 169,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "2150",
+            "facility_id": "FAC-015",
+            "commodity": "iron-folate tab",
+            "month": "2025-11",
+            "opening": 169,
+            "received": 216,
+            "wastage": 0,
+            "consumed": 262,
+            "closing": 123,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "2151",
+            "facility_id": "FAC-015",
+            "commodity": "iron-folate tab",
+            "month": "2025-12",
+            "opening": 123,
+            "received": 320,
+            "wastage": 0,
+            "consumed": 259,
+            "closing": 184,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "2152",
+            "facility_id": "FAC-015",
+            "commodity": "iron-folate tab",
+            "month": "2026-01",
+            "opening": 184,
+            "received": 247,
+            "wastage": 0,
+            "consumed": 304,
+            "closing": 127,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "2153",
+            "facility_id": "FAC-015",
+            "commodity": "iron-folate tab",
+            "month": "2026-02",
+            "opening": 127,
+            "received": 101,
+            "wastage": 0,
+            "consumed": 210,
+            "closing": 19,
+            "reported_stockout_days": 0
+          }
+        ],
+        "facilities": [
+          {
+            "facility_id": "FAC-001",
+            "lat": -1.0174,
+            "lon": 38.3295,
+            "facility_name": "Ngieni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/14239550707"
+          },
+          {
+            "facility_id": "FAC-002",
+            "lat": -1.2527,
+            "lon": 38.2312,
+            "facility_name": "Itiko Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6303096758"
+          },
+          {
+            "facility_id": "FAC-003",
+            "lat": -1.1222,
+            "lon": 38.2126,
+            "facility_name": "Mui Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798318295"
+          },
+          {
+            "facility_id": "FAC-004",
+            "lat": -0.7479,
+            "lon": 37.9798,
+            "facility_name": "Tyaa Kamuthale Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi North",
+            "osm_id": "way/1171234022"
+          },
+          {
+            "facility_id": "FAC-005",
+            "lat": -0.7799,
+            "lon": 38.0206,
+            "facility_name": "Katuluni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/10883742550"
+          },
+          {
+            "facility_id": "FAC-006",
+            "lat": -0.8566,
+            "lon": 38.2555,
+            "facility_name": "Kamulewa Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798331031"
+          },
+          {
+            "facility_id": "FAC-007",
+            "lat": -1.0791,
+            "lon": 37.9143,
+            "facility_name": "Ngongoni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935335"
+          },
+          {
+            "facility_id": "FAC-008",
+            "lat": -0.8509,
+            "lon": 38.2466,
+            "facility_name": "Enziu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/6244576623"
+          },
+          {
+            "facility_id": "FAC-009",
+            "lat": -1.1835,
+            "lon": 37.8214,
+            "facility_name": "Katutu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui West",
+            "osm_id": "way/1318131957"
+          },
+          {
+            "facility_id": "FAC-010",
+            "lat": -1.1757,
+            "lon": 38.2125,
+            "facility_name": "Yoonye Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333661"
+          },
+          {
+            "facility_id": "FAC-011",
+            "lat": -1.436,
+            "lon": 38.2444,
+            "facility_name": "Zombe Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6244567617"
+          },
+          {
+            "facility_id": "FAC-012",
+            "lat": -1.4597,
+            "lon": 38.2037,
+            "facility_name": "Kaumu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798331033"
+          },
+          {
+            "facility_id": "FAC-013",
+            "lat": -0.93,
+            "lon": 38.2659,
+            "facility_name": "Yumbu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798307186"
+          },
+          {
+            "facility_id": "FAC-014",
+            "lat": -0.9151,
+            "lon": 37.8612,
+            "facility_name": "Kyusyani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935320"
+          },
+          {
+            "facility_id": "FAC-015",
+            "lat": -0.8523,
+            "lon": 37.9696,
+            "facility_name": "Itongolani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935378"
+          },
+          {
+            "facility_id": "FAC-016",
+            "lat": -1.2274,
+            "lon": 38.1737,
+            "facility_name": "Mutito Sub-County Hospital",
+            "facility_type": "sub-county hospital",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333660"
+          },
+          {
+            "facility_id": "FAC-017",
+            "lat": -1.2194,
+            "lon": 38.2989,
+            "facility_name": "Manyoeni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333662"
+          },
+          {
+            "facility_id": "FAC-018",
+            "lat": -0.8772,
+            "lon": 38.1777,
+            "facility_name": "Mutuangombe Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/6243798527"
+          },
+          {
+            "facility_id": "FAC-019",
+            "lat": -1.4182,
+            "lon": 38.1553,
+            "facility_name": "Inyuu Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798331035"
+          },
+          {
+            "facility_id": "FAC-020",
+            "lat": -0.9704,
+            "lon": 37.9194,
+            "facility_name": "Winzyeei Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796944524"
+          },
+          {
+            "facility_id": "FAC-021",
+            "lat": -1.088,
+            "lon": 38.2191,
+            "facility_name": "Muyuni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798307187"
+          },
+          {
+            "facility_id": "FAC-022",
+            "lat": -1.4736,
+            "lon": 37.8376,
+            "facility_name": "Kiusyani Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui Rural",
+            "osm_id": "node/7549451145"
+          },
+          {
+            "facility_id": "FAC-023",
+            "lat": -0.9343,
+            "lon": 37.9649,
+            "facility_name": "Kiio Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877939679"
+          },
+          {
+            "facility_id": "FAC-024",
+            "lat": -1.1119,
+            "lon": 37.9241,
+            "facility_name": "Nzawa Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796943125"
+          },
+          {
+            "facility_id": "FAC-025",
+            "lat": -1.3841,
+            "lon": 38.2731,
+            "facility_name": "Ngelani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6244568075"
+          },
+          {
+            "facility_id": "FAC-026",
+            "lat": -1.5208,
+            "lon": 38.2481,
+            "facility_name": "Kasunguni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333663"
+          },
+          {
+            "facility_id": "FAC-027",
+            "lat": -1.0611,
+            "lon": 37.8733,
+            "facility_name": "Kakululo Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935301"
+          },
+          {
+            "facility_id": "FAC-028",
+            "lat": -0.8435,
+            "lon": 37.9961,
+            "facility_name": "Kyethani Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2864248999"
+          },
+          {
+            "facility_id": "FAC-029",
+            "lat": -0.7821,
+            "lon": 37.9519,
+            "facility_name": "Wikithuki Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796948428"
+          },
+          {
+            "facility_id": "FAC-030",
+            "lat": -1.3751,
+            "lon": 37.9952,
+            "facility_name": "Kanyangi Sub-County Hospital",
+            "facility_type": "sub-county hospital",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/1132558742"
+          }
+        ],
+        "web_notes": [],
+        "computed_evidence": {
+          "h1_late_order": {
+            "order_date": "2026-02-09",
+            "cutoff_date": "2026-02-10",
+            "days_late": -1,
+            "late": false,
+            "delivery_month": "2026-03",
+            "expected_delivery_month": "2026-03",
+            "delivery_slipped": false,
+            "order_id": "orders#2153",
+            "order_month": "2026-02"
+          },
+          "h2_supplier_underfill": {
+            "facility_fill_rate": 0.349,
+            "county_avg_fill_rate": 0.4241,
+            "relative_shortfall": 0.0751,
+            "underfill": true,
+            "n_facilities_in_cycle": 30,
+            "order_id": "orders#2153"
+          },
+          "h3_payment_arrears": {
+            "arrears_in_month": true,
+            "amount_owed_kes": 111000000.0,
+            "major_arrears": true,
+            "fill_drop_vs_prev": -0.0144,
+            "county_fill_this_month": 0.4241046149820186,
+            "county_fill_prev_month": 0.40971913741515
+          },
+          "h4_demand_surge": {
+            "consumed_this_month": 190.0,
+            "avg_consumed_3m": 257.67,
+            "reported_stockout_days": 7.0,
+            "pct_change_issues_only": -26.26,
+            "demand_basis": "stockout_adjusted",
+            "pct_change": -3.82,
+            "stock_id": "stock#2154",
+            "adjusted_demand": 247.83,
+            "surge": false
+          },
+          "h5_record_error": {
+            "computed_closing": 0.0,
+            "reported_closing": 0.0,
+            "discrepancy": 0.0,
+            "identity_holds": true,
+            "stockout_days_plausible": true,
+            "reported_stockout_days": 7.0,
+            "stock_id": "stock#2154"
+          },
+          "h6_expiry": {
+            "wastage_this_month": 0.0,
+            "avg_wastage_3m": 0.0,
+            "avg_consumed_3m": 257.67,
+            "high_wastage": false,
+            "stock_id": "stock#2154"
+          },
+          "h7_national_disruption": {
+            "county_fill_drop": -0.0144,
+            "county_fill_this_month": 0.4241046149820186,
+            "county_fill_prev_month": 0.40971913741515,
+            "web_notice_found": false,
+            "notice_details": null
+          }
+        }
+      },
+      "world_model": {
+        "snapshot_id": "wm_730430611566c9396265e2da",
+        "schema_version": 1,
+        "entities": 95,
+        "relationships": 143
+      }
+    },
+    "data_analyst": {
+      "analysis_summary": "Strongest computed signal: H3 payment_arrears. County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144. Also supported: H2 supplier_underfill.",
+      "hypothesis_signals": {
+        "H1": {
+          "signal": "none",
+          "reasoning": "orders#2153 was placed 2026-02-09 against cutoff 2026-02-10 (1 days before the cutoff); delivery month 2026-03 vs expected 2026-03. Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "orders#2153"
+          ]
+        },
+        "H2": {
+          "signal": "weak",
+          "reasoning": "orders#2153 fill rate 0.349 vs county average 0.4241 across 30 orders in the cycle (shortfall 0.0751; under-fill threshold 0.05). Computed flag gives 'supported'.",
+          "evidence_ids": [
+            "orders#2153"
+          ]
+        },
+        "H3": {
+          "signal": "strong",
+          "reasoning": "County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144. Computed flag gives 'supported'.",
+          "evidence_ids": []
+        },
+        "H4": {
+          "signal": "none",
+          "reasoning": "stock#2154: consumed 190 with 7 reported stock-out days; stock-out-adjusted demand 190 x 30 / (30 - 7) = 247.83 vs 3-month average 257.67 (-3.82%; issues only -26.26%; surge threshold +25%). Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "stock#2154"
+          ]
+        },
+        "H5": {
+          "signal": "none",
+          "reasoning": "stock#2154: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 7 plausible. Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "stock#2154"
+          ]
+        },
+        "H6": {
+          "signal": "none",
+          "reasoning": "stock#2154: wastage 0 vs 3-month average 0, with average consumption 257.67 (high-wastage rule: >2x average and >10% of consumption). Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "stock#2154"
+          ]
+        },
+        "H7": {
+          "signal": "none",
+          "reasoning": "no public notice for this commodity in the window; county fill-rate drop vs previous month -0.0144. Computed flag gives 'weakened'.",
+          "evidence_ids": []
+        }
+      },
+      "primary_leads": [
+        "H3 payment_arrears: County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144.",
+        "H2 supplier_underfill: orders#2153 fill rate 0.349 vs county average 0.4241 across 30 orders in the cycle (shortfall 0.0751; under-fill threshold 0.05)."
+      ],
+      "primary_lead_ids": [
+        "H3",
+        "H2"
+      ],
+      "data_limitations": [
+        "Signals are threshold checks on one month of records; they show association, not causation."
+      ],
+      "_produced_by": "rule-based"
+    },
+    "theory_generator": {
+      "theories": [
+        {
+          "id": "H1",
+          "hypothesis_name": "late_order",
+          "title": "Late order",
+          "mechanism": "The order meant to deliver this month was placed after the ordering cutoff, so delivery slipped to the following month and stock ran out before it arrived.",
+          "evidence_needed": [
+            "order_date later than cutoff_date on the previous month's order",
+            "delivery_month later than the stockout month"
+          ],
+          "disconfirming_evidence": [
+            "Order placed on or before the cutoff",
+            "Delivery arrived in the stockout month"
+          ],
+          "predictions": [
+            "received is 0 or low in the stockout month",
+            "A delivery lands the following month"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "orders#2153 was placed 2026-02-09 against cutoff 2026-02-10 (1 days before the cutoff); delivery month 2026-03 vs expected 2026-03. Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H2",
+          "hypothesis_name": "supplier_underfill",
+          "title": "Supplier under-fill",
+          "mechanism": "The supplier delivered much less than requested to this facility compared with peers in the same cycle, leaving too little stock.",
+          "evidence_needed": [
+            "Facility fill rate more than 5 points below the county average for the cycle"
+          ],
+          "disconfirming_evidence": [
+            "Facility fill rate at or above the county average"
+          ],
+          "predictions": [
+            "qty_delivered well below qty_requested for this facility only"
+          ],
+          "lead_signal": "weak",
+          "lead_reasoning": "orders#2153 fill rate 0.349 vs county average 0.4241 across 30 orders in the cycle (shortfall 0.0751; under-fill threshold 0.05). Computed flag gives 'supported'."
+        },
+        {
+          "id": "H3",
+          "hypothesis_name": "payment_arrears",
+          "title": "County payment arrears",
+          "mechanism": "The county owed the supplier at least 30M KES and the supplier cut deliveries county-wide until paid.",
+          "evidence_needed": [
+            "County arrears flag with amount owed >= 30,000,000 KES",
+            "County-wide fill rate falling vs the previous month"
+          ],
+          "disconfirming_evidence": [
+            "No arrears flag, or arrears below the threshold",
+            "County fill rate stable or rising"
+          ],
+          "predictions": [
+            "Many facilities under-filled in the same month"
+          ],
+          "lead_signal": "strong",
+          "lead_reasoning": "County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144. Computed flag gives 'supported'."
+        },
+        {
+          "id": "H4",
+          "hypothesis_name": "demand_surge",
+          "title": "Demand surge",
+          "mechanism": "Consumption jumped more than 25% above the 3-month average, exhausting stock faster than the ordering cycle planned for.",
+          "evidence_needed": [
+            "consumed this month > 1.25 x the 3-month average"
+          ],
+          "disconfirming_evidence": [
+            "Consumption at or below the recent average"
+          ],
+          "predictions": [
+            "Stock reaches zero mid-month despite a normal delivery"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "stock#2154: consumed 190 with 7 reported stock-out days; stock-out-adjusted demand 190 x 30 / (30 - 7) = 247.83 vs 3-month average 257.67 (-3.82%; issues only -26.26%; surge threshold +25%). Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H5",
+          "hypothesis_name": "record_error",
+          "title": "Stock record error",
+          "mechanism": "The reported stockout is a recording error: the stock ledger does not add up, or stockout days conflict with stock on hand.",
+          "evidence_needed": [
+            "opening + received - wastage - consumed differs from reported closing",
+            "Stockout days reported while closing stock is above zero"
+          ],
+          "disconfirming_evidence": [
+            "Stock identity holds and closing is zero"
+          ],
+          "predictions": [
+            "A physical count differs from the ledger"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "stock#2154: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 7 plausible. Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H6",
+          "hypothesis_name": "expiry",
+          "title": "Expiry or wastage",
+          "mechanism": "A large expiry or damage write-off removed usable stock, causing the shortfall.",
+          "evidence_needed": [
+            "Wastage more than 2x its 3-month average and above 10% of average consumption"
+          ],
+          "disconfirming_evidence": [
+            "Wastage near zero or at its normal level"
+          ],
+          "predictions": [
+            "Expired batches recorded in the stockout month"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "stock#2154: wastage 0 vs 3-month average 0, with average consumption 257.67 (high-wastage rule: >2x average and >10% of consumption). Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H7",
+          "hypothesis_name": "national_disruption",
+          "title": "National supply disruption",
+          "mechanism": "A national supply disruption (tender failure, logistics breakdown) reduced deliveries county-wide and was publicly announced.",
+          "evidence_needed": [
+            "Public notice for this commodity within 2 months",
+            "County-wide fill-rate drop vs the previous month"
+          ],
+          "disconfirming_evidence": [
+            "No public notice",
+            "County fill rate stable"
+          ],
+          "predictions": [
+            "Several facilities short of the same commodity at once"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "no public notice for this commodity in the window; county fill-rate drop vs previous month -0.0144. Computed flag gives 'weakened'."
+        }
+      ],
+      "_produced_by": "rule-based"
+    },
+    "evidence_investigator": {
+      "evaluations": [
+        {
+          "theory_id": "H2",
+          "hypothesis_name": "supplier_underfill",
+          "verdict": "supported",
+          "verdict_source": "deterministic",
+          "supporting_evidence_ids": [
+            "orders#2153"
+          ],
+          "contradicting_evidence_ids": [],
+          "reasoning": "orders#2153 fill rate 0.349 vs county average 0.4241 across 30 orders in the cycle (shortfall 0.0751; under-fill threshold 0.05). Verdict 'supported': the computed flag passes its threshold.",
+          "limitations": [
+            "County average covers one cycle; a single under-fill may be routine."
+          ],
+          "additional_analysis_needed": [
+            "Compare the delivery note with the order for this cycle."
+          ],
+          "explanation_source": "rule_based",
+          "_produced_by": "rule-based",
+          "evidence_strength": 0.25,
+          "cited_values": {
+            "orders#2153": {
+              "fill_rate": 0.349
+            }
+          },
+          "verified_citations": [
+            "orders#2153"
+          ],
+          "evaluator_confidence": 1.0
+        },
+        {
+          "theory_id": "H3",
+          "hypothesis_name": "payment_arrears",
+          "verdict": "supported",
+          "verdict_source": "deterministic",
+          "supporting_evidence_ids": [],
+          "contradicting_evidence_ids": [],
+          "reasoning": "County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144. Verdict 'supported': the computed flag passes its threshold.",
+          "limitations": [
+            "Arrears are county-level; they cannot be tied to this facility's delivery directly."
+          ],
+          "additional_analysis_needed": [
+            "Check the county's payment status with the supplier."
+          ],
+          "explanation_source": "rule_based",
+          "_produced_by": "rule-based",
+          "evidence_strength": 1.0,
+          "cited_values": {
+            "payments#15": {
+              "county_arrears_flag": 1,
+              "amount_owed_kes": 77000000.0
+            },
+            "payments#16": {
+              "county_arrears_flag": 1,
+              "amount_owed_kes": 91000000.0
+            },
+            "payments#17": {
+              "county_arrears_flag": 1,
+              "amount_owed_kes": 65000000.0
+            },
+            "payments#18": {
+              "county_arrears_flag": 1,
+              "amount_owed_kes": 111000000.0
+            }
+          },
+          "verified_citations": [
+            "payments#15",
+            "payments#16",
+            "payments#17",
+            "payments#18"
+          ],
+          "evaluator_confidence": 1.0
+        }
+      ],
+      "analysis_requests": [],
+      "waves": [
+        {
+          "wave": 1,
+          "hypotheses": [
+            "H2",
+            "H3"
+          ]
+        }
+      ]
+    },
+    "action_strategist": {
+      "medical_disclaimer": "This system provides decision-support information only. It does not constitute medical advice, clinical guidance, or authorisation to act. All proposed actions must be reviewed and approved by a qualified pharmacist or supply-chain officer before implementation.",
+      "ranked_hypotheses": [
+        {
+          "hypothesis_id": "H3",
+          "hypothesis_name": "payment_arrears",
+          "likelihood": "high",
+          "verdict": "supported",
+          "evidence_strength": 1.0,
+          "summary": "County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144. Verdict 'supported': the computed flag passes its threshold.",
+          "evidence_ids": []
+        },
+        {
+          "hypothesis_id": "H2",
+          "hypothesis_name": "supplier_underfill",
+          "likelihood": "medium",
+          "verdict": "supported",
+          "evidence_strength": 0.25,
+          "summary": "orders#2153 fill rate 0.349 vs county average 0.4241 across 30 orders in the cycle (shortfall 0.0751; under-fill threshold 0.05). Verdict 'supported': the computed flag passes its threshold.",
+          "evidence_ids": [
+            "orders#2153"
+          ]
+        }
+      ],
+      "most_likely_cause": "payment_arrears (H3): County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144. Verdict 'supported': the computed flag passes its threshold.",
+      "most_likely_hypothesis_id": "H3",
+      "actions": [
+        {
+          "action_id": "A1",
+          "action": "Escalate the county arrears to the county finance office with the computed amount owed.",
+          "linked_hypothesis_ids": [
+            "H3"
+          ],
+          "evidence_basis": "County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144. Verdict 'supported': the computed flag passes its threshold.",
+          "priority": "high",
+          "proposed_owner": "County pharmacist",
+          "timeframe": "within 2 weeks",
+          "expected_outcome": "Payment plan agreed with the supplier.",
+          "success_measure": "County fill rate recovers in the following cycle.",
+          "risks_and_caveats": "Finance decisions are outside the facility's control.",
+          "pharmacist_review_required": true,
+          "verified_citations": [
+            "payments#15",
+            "payments#16",
+            "payments#17",
+            "payments#18"
+          ]
+        },
+        {
+          "action_id": "A2",
+          "action": "Raise the under-fill with the supplier and request the undelivered balance.",
+          "linked_hypothesis_ids": [
+            "H2"
+          ],
+          "evidence_basis": "orders#2153 fill rate 0.349 vs county average 0.4241 across 30 orders in the cycle (shortfall 0.0751; under-fill threshold 0.05). Verdict 'supported': the computed flag passes its threshold.",
+          "priority": "high",
+          "proposed_owner": "Sub-county pharmacist",
+          "timeframe": "within 1 week",
+          "expected_outcome": "Undelivered balance confirmed or scheduled.",
+          "success_measure": "Facility fill rate back to the county average next cycle.",
+          "risks_and_caveats": "Supplier may be rationing; confirm before escalating.",
+          "pharmacist_review_required": true,
+          "verified_citations": [
+            "orders#2153"
+          ]
+        },
+        {
+          "action_id": "A3",
+          "type": "transfer_request",
+          "action": "Draft a transfer request for 41 units of iron-folate tab from Winzyeei Health Centre (FAC-020) (14.3 km away) to cover the gap.",
+          "linked_hypothesis_ids": [
+            "H3"
+          ],
+          "source_facility": "FAC-020",
+          "units": 41,
+          "distance_km": 14.3,
+          "k": 1.0,
+          "rule": "surplus beyond 1 month of the source's 3-month average use",
+          "citations": [
+            "stock#2874",
+            "stock#2871",
+            "stock#2872",
+            "stock#2873",
+            "facilities#FAC-015",
+            "facilities#FAC-020"
+          ],
+          "evidence_basis": "Winzyeei Health Centre (FAC-020) closing 170 in 2026-03 (stock#2874) minus its 3-month average use 128.33 (stock#2871, stock#2872, stock#2873) leaves 41 units; 14.3 km from Itongolani Dispensary (FAC-015) (facilities#FAC-015, facilities#FAC-020).",
+          "priority": "high",
+          "proposed_owner": "Sub-county pharmacist",
+          "timeframe": "within 48 hours",
+          "expected_outcome": "Itongolani Dispensary (FAC-015) has iron-folate tab until the next delivery.",
+          "success_measure": "Transfer received and recorded in both facilities' ledgers.",
+          "risks_and_caveats": "Leaves Winzyeei Health Centre (FAC-020) with about one month of its own average use; confirm its current stock by phone first.",
+          "requires_pharmacist_approval": true,
+          "pharmacist_review_required": true,
+          "draft": "DRAFT \u2014 requires pharmacist approval before anyone is contacted.\nTransfer request: 41 units of iron-folate tab from Winzyeei Health Centre (FAC-020) to Itongolani Dispensary (FAC-015) (14.3 km).\nRule: surplus beyond 1 month of the source's 3-month average use.\nEvidence: Winzyeei Health Centre (FAC-020) closing 170 in 2026-03 (stock#2874) minus its 3-month average use 128.33 (stock#2871, stock#2872, stock#2873) leaves 41 units; 14.3 km from Itongolani Dispensary (FAC-015) (facilities#FAC-015, facilities#FAC-020).",
+          "source_facility_name": "Winzyeei Health Centre",
+          "verified_citations": [
+            "stock#2874",
+            "stock#2871",
+            "stock#2872",
+            "stock#2873",
+            "facilities#FAC-015",
+            "facilities#FAC-020"
+          ]
+        }
+      ],
+      "emergency_requisition_memo": "DRAFT \u2014 requires pharmacist sign-off.\nSubject: Emergency requisition, iron-folate tab, Itongolani Dispensary (FAC-015)\nItongolani Dispensary (FAC-015) reported a stockout of iron-folate tab in 2026-03. Most likely cause: payment_arrears (H3).\nEvidence: orders#2153.\nQuantity: to be set by the pharmacist from current consumption records.",
+      "transfer_request": "DRAFT \u2014 requires pharmacist approval before anyone is contacted.\nTransfer request: 41 units of iron-folate tab from Winzyeei Health Centre (FAC-020) to Itongolani Dispensary (FAC-015) (14.3 km).\nRule: surplus beyond 1 month of the source's 3-month average use.\nEvidence: Winzyeei Health Centre (FAC-020) closing 170 in 2026-03 (stock#2874) minus its 3-month average use 128.33 (stock#2871, stock#2872, stock#2873) leaves 41 units; 14.3 km from Itongolani Dispensary (FAC-015) (facilities#FAC-015, facilities#FAC-020).",
+      "ordering_schedule_recommendation": "Keep the current ordering schedule and re-check after the next stock report.",
+      "communication_draft": "DRAFT \u2014 for pharmacist review.\nTo: County pharmacist\nRe: iron-folate tab stockout at Itongolani Dispensary (FAC-015), 2026-03\nMost likely cause: payment_arrears (H3). Evidence: orders#2153. Proposed actions are attached for review; none will be executed without approval.",
+      "open_questions": [
+        "More than one cause passes its threshold: H3, H2. Their relative contribution is not established."
+      ],
+      "_produced_by": "rule-based"
+    }
+  },
+  "approved_actions": [],
+  "rejected_actions": [],
+  "medical_disclaimer": "This system provides decision-support information only. It does not constitute medical advice, clinical guidance, or authorisation to act. All proposed actions must be reviewed and approved by a qualified pharmacist or supply-chain officer before implementation.",
+  "requires_pharmacist_approval": true,
+  "data_backend": "csv:data/cases/noisy/case_02",
+  "scout": {
+    "decision": "allow",
+    "intent": "stockout.explain",
+    "band": "high",
+    "reason": "Bound to facility_id=FAC-015, commodity=iron-folate tab, month=2026-03",
+    "params": {
+      "facility_id": "FAC-015",
+      "commodity": "iron-folate tab",
+      "month": "2026-03"
+    },
+    "suggestions": {}
+  },
+  "contract": {
+    "contractId": "1793125731490-0fcd5fa6bd",
+    "parentId": null,
+    "traceId": "ef898ac02f324c4889c02042f9a00417",
+    "intent": "stockout.explain",
+    "risk": {
+      "level": "low",
+      "flags": [
+        "memory.write"
+      ],
+      "approvals": []
+    },
+    "scope": {
+      "capabilities": [
+        "data.read",
+        "llm.call",
+        "memory.read",
+        "memory.write"
+      ],
+      "params": {
+        "facility_id": "FAC-015",
+        "commodity": "iron-folate tab",
+        "month": "2026-03"
+      },
+      "role": "pharmacist"
+    },
+    "issuedAt": "2026-10-27T18:28:51.490589+00:00",
+    "expiresAt": "2026-10-27T18:33:51.490589+00:00",
+    "registryVersion": 3,
+    "policyPackVersion": "stockwhy-default-2",
+    "signature": "2f359bae1029a41fa659946871112db2d48a11fd044c74247f7760abd62c3cd8",
+    "signedBy": "scout"
+  },
+  "canonical_question": "Why did facility FAC-015 report a stockout of iron-folate tab in 2026-03?",
+  "memory": {
+    "recalled": [],
+    "prioritised": [],
+    "dataset_key": "data/cases/noisy/case_02",
+    "stored_id": "3373b62f2d9a490d989e21a902c4fdee",
+    "stored_status": "pending_approval"
+  },
+  "world_model": {
+    "snapshot_id": "wm_730430611566c9396265e2da",
+    "schema_version": 1,
+    "entities": 95,
+    "relationships": 143
+  },
+  "wave_plan": {
+    "wave1": [
+      "H2",
+      "H3"
+    ],
+    "held_back": [
+      "H1",
+      "H4",
+      "H5",
+      "H6",
+      "H7"
+    ],
+    "reasons": {
+      "H2": "computed flags -> supported",
+      "H3": "computed flags -> supported"
+    }
+  },
+  "fault_drill": null,
+  "dropped_claims": [],
+  "not_investigated": [
+    "H1",
+    "H4",
+    "H5",
+    "H6",
+    "H7"
+  ],
+  "hypotheses_not_investigated": [
+    {
+      "id": "H1",
+      "name": "late_order",
+      "computed_verdict": "weakened",
+      "rows": [
+        "orders#2153"
+      ]
+    },
+    {
+      "id": "H4",
+      "name": "demand_surge",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#2154"
+      ]
+    },
+    {
+      "id": "H5",
+      "name": "record_error",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#2154"
+      ]
+    },
+    {
+      "id": "H6",
+      "name": "expiry",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#2154"
+      ]
+    },
+    {
+      "id": "H7",
+      "name": "national_disruption",
+      "computed_verdict": "weakened",
+      "rows": []
+    }
+  ],
+  "coverage": {
+    "verdict": "explained",
+    "supported": [
+      "H3",
+      "H2"
+    ],
+    "request": [],
+    "reason": "verified supported cause(s): H3, H2"
+  },
+  "verified_citations": {
+    "H2": [
+      "orders#2153"
+    ],
+    "H3": [
+      "payments#15",
+      "payments#16",
+      "payments#17",
+      "payments#18"
+    ]
+  },
+  "most_likely_cause": "payment_arrears (H3): County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144. Verdict 'supported': the computed flag passes its threshold.",
+  "verified_cause": {
+    "hypothesis_id": "H3",
+    "hypothesis_name": "payment_arrears",
+    "citations": [
+      "payments#15",
+      "payments#16",
+      "payments#17",
+      "payments#18"
+    ]
+  },
+  "ranked_hypotheses": [
+    {
+      "hypothesis_id": "H3",
+      "hypothesis_name": "payment_arrears",
+      "likelihood": "high",
+      "verdict": "supported",
+      "evidence_strength": 1.0,
+      "summary": "County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144. Verdict 'supported': the computed flag passes its threshold.",
+      "evidence_ids": [],
+      "citations": [
+        "payments#15",
+        "payments#16",
+        "payments#17",
+        "payments#18"
+      ]
+    },
+    {
+      "hypothesis_id": "H2",
+      "hypothesis_name": "supplier_underfill",
+      "likelihood": "medium",
+      "verdict": "supported",
+      "evidence_strength": 0.25,
+      "summary": "orders#2153 fill rate 0.349 vs county average 0.4241 across 30 orders in the cycle (shortfall 0.0751; under-fill threshold 0.05). Verdict 'supported': the computed flag passes its threshold.",
+      "evidence_ids": [
+        "orders#2153"
+      ],
+      "citations": [
+        "orders#2153"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "action_id": "A1",
+      "action": "Escalate the county arrears to the county finance office with the computed amount owed.",
+      "linked_hypothesis_ids": [
+        "H3"
+      ],
+      "evidence_basis": "County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month -0.0144. Verdict 'supported': the computed flag passes its threshold.",
+      "priority": "high",
+      "proposed_owner": "County pharmacist",
+      "timeframe": "within 2 weeks",
+      "expected_outcome": "Payment plan agreed with the supplier.",
+      "success_measure": "County fill rate recovers in the following cycle.",
+      "risks_and_caveats": "Finance decisions are outside the facility's control.",
+      "pharmacist_review_required": true,
+      "verified_citations": [
+        "payments#15",
+        "payments#16",
+        "payments#17",
+        "payments#18"
+      ]
+    },
+    {
+      "action_id": "A2",
+      "action": "Raise the under-fill with the supplier and request the undelivered balance.",
+      "linked_hypothesis_ids": [
+        "H2"
+      ],
+      "evidence_basis": "orders#2153 fill rate 0.349 vs county average 0.4241 across 30 orders in the cycle (shortfall 0.0751; under-fill threshold 0.05). Verdict 'supported': the computed flag passes its threshold.",
+      "priority": "high",
+      "proposed_owner": "Sub-county pharmacist",
+      "timeframe": "within 1 week",
+      "expected_outcome": "Undelivered balance confirmed or scheduled.",
+      "success_measure": "Facility fill rate back to the county average next cycle.",
+      "risks_and_caveats": "Supplier may be rationing; confirm before escalating.",
+      "pharmacist_review_required": true,
+      "verified_citations": [
+        "orders#2153"
+      ]
+    },
+    {
+      "action_id": "A3",
+      "type": "transfer_request",
+      "action": "Draft a transfer request for 41 units of iron-folate tab from Winzyeei Health Centre (FAC-020) (14.3 km away) to cover the gap.",
+      "linked_hypothesis_ids": [
+        "H3"
+      ],
+      "source_facility": "FAC-020",
+      "units": 41,
+      "distance_km": 14.3,
+      "k": 1.0,
+      "rule": "surplus beyond 1 month of the source's 3-month average use",
+      "citations": [
+        "stock#2874",
+        "stock#2871",
+        "stock#2872",
+        "stock#2873",
+        "facilities#FAC-015",
+        "facilities#FAC-020"
+      ],
+      "evidence_basis": "Winzyeei Health Centre (FAC-020) closing 170 in 2026-03 (stock#2874) minus its 3-month average use 128.33 (stock#2871, stock#2872, stock#2873) leaves 41 units; 14.3 km from Itongolani Dispensary (FAC-015) (facilities#FAC-015, facilities#FAC-020).",
+      "priority": "high",
+      "proposed_owner": "Sub-county pharmacist",
+      "timeframe": "within 48 hours",
+      "expected_outcome": "Itongolani Dispensary (FAC-015) has iron-folate tab until the next delivery.",
+      "success_measure": "Transfer received and recorded in both facilities' ledgers.",
+      "risks_and_caveats": "Leaves Winzyeei Health Centre (FAC-020) with about one month of its own average use; confirm its current stock by phone first.",
+      "requires_pharmacist_approval": true,
+      "pharmacist_review_required": true,
+      "draft": "DRAFT \u2014 requires pharmacist approval before anyone is contacted.\nTransfer request: 41 units of iron-folate tab from Winzyeei Health Centre (FAC-020) to Itongolani Dispensary (FAC-015) (14.3 km).\nRule: surplus beyond 1 month of the source's 3-month average use.\nEvidence: Winzyeei Health Centre (FAC-020) closing 170 in 2026-03 (stock#2874) minus its 3-month average use 128.33 (stock#2871, stock#2872, stock#2873) leaves 41 units; 14.3 km from Itongolani Dispensary (FAC-015) (facilities#FAC-015, facilities#FAC-020).",
+      "source_facility_name": "Winzyeei Health Centre",
+      "verified_citations": [
+        "stock#2874",
+        "stock#2871",
+        "stock#2872",
+        "stock#2873",
+        "facilities#FAC-015",
+        "facilities#FAC-020"
+      ]
+    }
+  ],
+  "investigate_further": [],
+  "removed_actions": [],
+  "contracts": {
+    "main": {
+      "contractId": "1793125731490-0fcd5fa6bd",
+      "parentId": null,
+      "traceId": "ef898ac02f324c4889c02042f9a00417",
+      "intent": "stockout.explain",
+      "risk": {
+        "level": "low",
+        "flags": [
+          "memory.write"
+        ],
+        "approvals": []
+      },
+      "scope": {
+        "capabilities": [
+          "data.read",
+          "llm.call",
+          "memory.read",
+          "memory.write"
+        ],
+        "params": {
+          "facility_id": "FAC-015",
+          "commodity": "iron-folate tab",
+          "month": "2026-03"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T18:28:51.490589+00:00",
+      "expiresAt": "2026-10-27T18:33:51.490589+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "2f359bae1029a41fa659946871112db2d48a11fd044c74247f7760abd62c3cd8",
+      "signedBy": "scout"
+    },
+    "child": {
+      "contractId": "1793125731588-893f5e8b05",
+      "parentId": "1793125731490-0fcd5fa6bd",
+      "traceId": "ef898ac02f324c4889c02042f9a00417",
+      "intent": "action.draft",
+      "risk": {
+        "level": "medium",
+        "flags": [
+          "action.draft"
+        ],
+        "approvals": [
+          "pharmacist-confirm"
+        ]
+      },
+      "scope": {
+        "capabilities": [
+          "action.draft",
+          "data.read"
+        ],
+        "params": {
+          "facility_id": "FAC-015",
+          "commodity": "iron-folate tab",
+          "month": "2026-03"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T18:28:51.588077+00:00",
+      "expiresAt": "2026-10-27T18:33:51.588077+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "ec5beb62b062aebd235e48aab1a7bbc7eb49034cd3138a35def91e27194f2abd",
+      "signedBy": "scout"
+    },
+    "phases": [
+      {
+        "phase": "read",
+        "contract": {
+          "contractId": "1793125731492-ad2629e11e",
+          "parentId": "1793125731490-0fcd5fa6bd",
+          "traceId": "ef898ac02f324c4889c02042f9a00417",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call",
+              "memory.read"
+            ],
+            "params": {
+              "facility_id": "FAC-015",
+              "commodity": "iron-folate tab",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.492332+00:00",
+          "expiresAt": "2026-10-27T18:33:51.492332+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "c6741433722ade17edf09e1183a5bfa9715ea40eeedf33abaa101a65ecd4ad42",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "analyse",
+        "contract": {
+          "contractId": "1793125731574-2490c6e872",
+          "parentId": "1793125731490-0fcd5fa6bd",
+          "traceId": "ef898ac02f324c4889c02042f9a00417",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "llm.call"
+            ],
+            "params": {
+              "facility_id": "FAC-015",
+              "commodity": "iron-folate tab",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.574321+00:00",
+          "expiresAt": "2026-10-27T18:33:51.574321+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "9ed943245d194b9f5e336f94cf585a1c6b1681f4c25cecc0b3f7d0da6c0c3318",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "investigate",
+        "contract": {
+          "contractId": "1793125731576-572e81ad44",
+          "parentId": "1793125731490-0fcd5fa6bd",
+          "traceId": "ef898ac02f324c4889c02042f9a00417",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call"
+            ],
+            "params": {
+              "facility_id": "FAC-015",
+              "commodity": "iron-folate tab",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.576570+00:00",
+          "expiresAt": "2026-10-27T18:33:51.576570+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "ed00d6c70e97e2eebc33e6ddd5a7ab1a583ca0a213664b283aafa16c3e58304a",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "draft",
+        "contract": {
+          "contractId": "1793125731588-893f5e8b05",
+          "parentId": "1793125731490-0fcd5fa6bd",
+          "traceId": "ef898ac02f324c4889c02042f9a00417",
+          "intent": "action.draft",
+          "risk": {
+            "level": "medium",
+            "flags": [
+              "action.draft"
+            ],
+            "approvals": [
+              "pharmacist-confirm"
+            ]
+          },
+          "scope": {
+            "capabilities": [
+              "action.draft",
+              "data.read"
+            ],
+            "params": {
+              "facility_id": "FAC-015",
+              "commodity": "iron-folate tab",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.588077+00:00",
+          "expiresAt": "2026-10-27T18:33:51.588077+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "ec5beb62b062aebd235e48aab1a7bbc7eb49034cd3138a35def91e27194f2abd",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "memory",
+        "contract": {
+          "contractId": "1793125731694-ec5e0cff8f",
+          "parentId": "1793125731490-0fcd5fa6bd",
+          "traceId": "ef898ac02f324c4889c02042f9a00417",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [
+              "memory.write"
+            ],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "memory.write"
+            ],
+            "params": {
+              "facility_id": "FAC-015",
+              "commodity": "iron-folate tab",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.694419+00:00",
+          "expiresAt": "2026-10-27T18:33:51.694419+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "03045c73a9641242f611ff8bd82d99d917e17d8916cd179589748550f9651f34",
+          "signedBy": "scout"
+        }
+      }
+    ],
+    "checks": 4,
+    "granted": 4,
+    "skipped": 0,
+    "denied": 0
+  },
+  "trace": [
+    {
+      "agent": "orchestrator",
+      "action": "run_start",
+      "target_agent": "scout",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "data_backend=csv; llm_mode=rule-based; scout=on; memory=on"
+    },
+    {
+      "agent": "data_reader",
+      "action": "load_dataset",
+      "target_agent": "scout",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "loaded from csv:data/cases/noisy/case_02: stock=4320, orders=4320, payments=24, web_notes=2"
+    },
+    {
+      "agent": "scout",
+      "action": "scout_gate",
+      "target_agent": "memory",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "allow (stockout.explain, band high): Bound to facility_id=FAC-015, commodity=iron-folate tab, month=2026-03"
+    },
+    {
+      "agent": "scout",
+      "action": "scan_web_notes",
+      "target_agent": "memory",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "no injection text found"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731492-ad2629e11e for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_recall",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793125731492-ad2629e11e signature, expiry and capability verified"
+    },
+    {
+      "agent": "memory",
+      "action": "memory_recall",
+      "target_agent": "data_reader",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "0 prior finding(s); prioritise approved none"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "data_reader",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793125731492-ad2629e11e signature, expiry and capability verified"
+    },
+    {
+      "agent": "data_reader",
+      "action": "read_and_profile",
+      "target_agent": "data_analyst",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "Profile complete. Warnings: 0"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731574-2490c6e872 for stockout.explain (['llm.call'])"
+    },
+    {
+      "agent": "data_analyst",
+      "action": "analyze_evidence",
+      "target_agent": "theory_generator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "Strongest computed signal: H3 payment_arrears. County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000"
+    },
+    {
+      "agent": "theory_generator",
+      "action": "generate",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "7 theories generated"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "plan_waves",
+      "target_agent": "evidence_investigator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "wave 1: ['H2', 'H3']; held back: ['H1', 'H4', 'H5', 'H6', 'H7']; H2: computed flags -> supported; H3: computed flags -> supported"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731576-572e81ad44 for stockout.explain (['data.read', 'llm.call'])"
+    },
+    {
+      "agent": "evidence_investigator",
+      "action": "investigate_wave",
+      "target_agent": "evaluator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "verdicts: H2=supported, H3=supported"
+    },
+    {
+      "agent": "evaluator",
+      "action": "verify_citations",
+      "target_agent": "evaluator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "5 cited row(s) re-read and matched; failures: none"
+    },
+    {
+      "agent": "evaluator",
+      "action": "check_consistency",
+      "target_agent": "evaluator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "all verdicts agree with the computed flags"
+    },
+    {
+      "agent": "evaluator",
+      "action": "cross_critique",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "no conflicts between hypotheses"
+    },
+    {
+      "agent": "evaluator",
+      "action": "coverage_check",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "explained: verified supported cause(s): H3, H2"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731588-893f5e8b05 for action.draft (['action.draft', 'data.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793125731588-893f5e8b05 signature, expiry and capability verified"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "transfer_candidates",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "4 facility(ies) with surplus; nearest FAC-020 14.3 km, closing 170 - avg 128.33 -> 41 units (stock#2874, stock#2871, stock#2872, stock#2873, facilities#FAC-015, facilities#FAC-020)"
+    },
+    {
+      "agent": "evaluator",
+      "action": "verify_transfer",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "6 row(s) re-read; units and distance recomputed and match"
+    },
+    {
+      "agent": "action_strategist",
+      "action": "recommend_actions",
+      "target_agent": "pharmacist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "Most likely: payment_arrears (H3): County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (thres. 3 action(s) drafted for pharmacist approval"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731694-ec5e0cff8f for stockout.explain (['memory.write'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_store",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793125731694-ec5e0cff8f signature, expiry and capability verified"
+    },
+    {
+      "agent": "memory",
+      "action": "memory_store",
+      "target_agent": "pharmacist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "stored 3373b62f2d9a490d989e21a902c4fdee as pending_approval"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "contract_summary",
+      "target_agent": "none",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "4 granted, 0 denied, 0 skipped (no Scout contract)"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "pipeline_complete",
+      "target_agent": "user",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "status=complete. Most likely cause: payment_arrears (H3): County payment records: arrears flag set in the 4-month window, amount owed 111,000,000 KES (threshold 30,000,000 KES); county fill-rate drop "
+    }
+  ],
+  "contract_checks": [
+    {
+      "step": "memory_recall",
+      "capability": "memory.read",
+      "result": "granted",
+      "contract_id": "1793125731492-ad2629e11e"
+    },
+    {
+      "step": "data_reader",
+      "capability": "data.read",
+      "result": "granted",
+      "contract_id": "1793125731492-ad2629e11e"
+    },
+    {
+      "step": "action_strategist",
+      "capability": "action.draft",
+      "result": "granted",
+      "contract_id": "1793125731588-893f5e8b05"
+    },
+    {
+      "step": "memory_store",
+      "capability": "memory.write",
+      "result": "granted",
+      "contract_id": "1793125731694-ec5e0cff8f"
+    }
+  ]
+}

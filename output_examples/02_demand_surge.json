@@ -1,0 +1,2098 @@
+{
+  "run_id": "4b8cbc2b",
+  "status": "complete",
+  "facility_id": "FAC-011",
+  "commodity": "ORS sachet",
+  "month": "2026-03",
+  "question": "Why did facility FAC-011 report a stockout of ORS sachet in 2026-03?",
+  "dataset_dir": "data/cases/normal/case_01",
+  "log_file": "run_4b8cbc2b_20261027T182851.jsonl",
+  "llm_mode": "rule-based",
+  "steps": {
+    "data_reader": {
+      "facility_id": "FAC-011",
+      "commodity": "ORS sachet",
+      "month": "2026-03",
+      "evidence": {
+        "dataset_summary": {
+          "stock_rows": 1,
+          "order_rows": 2,
+          "history_months_available": 6,
+          "has_payment_records": true,
+          "has_web_notes": true
+        },
+        "relevant_records": {
+          "stock_ids": [
+            "stock#1506",
+            "stock#1500",
+            "stock#1501",
+            "stock#1502",
+            "stock#1503",
+            "stock#1504",
+            "stock#1505"
+          ],
+          "order_ids": [
+            "orders#1505",
+            "orders#1506"
+          ],
+          "payment_months": [
+            "2025-12",
+            "2026-01",
+            "2026-02",
+            "2026-03"
+          ]
+        },
+        "data_quality_flags": [],
+        "evidence_for_hypotheses": {
+          "h1_late_order": "orders#1505 was placed 2026-02-05 against cutoff 2026-02-10 (5 days before the cutoff); delivery month 2026-03 vs expected 2026-03.",
+          "h2_supplier_underfill": "orders#1505 fill rate 0.9591 vs county average 0.9096 across 30 orders in the cycle (shortfall -0.0494; under-fill threshold 0.05).",
+          "h3_payment_arrears": "County payment records: arrears flag set in the 4-month window, amount owed 3,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month 0.0113.",
+          "h4_demand_surge": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%).",
+          "h5_record_error": "stock#1506: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 8 plausible.",
+          "h6_expiry": "stock#1506: wastage 0 vs 3-month average 0, with average consumption 311.33 (high-wastage rule: >2x average and >10% of consumption).",
+          "h7_national_disruption": "no public notice for this commodity in the window; county fill-rate drop vs previous month 0.0113."
+        },
+        "missing_data_warnings": [],
+        "_produced_by": "rule-based"
+      },
+      "computed_evidence": {
+        "h1_late_order": {
+          "order_date": "2026-02-05",
+          "cutoff_date": "2026-02-10",
+          "days_late": -5,
+          "late": false,
+          "delivery_month": "2026-03",
+          "expected_delivery_month": "2026-03",
+          "delivery_slipped": false,
+          "order_id": "orders#1505",
+          "order_month": "2026-02"
+        },
+        "h2_supplier_underfill": {
+          "facility_fill_rate": 0.9591,
+          "county_avg_fill_rate": 0.9096,
+          "relative_shortfall": -0.0494,
+          "underfill": false,
+          "n_facilities_in_cycle": 30,
+          "order_id": "orders#1505"
+        },
+        "h3_payment_arrears": {
+          "arrears_in_month": true,
+          "amount_owed_kes": 3000000.0,
+          "major_arrears": false,
+          "fill_drop_vs_prev": 0.0113,
+          "county_fill_this_month": 0.9096405272604537,
+          "county_fill_prev_month": 0.9209769698450506
+        },
+        "h4_demand_surge": {
+          "consumed_this_month": 536.0,
+          "avg_consumed_3m": 311.33,
+          "reported_stockout_days": 8.0,
+          "pct_change_issues_only": 72.16,
+          "demand_basis": "stockout_adjusted",
+          "pct_change": 134.77,
+          "stock_id": "stock#1506",
+          "adjusted_demand": 730.91,
+          "surge": true
+        },
+        "h5_record_error": {
+          "computed_closing": 0.0,
+          "reported_closing": 0.0,
+          "discrepancy": 0.0,
+          "identity_holds": true,
+          "stockout_days_plausible": true,
+          "reported_stockout_days": 8.0,
+          "stock_id": "stock#1506"
+        },
+        "h6_expiry": {
+          "wastage_this_month": 0.0,
+          "avg_wastage_3m": 0.0,
+          "avg_consumed_3m": 311.33,
+          "high_wastage": false,
+          "stock_id": "stock#1506"
+        },
+        "h7_national_disruption": {
+          "county_fill_drop": 0.0113,
+          "county_fill_this_month": 0.9096405272604537,
+          "county_fill_prev_month": 0.9209769698450506,
+          "web_notice_found": false,
+          "notice_details": null
+        }
+      },
+      "data_quality": [],
+      "missing_data_warnings": [],
+      "_produced_by": "rule-based",
+      "_profile": {
+        "facility_id": "FAC-011",
+        "commodity": "ORS sachet",
+        "month": "2026-03",
+        "stock_record": [
+          {
+            "id": "1506",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-03",
+            "opening": 208,
+            "received": 328,
+            "wastage": 0,
+            "consumed": 536,
+            "closing": 0,
+            "reported_stockout_days": 8
+          }
+        ],
+        "order_record": [
+          {
+            "id": "1506",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-06 00:00:00",
+            "qty_requested": 301,
+            "qty_delivered": 292,
+            "delivery_month": "2026-04"
+          }
+        ],
+        "prev_order_record": [
+          {
+            "id": "1505",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 342,
+            "qty_delivered": 328,
+            "delivery_month": "2026-03"
+          }
+        ],
+        "all_orders": [
+          {
+            "id": "65",
+            "facility_id": "FAC-001",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 387,
+            "qty_delivered": 355,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "209",
+            "facility_id": "FAC-002",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 198,
+            "qty_delivered": 184,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "353",
+            "facility_id": "FAC-003",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-04 00:00:00",
+            "qty_requested": 320,
+            "qty_delivered": 297,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "497",
+            "facility_id": "FAC-004",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 222,
+            "qty_delivered": 219,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "641",
+            "facility_id": "FAC-005",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 285,
+            "qty_delivered": 284,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "785",
+            "facility_id": "FAC-006",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 173,
+            "qty_delivered": 159,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "929",
+            "facility_id": "FAC-007",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 120,
+            "qty_delivered": 101,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1073",
+            "facility_id": "FAC-008",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 181,
+            "qty_delivered": 168,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1217",
+            "facility_id": "FAC-009",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 396,
+            "qty_delivered": 342,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1361",
+            "facility_id": "FAC-010",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 411,
+            "qty_delivered": 382,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1505",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 342,
+            "qty_delivered": 328,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1649",
+            "facility_id": "FAC-012",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 442,
+            "qty_delivered": 395,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1793",
+            "facility_id": "FAC-013",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 337,
+            "qty_delivered": 272,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "1937",
+            "facility_id": "FAC-014",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 154,
+            "qty_delivered": 140,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2081",
+            "facility_id": "FAC-015",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 320,
+            "qty_delivered": 292,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2225",
+            "facility_id": "FAC-016",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 129,
+            "qty_delivered": 121,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2369",
+            "facility_id": "FAC-017",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 257,
+            "qty_delivered": 257,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2513",
+            "facility_id": "FAC-018",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-04 00:00:00",
+            "qty_requested": 192,
+            "qty_delivered": 172,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2657",
+            "facility_id": "FAC-019",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 189,
+            "qty_delivered": 173,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2801",
+            "facility_id": "FAC-020",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-04 00:00:00",
+            "qty_requested": 286,
+            "qty_delivered": 263,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "2945",
+            "facility_id": "FAC-021",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 254,
+            "qty_delivered": 226,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3089",
+            "facility_id": "FAC-022",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-05 00:00:00",
+            "qty_requested": 177,
+            "qty_delivered": 150,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3233",
+            "facility_id": "FAC-023",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 366,
+            "qty_delivered": 339,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3377",
+            "facility_id": "FAC-024",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 424,
+            "qty_delivered": 380,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3521",
+            "facility_id": "FAC-025",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 90,
+            "qty_delivered": 82,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3665",
+            "facility_id": "FAC-026",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-06 00:00:00",
+            "qty_requested": 137,
+            "qty_delivered": 121,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3809",
+            "facility_id": "FAC-027",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-09 00:00:00",
+            "qty_requested": 411,
+            "qty_delivered": 330,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "3953",
+            "facility_id": "FAC-028",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-08 00:00:00",
+            "qty_requested": 363,
+            "qty_delivered": 363,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "4097",
+            "facility_id": "FAC-029",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-10 00:00:00",
+            "qty_requested": 358,
+            "qty_delivered": 302,
+            "delivery_month": "2026-03"
+          },
+          {
+            "id": "4241",
+            "facility_id": "FAC-030",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "cutoff_date": "2026-02-10 00:00:00",
+            "order_date": "2026-02-07 00:00:00",
+            "qty_requested": 257,
+            "qty_delivered": 231,
+            "delivery_month": "2026-03"
+          }
+        ],
+        "payments_history": [
+          {
+            "id": "1",
+            "month": "2024-10",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "2",
+            "month": "2024-11",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "3",
+            "month": "2024-12",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "4",
+            "month": "2025-01",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "5",
+            "month": "2025-02",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "6",
+            "month": "2025-03",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "7",
+            "month": "2025-04",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "8",
+            "month": "2025-05",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "9",
+            "month": "2025-06",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 8000000
+          },
+          {
+            "id": "10",
+            "month": "2025-07",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "11",
+            "month": "2025-08",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "12",
+            "month": "2025-09",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "13",
+            "month": "2025-10",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "14",
+            "month": "2025-11",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "15",
+            "month": "2025-12",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "16",
+            "month": "2026-01",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "17",
+            "month": "2026-02",
+            "county_arrears_flag": 1,
+            "amount_owed_kes": 3000000
+          },
+          {
+            "id": "18",
+            "month": "2026-03",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "19",
+            "month": "2026-04",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "20",
+            "month": "2026-05",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "21",
+            "month": "2026-06",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "22",
+            "month": "2026-07",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "23",
+            "month": "2026-08",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "24",
+            "month": "2026-09",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          }
+        ],
+        "stock_history": [
+          {
+            "id": "1500",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2025-09",
+            "opening": 163,
+            "received": 321,
+            "wastage": 0,
+            "consumed": 484,
+            "closing": 0,
+            "reported_stockout_days": 8
+          },
+          {
+            "id": "1501",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2025-10",
+            "opening": 0,
+            "received": 356,
+            "wastage": 0,
+            "consumed": 333,
+            "closing": 23,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1502",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2025-11",
+            "opening": 23,
+            "received": 473,
+            "wastage": 0,
+            "consumed": 339,
+            "closing": 157,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1503",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2025-12",
+            "opening": 157,
+            "received": 312,
+            "wastage": 0,
+            "consumed": 340,
+            "closing": 129,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1504",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-01",
+            "opening": 129,
+            "received": 335,
+            "wastage": 0,
+            "consumed": 304,
+            "closing": 160,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1505",
+            "facility_id": "FAC-011",
+            "commodity": "ORS sachet",
+            "month": "2026-02",
+            "opening": 160,
+            "received": 338,
+            "wastage": 0,
+            "consumed": 290,
+            "closing": 208,
+            "reported_stockout_days": 0
+          }
+        ],
+        "facilities": [
+          {
+            "facility_id": "FAC-001",
+            "lat": -1.0174,
+            "lon": 38.3295,
+            "facility_name": "Ngieni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/14239550707"
+          },
+          {
+            "facility_id": "FAC-002",
+            "lat": -1.2527,
+            "lon": 38.2312,
+            "facility_name": "Itiko Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6303096758"
+          },
+          {
+            "facility_id": "FAC-003",
+            "lat": -1.1222,
+            "lon": 38.2126,
+            "facility_name": "Mui Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798318295"
+          },
+          {
+            "facility_id": "FAC-004",
+            "lat": -0.7479,
+            "lon": 37.9798,
+            "facility_name": "Tyaa Kamuthale Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi North",
+            "osm_id": "way/1171234022"
+          },
+          {
+            "facility_id": "FAC-005",
+            "lat": -0.7799,
+            "lon": 38.0206,
+            "facility_name": "Katuluni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/10883742550"
+          },
+          {
+            "facility_id": "FAC-006",
+            "lat": -0.8566,
+            "lon": 38.2555,
+            "facility_name": "Kamulewa Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798331031"
+          },
+          {
+            "facility_id": "FAC-007",
+            "lat": -1.0791,
+            "lon": 37.9143,
+            "facility_name": "Ngongoni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935335"
+          },
+          {
+            "facility_id": "FAC-008",
+            "lat": -0.8509,
+            "lon": 38.2466,
+            "facility_name": "Enziu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/6244576623"
+          },
+          {
+            "facility_id": "FAC-009",
+            "lat": -1.1835,
+            "lon": 37.8214,
+            "facility_name": "Katutu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui West",
+            "osm_id": "way/1318131957"
+          },
+          {
+            "facility_id": "FAC-010",
+            "lat": -1.1757,
+            "lon": 38.2125,
+            "facility_name": "Yoonye Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333661"
+          },
+          {
+            "facility_id": "FAC-011",
+            "lat": -1.436,
+            "lon": 38.2444,
+            "facility_name": "Zombe Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6244567617"
+          },
+          {
+            "facility_id": "FAC-012",
+            "lat": -1.4597,
+            "lon": 38.2037,
+            "facility_name": "Kaumu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798331033"
+          },
+          {
+            "facility_id": "FAC-013",
+            "lat": -0.93,
+            "lon": 38.2659,
+            "facility_name": "Yumbu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798307186"
+          },
+          {
+            "facility_id": "FAC-014",
+            "lat": -0.9151,
+            "lon": 37.8612,
+            "facility_name": "Kyusyani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935320"
+          },
+          {
+            "facility_id": "FAC-015",
+            "lat": -0.8523,
+            "lon": 37.9696,
+            "facility_name": "Itongolani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935378"
+          },
+          {
+            "facility_id": "FAC-016",
+            "lat": -1.2274,
+            "lon": 38.1737,
+            "facility_name": "Mutito Sub-County Hospital",
+            "facility_type": "sub-county hospital",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333660"
+          },
+          {
+            "facility_id": "FAC-017",
+            "lat": -1.2194,
+            "lon": 38.2989,
+            "facility_name": "Manyoeni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333662"
+          },
+          {
+            "facility_id": "FAC-018",
+            "lat": -0.8772,
+            "lon": 38.1777,
+            "facility_name": "Mutuangombe Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/6243798527"
+          },
+          {
+            "facility_id": "FAC-019",
+            "lat": -1.4182,
+            "lon": 38.1553,
+            "facility_name": "Inyuu Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798331035"
+          },
+          {
+            "facility_id": "FAC-020",
+            "lat": -0.9704,
+            "lon": 37.9194,
+            "facility_name": "Winzyeei Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796944524"
+          },
+          {
+            "facility_id": "FAC-021",
+            "lat": -1.088,
+            "lon": 38.2191,
+            "facility_name": "Muyuni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798307187"
+          },
+          {
+            "facility_id": "FAC-022",
+            "lat": -1.4736,
+            "lon": 37.8376,
+            "facility_name": "Kiusyani Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui Rural",
+            "osm_id": "node/7549451145"
+          },
+          {
+            "facility_id": "FAC-023",
+            "lat": -0.9343,
+            "lon": 37.9649,
+            "facility_name": "Kiio Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877939679"
+          },
+          {
+            "facility_id": "FAC-024",
+            "lat": -1.1119,
+            "lon": 37.9241,
+            "facility_name": "Nzawa Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796943125"
+          },
+          {
+            "facility_id": "FAC-025",
+            "lat": -1.3841,
+            "lon": 38.2731,
+            "facility_name": "Ngelani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6244568075"
+          },
+          {
+            "facility_id": "FAC-026",
+            "lat": -1.5208,
+            "lon": 38.2481,
+            "facility_name": "Kasunguni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333663"
+          },
+          {
+            "facility_id": "FAC-027",
+            "lat": -1.0611,
+            "lon": 37.8733,
+            "facility_name": "Kakululo Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935301"
+          },
+          {
+            "facility_id": "FAC-028",
+            "lat": -0.8435,
+            "lon": 37.9961,
+            "facility_name": "Kyethani Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2864248999"
+          },
+          {
+            "facility_id": "FAC-029",
+            "lat": -0.7821,
+            "lon": 37.9519,
+            "facility_name": "Wikithuki Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796948428"
+          },
+          {
+            "facility_id": "FAC-030",
+            "lat": -1.3751,
+            "lon": 37.9952,
+            "facility_name": "Kanyangi Sub-County Hospital",
+            "facility_type": "sub-county hospital",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/1132558742"
+          }
+        ],
+        "web_notes": [
+          {
+            "month": "2025-06",
+            "commodity": "ORS sachet",
+            "source": "KEMSA notice (synthetic)",
+            "title": "Routine delivery schedule update",
+            "url": "https://example.org/synthetic/1",
+            "synthetic": true
+          }
+        ],
+        "computed_evidence": {
+          "h1_late_order": {
+            "order_date": "2026-02-05",
+            "cutoff_date": "2026-02-10",
+            "days_late": -5,
+            "late": false,
+            "delivery_month": "2026-03",
+            "expected_delivery_month": "2026-03",
+            "delivery_slipped": false,
+            "order_id": "orders#1505",
+            "order_month": "2026-02"
+          },
+          "h2_supplier_underfill": {
+            "facility_fill_rate": 0.9591,
+            "county_avg_fill_rate": 0.9096,
+            "relative_shortfall": -0.0494,
+            "underfill": false,
+            "n_facilities_in_cycle": 30,
+            "order_id": "orders#1505"
+          },
+          "h3_payment_arrears": {
+            "arrears_in_month": true,
+            "amount_owed_kes": 3000000.0,
+            "major_arrears": false,
+            "fill_drop_vs_prev": 0.0113,
+            "county_fill_this_month": 0.9096405272604537,
+            "county_fill_prev_month": 0.9209769698450506
+          },
+          "h4_demand_surge": {
+            "consumed_this_month": 536.0,
+            "avg_consumed_3m": 311.33,
+            "reported_stockout_days": 8.0,
+            "pct_change_issues_only": 72.16,
+            "demand_basis": "stockout_adjusted",
+            "pct_change": 134.77,
+            "stock_id": "stock#1506",
+            "adjusted_demand": 730.91,
+            "surge": true
+          },
+          "h5_record_error": {
+            "computed_closing": 0.0,
+            "reported_closing": 0.0,
+            "discrepancy": 0.0,
+            "identity_holds": true,
+            "stockout_days_plausible": true,
+            "reported_stockout_days": 8.0,
+            "stock_id": "stock#1506"
+          },
+          "h6_expiry": {
+            "wastage_this_month": 0.0,
+            "avg_wastage_3m": 0.0,
+            "avg_consumed_3m": 311.33,
+            "high_wastage": false,
+            "stock_id": "stock#1506"
+          },
+          "h7_national_disruption": {
+            "county_fill_drop": 0.0113,
+            "county_fill_this_month": 0.9096405272604537,
+            "county_fill_prev_month": 0.9209769698450506,
+            "web_notice_found": false,
+            "notice_details": null
+          }
+        }
+      },
+      "world_model": {
+        "snapshot_id": "wm_a3b4cbdf4fe4461ac98e76ee",
+        "schema_version": 1,
+        "entities": 96,
+        "relationships": 145
+      }
+    },
+    "data_analyst": {
+      "analysis_summary": "Strongest computed signal: H4 demand_surge. stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%).",
+      "hypothesis_signals": {
+        "H1": {
+          "signal": "none",
+          "reasoning": "orders#1505 was placed 2026-02-05 against cutoff 2026-02-10 (5 days before the cutoff); delivery month 2026-03 vs expected 2026-03. Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "orders#1505"
+          ]
+        },
+        "H2": {
+          "signal": "none",
+          "reasoning": "orders#1505 fill rate 0.9591 vs county average 0.9096 across 30 orders in the cycle (shortfall -0.0494; under-fill threshold 0.05). Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "orders#1505"
+          ]
+        },
+        "H3": {
+          "signal": "none",
+          "reasoning": "County payment records: arrears flag set in the 4-month window, amount owed 3,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month 0.0113. Computed flag gives 'weakened'.",
+          "evidence_ids": []
+        },
+        "H4": {
+          "signal": "strong",
+          "reasoning": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Computed flag gives 'supported'.",
+          "evidence_ids": [
+            "stock#1506"
+          ]
+        },
+        "H5": {
+          "signal": "none",
+          "reasoning": "stock#1506: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 8 plausible. Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "stock#1506"
+          ]
+        },
+        "H6": {
+          "signal": "none",
+          "reasoning": "stock#1506: wastage 0 vs 3-month average 0, with average consumption 311.33 (high-wastage rule: >2x average and >10% of consumption). Computed flag gives 'weakened'.",
+          "evidence_ids": [
+            "stock#1506"
+          ]
+        },
+        "H7": {
+          "signal": "none",
+          "reasoning": "no public notice for this commodity in the window; county fill-rate drop vs previous month 0.0113. Computed flag gives 'weakened'.",
+          "evidence_ids": []
+        }
+      },
+      "primary_leads": [
+        "H4 demand_surge: stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%)."
+      ],
+      "primary_lead_ids": [
+        "H4"
+      ],
+      "data_limitations": [
+        "Signals are threshold checks on one month of records; they show association, not causation."
+      ],
+      "_produced_by": "rule-based"
+    },
+    "theory_generator": {
+      "theories": [
+        {
+          "id": "H1",
+          "hypothesis_name": "late_order",
+          "title": "Late order",
+          "mechanism": "The order meant to deliver this month was placed after the ordering cutoff, so delivery slipped to the following month and stock ran out before it arrived.",
+          "evidence_needed": [
+            "order_date later than cutoff_date on the previous month's order",
+            "delivery_month later than the stockout month"
+          ],
+          "disconfirming_evidence": [
+            "Order placed on or before the cutoff",
+            "Delivery arrived in the stockout month"
+          ],
+          "predictions": [
+            "received is 0 or low in the stockout month",
+            "A delivery lands the following month"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "orders#1505 was placed 2026-02-05 against cutoff 2026-02-10 (5 days before the cutoff); delivery month 2026-03 vs expected 2026-03. Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H2",
+          "hypothesis_name": "supplier_underfill",
+          "title": "Supplier under-fill",
+          "mechanism": "The supplier delivered much less than requested to this facility compared with peers in the same cycle, leaving too little stock.",
+          "evidence_needed": [
+            "Facility fill rate more than 5 points below the county average for the cycle"
+          ],
+          "disconfirming_evidence": [
+            "Facility fill rate at or above the county average"
+          ],
+          "predictions": [
+            "qty_delivered well below qty_requested for this facility only"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "orders#1505 fill rate 0.9591 vs county average 0.9096 across 30 orders in the cycle (shortfall -0.0494; under-fill threshold 0.05). Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H3",
+          "hypothesis_name": "payment_arrears",
+          "title": "County payment arrears",
+          "mechanism": "The county owed the supplier at least 30M KES and the supplier cut deliveries county-wide until paid.",
+          "evidence_needed": [
+            "County arrears flag with amount owed >= 30,000,000 KES",
+            "County-wide fill rate falling vs the previous month"
+          ],
+          "disconfirming_evidence": [
+            "No arrears flag, or arrears below the threshold",
+            "County fill rate stable or rising"
+          ],
+          "predictions": [
+            "Many facilities under-filled in the same month"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "County payment records: arrears flag set in the 4-month window, amount owed 3,000,000 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month 0.0113. Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H4",
+          "hypothesis_name": "demand_surge",
+          "title": "Demand surge",
+          "mechanism": "Consumption jumped more than 25% above the 3-month average, exhausting stock faster than the ordering cycle planned for.",
+          "evidence_needed": [
+            "consumed this month > 1.25 x the 3-month average"
+          ],
+          "disconfirming_evidence": [
+            "Consumption at or below the recent average"
+          ],
+          "predictions": [
+            "Stock reaches zero mid-month despite a normal delivery"
+          ],
+          "lead_signal": "strong",
+          "lead_reasoning": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Computed flag gives 'supported'."
+        },
+        {
+          "id": "H5",
+          "hypothesis_name": "record_error",
+          "title": "Stock record error",
+          "mechanism": "The reported stockout is a recording error: the stock ledger does not add up, or stockout days conflict with stock on hand.",
+          "evidence_needed": [
+            "opening + received - wastage - consumed differs from reported closing",
+            "Stockout days reported while closing stock is above zero"
+          ],
+          "disconfirming_evidence": [
+            "Stock identity holds and closing is zero"
+          ],
+          "predictions": [
+            "A physical count differs from the ledger"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "stock#1506: computed closing 0 vs reported 0 (discrepancy 0, identity holds); reported stockout days 8 plausible. Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H6",
+          "hypothesis_name": "expiry",
+          "title": "Expiry or wastage",
+          "mechanism": "A large expiry or damage write-off removed usable stock, causing the shortfall.",
+          "evidence_needed": [
+            "Wastage more than 2x its 3-month average and above 10% of average consumption"
+          ],
+          "disconfirming_evidence": [
+            "Wastage near zero or at its normal level"
+          ],
+          "predictions": [
+            "Expired batches recorded in the stockout month"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "stock#1506: wastage 0 vs 3-month average 0, with average consumption 311.33 (high-wastage rule: >2x average and >10% of consumption). Computed flag gives 'weakened'."
+        },
+        {
+          "id": "H7",
+          "hypothesis_name": "national_disruption",
+          "title": "National supply disruption",
+          "mechanism": "A national supply disruption (tender failure, logistics breakdown) reduced deliveries county-wide and was publicly announced.",
+          "evidence_needed": [
+            "Public notice for this commodity within 2 months",
+            "County-wide fill-rate drop vs the previous month"
+          ],
+          "disconfirming_evidence": [
+            "No public notice",
+            "County fill rate stable"
+          ],
+          "predictions": [
+            "Several facilities short of the same commodity at once"
+          ],
+          "lead_signal": "none",
+          "lead_reasoning": "no public notice for this commodity in the window; county fill-rate drop vs previous month 0.0113. Computed flag gives 'weakened'."
+        }
+      ],
+      "_produced_by": "rule-based"
+    },
+    "evidence_investigator": {
+      "evaluations": [
+        {
+          "theory_id": "H4",
+          "hypothesis_name": "demand_surge",
+          "verdict": "supported",
+          "verdict_source": "deterministic",
+          "supporting_evidence_ids": [
+            "stock#1506"
+          ],
+          "contradicting_evidence_ids": [],
+          "reasoning": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+          "limitations": [
+            "A 3-month average is a short baseline; seasonality is not modelled."
+          ],
+          "additional_analysis_needed": [
+            "Check clinic records for an outbreak or caseload change."
+          ],
+          "explanation_source": "rule_based",
+          "_produced_by": "rule-based",
+          "evidence_strength": 1.0,
+          "demand_basis": "stockout_adjusted",
+          "cited_values": {
+            "stock#1506": {
+              "consumed": 536.0,
+              "reported_stockout_days": 8.0
+            }
+          },
+          "verified_citations": [
+            "stock#1506"
+          ],
+          "evaluator_confidence": 1.0
+        }
+      ],
+      "analysis_requests": [],
+      "waves": [
+        {
+          "wave": 1,
+          "hypotheses": [
+            "H4"
+          ]
+        }
+      ]
+    },
+    "action_strategist": {
+      "medical_disclaimer": "This system provides decision-support information only. It does not constitute medical advice, clinical guidance, or authorisation to act. All proposed actions must be reviewed and approved by a qualified pharmacist or supply-chain officer before implementation.",
+      "ranked_hypotheses": [
+        {
+          "hypothesis_id": "H4",
+          "hypothesis_name": "demand_surge",
+          "likelihood": "high",
+          "verdict": "supported",
+          "evidence_strength": 1.0,
+          "summary": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+          "evidence_ids": [
+            "stock#1506"
+          ]
+        }
+      ],
+      "most_likely_cause": "demand_surge (H4): stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+      "most_likely_hypothesis_id": "H4",
+      "actions": [
+        {
+          "action_id": "A1",
+          "action": "Draft an emergency requisition for ORS sachet sized to recent consumption.",
+          "linked_hypothesis_ids": [
+            "H4"
+          ],
+          "evidence_basis": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+          "priority": "critical",
+          "proposed_owner": "Facility pharmacist",
+          "timeframe": "within 24 hours",
+          "expected_outcome": "Stock covers current demand.",
+          "success_measure": "No stockout days in the next stock report.",
+          "risks_and_caveats": "Confirm the surge is real (not a recording artefact) before ordering extra.",
+          "pharmacist_review_required": true,
+          "verified_citations": [
+            "stock#1506"
+          ]
+        },
+        {
+          "action_id": "A2",
+          "action": "Revise the next order quantity using the latest consumption instead of the 3-month average.",
+          "linked_hypothesis_ids": [
+            "H4"
+          ],
+          "evidence_basis": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+          "priority": "high",
+          "proposed_owner": "Facility pharmacist",
+          "timeframe": "next ordering cycle",
+          "expected_outcome": "Order quantity matches current demand.",
+          "success_measure": "Closing stock stays above zero next month.",
+          "risks_and_caveats": "If the surge is temporary, over-ordering raises expiry risk.",
+          "pharmacist_review_required": true,
+          "verified_citations": [
+            "stock#1506"
+          ]
+        }
+      ],
+      "emergency_requisition_memo": "DRAFT \u2014 requires pharmacist sign-off.\nSubject: Emergency requisition, ORS sachet, Zombe Health Centre (FAC-011)\nZombe Health Centre (FAC-011) reported a stockout of ORS sachet in 2026-03. Most likely cause: demand_surge (H4).\nEvidence: stock#1506.\nQuantity: to be set by the pharmacist from current consumption records.",
+      "transfer_request": null,
+      "ordering_schedule_recommendation": "Base the next order on the most recent month's consumption, not only the 3-month average.",
+      "communication_draft": "DRAFT \u2014 for pharmacist review.\nTo: County pharmacist\nRe: ORS sachet stockout at Zombe Health Centre (FAC-011), 2026-03\nMost likely cause: demand_surge (H4). Evidence: stock#1506. Proposed actions are attached for review; none will be executed without approval.",
+      "open_questions": [],
+      "_produced_by": "rule-based"
+    }
+  },
+  "approved_actions": [],
+  "rejected_actions": [],
+  "medical_disclaimer": "This system provides decision-support information only. It does not constitute medical advice, clinical guidance, or authorisation to act. All proposed actions must be reviewed and approved by a qualified pharmacist or supply-chain officer before implementation.",
+  "requires_pharmacist_approval": true,
+  "data_backend": "csv:data/cases/normal/case_01",
+  "scout": {
+    "decision": "allow",
+    "intent": "stockout.explain",
+    "band": "high",
+    "reason": "Bound to facility_id=FAC-011, commodity=ORS sachet, month=2026-03",
+    "params": {
+      "facility_id": "FAC-011",
+      "commodity": "ORS sachet",
+      "month": "2026-03"
+    },
+    "suggestions": {}
+  },
+  "contract": {
+    "contractId": "1793125731100-7b11644608",
+    "parentId": null,
+    "traceId": "925dfba6c4c8409d825681a6f1e93ef7",
+    "intent": "stockout.explain",
+    "risk": {
+      "level": "low",
+      "flags": [
+        "memory.write"
+      ],
+      "approvals": []
+    },
+    "scope": {
+      "capabilities": [
+        "data.read",
+        "llm.call",
+        "memory.read",
+        "memory.write"
+      ],
+      "params": {
+        "facility_id": "FAC-011",
+        "commodity": "ORS sachet",
+        "month": "2026-03"
+      },
+      "role": "pharmacist"
+    },
+    "issuedAt": "2026-10-27T18:28:51.100760+00:00",
+    "expiresAt": "2026-10-27T18:33:51.100760+00:00",
+    "registryVersion": 3,
+    "policyPackVersion": "stockwhy-default-2",
+    "signature": "2a560a30bd716699c906b47a1184f645c8ac6a0bceff385295dbda7b388806f6",
+    "signedBy": "scout"
+  },
+  "canonical_question": "Why did facility FAC-011 report a stockout of ORS sachet in 2026-03?",
+  "memory": {
+    "recalled": [],
+    "prioritised": [],
+    "dataset_key": "data/cases/normal/case_01",
+    "stored_id": "7d16ead4e759478f8885b17478624311",
+    "stored_status": "pending_approval"
+  },
+  "world_model": {
+    "snapshot_id": "wm_a3b4cbdf4fe4461ac98e76ee",
+    "schema_version": 1,
+    "entities": 96,
+    "relationships": 145
+  },
+  "wave_plan": {
+    "wave1": [
+      "H4"
+    ],
+    "held_back": [
+      "H1",
+      "H2",
+      "H3",
+      "H5",
+      "H6",
+      "H7"
+    ],
+    "reasons": {
+      "H4": "computed flags -> supported"
+    }
+  },
+  "fault_drill": null,
+  "dropped_claims": [],
+  "not_investigated": [
+    "H1",
+    "H2",
+    "H3",
+    "H5",
+    "H6",
+    "H7"
+  ],
+  "hypotheses_not_investigated": [
+    {
+      "id": "H1",
+      "name": "late_order",
+      "computed_verdict": "weakened",
+      "rows": [
+        "orders#1505"
+      ]
+    },
+    {
+      "id": "H2",
+      "name": "supplier_underfill",
+      "computed_verdict": "weakened",
+      "rows": [
+        "orders#1505"
+      ]
+    },
+    {
+      "id": "H3",
+      "name": "payment_arrears",
+      "computed_verdict": "weakened",
+      "rows": []
+    },
+    {
+      "id": "H5",
+      "name": "record_error",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#1506"
+      ]
+    },
+    {
+      "id": "H6",
+      "name": "expiry",
+      "computed_verdict": "weakened",
+      "rows": [
+        "stock#1506"
+      ]
+    },
+    {
+      "id": "H7",
+      "name": "national_disruption",
+      "computed_verdict": "weakened",
+      "rows": []
+    }
+  ],
+  "coverage": {
+    "verdict": "explained",
+    "supported": [
+      "H4"
+    ],
+    "request": [],
+    "reason": "verified supported cause(s): H4"
+  },
+  "verified_citations": {
+    "H4": [
+      "stock#1506"
+    ]
+  },
+  "most_likely_cause": "demand_surge (H4): stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+  "verified_cause": {
+    "hypothesis_id": "H4",
+    "hypothesis_name": "demand_surge",
+    "citations": [
+      "stock#1506"
+    ]
+  },
+  "ranked_hypotheses": [
+    {
+      "hypothesis_id": "H4",
+      "hypothesis_name": "demand_surge",
+      "likelihood": "high",
+      "verdict": "supported",
+      "evidence_strength": 1.0,
+      "summary": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+      "evidence_ids": [
+        "stock#1506"
+      ],
+      "citations": [
+        "stock#1506"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "action_id": "A1",
+      "action": "Draft an emergency requisition for ORS sachet sized to recent consumption.",
+      "linked_hypothesis_ids": [
+        "H4"
+      ],
+      "evidence_basis": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+      "priority": "critical",
+      "proposed_owner": "Facility pharmacist",
+      "timeframe": "within 24 hours",
+      "expected_outcome": "Stock covers current demand.",
+      "success_measure": "No stockout days in the next stock report.",
+      "risks_and_caveats": "Confirm the surge is real (not a recording artefact) before ordering extra.",
+      "pharmacist_review_required": true,
+      "verified_citations": [
+        "stock#1506"
+      ]
+    },
+    {
+      "action_id": "A2",
+      "action": "Revise the next order quantity using the latest consumption instead of the 3-month average.",
+      "linked_hypothesis_ids": [
+        "H4"
+      ],
+      "evidence_basis": "stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.77%; issues only +72.16%; surge threshold +25%). Verdict 'supported': the computed flag passes its threshold.",
+      "priority": "high",
+      "proposed_owner": "Facility pharmacist",
+      "timeframe": "next ordering cycle",
+      "expected_outcome": "Order quantity matches current demand.",
+      "success_measure": "Closing stock stays above zero next month.",
+      "risks_and_caveats": "If the surge is temporary, over-ordering raises expiry risk.",
+      "pharmacist_review_required": true,
+      "verified_citations": [
+        "stock#1506"
+      ]
+    }
+  ],
+  "investigate_further": [],
+  "removed_actions": [],
+  "contracts": {
+    "main": {
+      "contractId": "1793125731100-7b11644608",
+      "parentId": null,
+      "traceId": "925dfba6c4c8409d825681a6f1e93ef7",
+      "intent": "stockout.explain",
+      "risk": {
+        "level": "low",
+        "flags": [
+          "memory.write"
+        ],
+        "approvals": []
+      },
+      "scope": {
+        "capabilities": [
+          "data.read",
+          "llm.call",
+          "memory.read",
+          "memory.write"
+        ],
+        "params": {
+          "facility_id": "FAC-011",
+          "commodity": "ORS sachet",
+          "month": "2026-03"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T18:28:51.100760+00:00",
+      "expiresAt": "2026-10-27T18:33:51.100760+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "2a560a30bd716699c906b47a1184f645c8ac6a0bceff385295dbda7b388806f6",
+      "signedBy": "scout"
+    },
+    "child": {
+      "contractId": "1793125731170-d9ed6b57ca",
+      "parentId": "1793125731100-7b11644608",
+      "traceId": "925dfba6c4c8409d825681a6f1e93ef7",
+      "intent": "action.draft",
+      "risk": {
+        "level": "medium",
+        "flags": [
+          "action.draft"
+        ],
+        "approvals": [
+          "pharmacist-confirm"
+        ]
+      },
+      "scope": {
+        "capabilities": [
+          "action.draft",
+          "data.read"
+        ],
+        "params": {
+          "facility_id": "FAC-011",
+          "commodity": "ORS sachet",
+          "month": "2026-03"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T18:28:51.170562+00:00",
+      "expiresAt": "2026-10-27T18:33:51.170562+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "50c8df5a83276f93d52a391f82a08b6c6e951fc5b59220c53c414e608323575d",
+      "signedBy": "scout"
+    },
+    "phases": [
+      {
+        "phase": "read",
+        "contract": {
+          "contractId": "1793125731102-abafd00dc9",
+          "parentId": "1793125731100-7b11644608",
+          "traceId": "925dfba6c4c8409d825681a6f1e93ef7",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call",
+              "memory.read"
+            ],
+            "params": {
+              "facility_id": "FAC-011",
+              "commodity": "ORS sachet",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.102147+00:00",
+          "expiresAt": "2026-10-27T18:33:51.102147+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "2d1ed2ad2a6c169cabebcf2862e606d4cbd41ac44adc984992cdba914d770d46",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "analyse",
+        "contract": {
+          "contractId": "1793125731161-31f9073b6c",
+          "parentId": "1793125731100-7b11644608",
+          "traceId": "925dfba6c4c8409d825681a6f1e93ef7",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "llm.call"
+            ],
+            "params": {
+              "facility_id": "FAC-011",
+              "commodity": "ORS sachet",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.161566+00:00",
+          "expiresAt": "2026-10-27T18:33:51.161566+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "e36104800500dd70e83d2b3594a5c51feaf7b2304f11b4e942f082c55401b9ea",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "investigate",
+        "contract": {
+          "contractId": "1793125731163-bdddd876ce",
+          "parentId": "1793125731100-7b11644608",
+          "traceId": "925dfba6c4c8409d825681a6f1e93ef7",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call"
+            ],
+            "params": {
+              "facility_id": "FAC-011",
+              "commodity": "ORS sachet",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.163097+00:00",
+          "expiresAt": "2026-10-27T18:33:51.163097+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "b98a9f5985990db998b4d02b1c0f2932bda194bd90621305fa432a7cf40aa54b",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "draft",
+        "contract": {
+          "contractId": "1793125731170-d9ed6b57ca",
+          "parentId": "1793125731100-7b11644608",
+          "traceId": "925dfba6c4c8409d825681a6f1e93ef7",
+          "intent": "action.draft",
+          "risk": {
+            "level": "medium",
+            "flags": [
+              "action.draft"
+            ],
+            "approvals": [
+              "pharmacist-confirm"
+            ]
+          },
+          "scope": {
+            "capabilities": [
+              "action.draft",
+              "data.read"
+            ],
+            "params": {
+              "facility_id": "FAC-011",
+              "commodity": "ORS sachet",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.170562+00:00",
+          "expiresAt": "2026-10-27T18:33:51.170562+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "50c8df5a83276f93d52a391f82a08b6c6e951fc5b59220c53c414e608323575d",
+          "signedBy": "scout"
+        }
+      },
+      {
+        "phase": "memory",
+        "contract": {
+          "contractId": "1793125731173-70e91b14ab",
+          "parentId": "1793125731100-7b11644608",
+          "traceId": "925dfba6c4c8409d825681a6f1e93ef7",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [
+              "memory.write"
+            ],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "memory.write"
+            ],
+            "params": {
+              "facility_id": "FAC-011",
+              "commodity": "ORS sachet",
+              "month": "2026-03"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.173563+00:00",
+          "expiresAt": "2026-10-27T18:33:51.173563+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "18525bd3f10969d7c8e8a99868ac1c77348199441c5500202ce3760588ccab54",
+          "signedBy": "scout"
+        }
+      }
+    ],
+    "checks": 4,
+    "granted": 4,
+    "skipped": 0,
+    "denied": 0
+  },
+  "trace": [
+    {
+      "agent": "orchestrator",
+      "action": "run_start",
+      "target_agent": "scout",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "data_backend=csv; llm_mode=rule-based; scout=on; memory=on"
+    },
+    {
+      "agent": "data_reader",
+      "action": "load_dataset",
+      "target_agent": "scout",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "loaded from csv:data/cases/normal/case_01: stock=4320, orders=4320, payments=24, web_notes=2"
+    },
+    {
+      "agent": "scout",
+      "action": "scout_gate",
+      "target_agent": "memory",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "allow (stockout.explain, band high): Bound to facility_id=FAC-011, commodity=ORS sachet, month=2026-03"
+    },
+    {
+      "agent": "scout",
+      "action": "scan_web_notes",
+      "target_agent": "memory",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "no injection text found"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731102-abafd00dc9 for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_recall",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793125731102-abafd00dc9 signature, expiry and capability verified"
+    },
+    {
+      "agent": "memory",
+      "action": "memory_recall",
+      "target_agent": "data_reader",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "0 prior finding(s); prioritise approved none"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "data_reader",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793125731102-abafd00dc9 signature, expiry and capability verified"
+    },
+    {
+      "agent": "data_reader",
+      "action": "read_and_profile",
+      "target_agent": "data_analyst",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "Profile complete. Warnings: 0"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731161-31f9073b6c for stockout.explain (['llm.call'])"
+    },
+    {
+      "agent": "data_analyst",
+      "action": "analyze_evidence",
+      "target_agent": "theory_generator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "Strongest computed signal: H4 demand_surge. stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3"
+    },
+    {
+      "agent": "theory_generator",
+      "action": "generate",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "7 theories generated"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "plan_waves",
+      "target_agent": "evidence_investigator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "wave 1: ['H4']; held back: ['H1', 'H2', 'H3', 'H5', 'H6', 'H7']; H4: computed flags -> supported"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731163-bdddd876ce for stockout.explain (['data.read', 'llm.call'])"
+    },
+    {
+      "agent": "evidence_investigator",
+      "action": "investigate_wave",
+      "target_agent": "evaluator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "verdicts: H4=supported"
+    },
+    {
+      "agent": "evaluator",
+      "action": "verify_citations",
+      "target_agent": "evaluator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "1 cited row(s) re-read and matched; failures: none"
+    },
+    {
+      "agent": "evaluator",
+      "action": "check_consistency",
+      "target_agent": "evaluator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "all verdicts agree with the computed flags"
+    },
+    {
+      "agent": "evaluator",
+      "action": "cross_critique",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "no conflicts between hypotheses"
+    },
+    {
+      "agent": "evaluator",
+      "action": "coverage_check",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "explained: verified supported cause(s): H4"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731170-d9ed6b57ca for action.draft (['action.draft', 'data.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "action_strategist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793125731170-d9ed6b57ca signature, expiry and capability verified"
+    },
+    {
+      "agent": "action_strategist",
+      "action": "recommend_actions",
+      "target_agent": "pharmacist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "Most likely: demand_surge (H4): stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8. 2 action(s) drafted for pharmacist approval"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731173-70e91b14ab for stockout.explain (['memory.write'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_store",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793125731173-70e91b14ab signature, expiry and capability verified"
+    },
+    {
+      "agent": "memory",
+      "action": "memory_store",
+      "target_agent": "pharmacist",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "stored 7d16ead4e759478f8885b17478624311 as pending_approval"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "contract_summary",
+      "target_agent": "none",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "4 granted, 0 denied, 0 skipped (no Scout contract)"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "pipeline_complete",
+      "target_agent": "user",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "status=complete. Most likely cause: demand_surge (H4): stock#1506: consumed 536 with 8 reported stock-out days; stock-out-adjusted demand 536 x 30 / (30 - 8) = 730.91 vs 3-month average 311.33 (+134.7"
+    }
+  ],
+  "contract_checks": [
+    {
+      "step": "memory_recall",
+      "capability": "memory.read",
+      "result": "granted",
+      "contract_id": "1793125731102-abafd00dc9"
+    },
+    {
+      "step": "data_reader",
+      "capability": "data.read",
+      "result": "granted",
+      "contract_id": "1793125731102-abafd00dc9"
+    },
+    {
+      "step": "action_strategist",
+      "capability": "action.draft",
+      "result": "granted",
+      "contract_id": "1793125731170-d9ed6b57ca"
+    },
+    {
+      "step": "memory_store",
+      "capability": "memory.write",
+      "result": "granted",
+      "contract_id": "1793125731173-70e91b14ab"
+    }
+  ]
+}

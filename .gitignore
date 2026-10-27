@@ -4,3 +4,9 @@
 __pycache__/
 docs/datapack/
 docs/*.pdf
+.venv/
+logs/memory/
+logs/*.jsonl
+logs/*.sqlite3
+results/
+.pytest_cache/

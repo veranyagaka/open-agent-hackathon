@@ -1,0 +1,15 @@
+StockWhy
+Copyright (c) 2026 NexusForge (Idah Anyango, Osborn Nyakaru, Vera Nyagaka)
+Licensed under the MIT License (see LICENSE).
+
+This project includes material from third parties:
+
+- tests/fixtures/hmem_vectors.json and tests/fixtures/scout_injection_adversarial.jsonl
+  come from meterless/meterless (https://github.com/meterless/meterless) and are
+  licensed under the Apache License, Version 2.0
+  (https://www.apache.org/licenses/LICENSE-2.0). engines/hmem.py and
+  engines/scout_intent.py are Python ports of the engine specifications in the
+  same repository.
+
+- Facility names and locations in data/*/facilities.csv: (c) OpenStreetMap
+  contributors, ODbL 1.0, via the HOT export on HDX (hotosm_ken_health_facilities).

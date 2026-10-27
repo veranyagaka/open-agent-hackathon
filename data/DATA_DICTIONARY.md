@@ -33,10 +33,11 @@ Stock identity: `opening - wastage + received - consumed = closing`. A facility 
 `id`, `month`, `county_arrears_flag` (1 if the county owed the supplier), `amount_owed_kes`. Arrears of KES 30 million or more count as major.
 
 ## facilities.csv
-`facility_id`, `lat`, `lon` (fictional coordinates, used to find the nearest facility with spare stock).
+`facility_id`, `lat`, `lon`, `facility_name`, `facility_type` (dispensary, health centre, sub-county hospital), `county`, `sub_county`, `osm_id`.
+These are real public health facilities in Kitui County, Kenya, taken from OpenStreetMap. Scout, the action drafter and the Evaluator use them to name facilities and to find the nearest facility with spare stock. The stock, order and payment records attached to these facilities are synthetic and do not describe what really happened at them.
 
 ## web_notes.json
-Public-notice stand-ins: `month`, `commodity`, `source`, `title`, `url`, and `synthetic: true`. The live version of this comes from Bright Data.
+Public-notice stand-ins: `month`, `commodity`, `source`, `title`, `url`, and `synthetic: true`. In live mode the same notices are read through Zetaris (`stockwhy_web`).
 
 ## manifest.json
 `seed`, `n_facilities`, `synthetic: true`. The planted cause is deliberately **not** stored anywhere in a dataset folder.
@@ -47,12 +48,12 @@ Public-notice stand-ins: `month`, `commodity`, `source`, `title`, `url`, and `sy
 | 1 | Late or missed ordering | orders | Days between `order_date` and `cutoff_date`; delivery slipped? |
 | 2 | Supplier under-fill (facility-specific) | orders | This facility's fill rate versus other facilities in the same cycle |
 | 3 | Payment arrears | payments, orders | County-wide fill drop plus a major arrears record |
-| 4 | Demand surge | stock | `consumed` versus the facility's recent average |
+| 4 | Demand surge | stock | `consumed` versus the facility's recent average; with stock-out days, stock-out-adjusted demand `consumed × 30 / (30 − reported_stockout_days)`, recomputed from `consumed` alone if `closing` > 0 |
 | 5 | Stock-record error | stock | Reported stock-out days versus normal issues and stock left at month end |
 | 6 | Expiry or wastage | stock | `wastage` relative to normal monthly use |
 | 7 | National supply disruption | orders, web_notes | County-wide fill drop plus a public notice for that medicine |
 
-`facilities.csv` is used only by the action drafter.
+`facilities.csv` is used by Scout (binding facility ids), the action drafter (names, nearest facility with spare stock) and the Evaluator (re-checks the transfer's units and distance).
 
 ## Honest caveats
 - Everything is generated. Real facility records are messier and the causes are tangled.

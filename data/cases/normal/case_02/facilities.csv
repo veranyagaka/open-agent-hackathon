@@ -1,31 +1,31 @@
-facility_id,lat,lon
-FAC-001,-1.5632,36.9401
-FAC-002,-1.3813,36.4261
-FAC-003,-1.3926,36.8924
-FAC-004,-1.092,37.0567
-FAC-005,-1.5943,36.3797
-FAC-006,-1.0091,36.6792
-FAC-007,-1.6293,36.855
-FAC-008,-1.3454,37.078
-FAC-009,-1.6398,36.7937
-FAC-010,-1.0308,37.067
-FAC-011,-1.0165,36.8366
-FAC-012,-0.9358,36.431
-FAC-013,-1.534,36.7432
-FAC-014,-1.7392,36.4124
-FAC-015,-1.2087,36.4215
-FAC-016,-1.6863,37.1228
-FAC-017,-1.6582,36.4648
-FAC-018,-1.3456,37.0561
-FAC-019,-1.0021,36.7002
-FAC-020,-1.5828,37.0695
-FAC-021,-0.9337,37.1426
-FAC-022,-1.7183,36.8415
-FAC-023,-0.9907,36.421
-FAC-024,-1.6135,36.661
-FAC-025,-0.9975,36.7685
-FAC-026,-1.473,36.4954
-FAC-027,-1.6468,36.8928
-FAC-028,-1.0036,36.6988
-FAC-029,-1.138,36.6847
-FAC-030,-1.2411,36.4358
+facility_id,lat,lon,facility_name,facility_type,county,sub_county,osm_id
+FAC-001,-1.0174,38.3295,Ngieni Dispensary,dispensary,Kitui,Mwingi East,node/14239550707
+FAC-002,-1.2527,38.2312,Itiko Dispensary,dispensary,Kitui,Kitui East,node/6303096758
+FAC-003,-1.1222,38.2126,Mui Dispensary,dispensary,Kitui,Mwingi East,way/798318295
+FAC-004,-0.7479,37.9798,Tyaa Kamuthale Health Centre,health centre,Kitui,Mwingi North,way/1171234022
+FAC-005,-0.7799,38.0206,Katuluni Dispensary,dispensary,Kitui,Mwingi East,node/10883742550
+FAC-006,-0.8566,38.2555,Kamulewa Dispensary,dispensary,Kitui,Mwingi East,way/798331031
+FAC-007,-1.0791,37.9143,Ngongoni Dispensary,dispensary,Kitui,Mwingi West,node/2877935335
+FAC-008,-0.8509,38.2466,Enziu Dispensary,dispensary,Kitui,Mwingi East,node/6244576623
+FAC-009,-1.1835,37.8214,Katutu Dispensary,dispensary,Kitui,Kitui West,way/1318131957
+FAC-010,-1.1757,38.2125,Yoonye Dispensary,dispensary,Kitui,Kitui East,way/798333661
+FAC-011,-1.436,38.2444,Zombe Health Centre,health centre,Kitui,Kitui East,node/6244567617
+FAC-012,-1.4597,38.2037,Kaumu Dispensary,dispensary,Kitui,Kitui East,way/798331033
+FAC-013,-0.93,38.2659,Yumbu Dispensary,dispensary,Kitui,Mwingi East,way/798307186
+FAC-014,-0.9151,37.8612,Kyusyani Dispensary,dispensary,Kitui,Mwingi West,node/2877935320
+FAC-015,-0.8523,37.9696,Itongolani Dispensary,dispensary,Kitui,Mwingi West,node/2877935378
+FAC-016,-1.2274,38.1737,Mutito Sub-County Hospital,sub-county hospital,Kitui,Kitui East,way/798333660
+FAC-017,-1.2194,38.2989,Manyoeni Dispensary,dispensary,Kitui,Kitui East,way/798333662
+FAC-018,-0.8772,38.1777,Mutuangombe Dispensary,dispensary,Kitui,Mwingi East,node/6243798527
+FAC-019,-1.4182,38.1553,Inyuu Health Centre,health centre,Kitui,Kitui East,way/798331035
+FAC-020,-0.9704,37.9194,Winzyeei Health Centre,health centre,Kitui,Mwingi West,way/796944524
+FAC-021,-1.088,38.2191,Muyuni Dispensary,dispensary,Kitui,Mwingi East,way/798307187
+FAC-022,-1.4736,37.8376,Kiusyani Health Centre,health centre,Kitui,Kitui Rural,node/7549451145
+FAC-023,-0.9343,37.9649,Kiio Dispensary,dispensary,Kitui,Mwingi West,node/2877939679
+FAC-024,-1.1119,37.9241,Nzawa Health Centre,health centre,Kitui,Mwingi West,way/796943125
+FAC-025,-1.3841,38.2731,Ngelani Dispensary,dispensary,Kitui,Kitui East,node/6244568075
+FAC-026,-1.5208,38.2481,Kasunguni Dispensary,dispensary,Kitui,Kitui East,way/798333663
+FAC-027,-1.0611,37.8733,Kakululo Dispensary,dispensary,Kitui,Mwingi West,node/2877935301
+FAC-028,-0.8435,37.9961,Kyethani Health Centre,health centre,Kitui,Mwingi West,node/2864248999
+FAC-029,-0.7821,37.9519,Wikithuki Dispensary,dispensary,Kitui,Mwingi West,way/796948428
+FAC-030,-1.3751,37.9952,Kanyangi Sub-County Hospital,sub-county hospital,Kitui,Kitui East,way/1132558742

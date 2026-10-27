@@ -75,6 +75,8 @@ class TestLogger:
         assert obj["status"] == "ok"
         assert obj["model"] == "test-model"
         assert obj["confidence"] == pytest.approx(0.8)
+        assert obj["target_agent"] is None
+        assert obj["retry_count"] == 0
         assert "timestamp" in obj
 
     def test_timestamp_iso_format(self, tmp_path, monkeypatch):
@@ -144,3 +146,46 @@ class TestLogger:
         obj = json.loads((tmp_path / "logs" / "run.jsonl").read_text().strip())
         assert obj["retry_count"] == 2
         assert obj["target_agent"] == "theory_generator"
+
+
+class TestLoggerFields:
+    def test_every_record_has_core_fields(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("STOCKWHY_LOGS_DIR", raising=False)
+        log_event(
+            log_file="run.jsonl", run_id="r1", agent_name="a", action="x",
+            input_summary="i", output_summary="o",
+        )
+        obj = json.loads((tmp_path / "logs" / "run.jsonl").read_text().strip())
+        for key in ("timestamp", "run_id", "agent_name", "action", "input_summary",
+                    "output_summary", "target_agent", "model", "confidence",
+                    "retry_count", "status"):
+            assert key in obj
+        assert obj["target_agent"] is None
+        assert obj["retry_count"] == 0
+
+    def test_logs_dir_env(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("STOCKWHY_LOGS_DIR", str(tmp_path / "custom"))
+        log_event(
+            log_file="run.jsonl", run_id="r1", agent_name="a", action="x",
+            input_summary="i", output_summary="o", model="rule-based",
+            target_agent="theory_generator", retry_count=1,
+        )
+        obj = json.loads((tmp_path / "custom" / "run.jsonl").read_text().strip())
+        assert obj["model"] == "rule-based"
+        assert obj["target_agent"] == "theory_generator"
+        assert obj["retry_count"] == 1
+        assert not (tmp_path / "logs").exists()
+
+
+def test_records_requested_and_served_model(tmp_path, monkeypatch):
+    monkeypatch.setenv("STOCKWHY_LOGS_DIR", str(tmp_path))
+    log_event(log_file="m.jsonl", run_id="r", agent_name="a", action="x", input_summary="i",
+              output_summary="o", model="nvidia/x", requested_model="meterless/deep",
+              served_model="nvidia/x")
+    log_event(log_file="m.jsonl", run_id="r", agent_name="a", action="y", input_summary="i",
+              output_summary="o")
+    first, second = [json.loads(l) for l in (tmp_path / "m.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert first["requested_model"] == "meterless/deep" and first["served_model"] == "nvidia/x"
+    assert "requested_model" not in second and "served_model" not in second

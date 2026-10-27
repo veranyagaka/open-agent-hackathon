@@ -1,0 +1,1 @@
+{"question": "Why did FAC-009 run out of magnesium sulphate in March 2026?", "_env": {"STOCKWHY_INJECT_FAULT": "H1"}, "_note": "fault drill: one cited value is corrupted on the first pass; the Evaluator catches it and the investigator retries"}

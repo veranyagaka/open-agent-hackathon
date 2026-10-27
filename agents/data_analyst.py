@@ -2,13 +2,16 @@
 agents/data_analyst.py
 
 Data Analyst Agent: interprets workbook profiles and computed evidence.
+With the LLM disabled (llm_client.llm_enabled) both functions return the
+same schema from rule-based reasoning over the computed numbers.
 """
 
-from llm_client import ask_agent
+from agents import rules
+from llm_client import RULE_BASED, ask_agent, llm_enabled
 
 
 SYSTEM = """
-You are the StockyWhy Data Analyst.
+You are the StockWhy Data Analyst.
 
 Analyze the supplied workbook profile and sample records.
 
@@ -32,7 +35,7 @@ Return valid JSON with:
 """
 
 EVIDENCE_SYSTEM = """
-You are the StockyWhy Data Analyst.
+You are the StockWhy Data Analyst.
 
 You will receive computed_evidence — deterministic calculations for all 7
 stockout hypotheses — plus the investigation question.
@@ -75,13 +78,80 @@ Return valid JSON:
 
 def analyze(profile: dict, question: str) -> dict:
     """Original analyze function — kept intact."""
-    return ask_agent(
-        SYSTEM,
-        {
-            "research_question": question,
-            "workbook_profile": profile,
-        },
-    )
+    if llm_enabled():
+        try:
+            return ask_agent(
+                SYSTEM,
+                {
+                    "research_question": question,
+                    "workbook_profile": profile,
+                },
+            )
+        except Exception as exc:  # LLMError or any client failure
+            result = analyze_rule_based(profile, question)
+            result["_fallback_reason"] = f"{type(exc).__name__}: {str(exc)[:200]}"
+            return result
+    return analyze_rule_based(profile, question)
+
+
+_VALID_SIGNALS = {"strong", "weak", "none", "inconclusive"}
+_SIGNAL_ALIASES = {"no": "none", "absent": "none", "no signal": "none", "moderate": "weak"}
+
+
+def _normalise_analysis(result):
+    """Accept harmless variants (evidence-key names, plain-string signals, "Strong signal")
+    without inventing anything; missing list fields become empty lists."""
+    if not isinstance(result, dict):
+        return result
+    signals = result.get("hypothesis_signals")
+    if isinstance(signals, dict):
+        by_name = {name: h_id for h_id, name in rules.HYPOTHESIS_NAMES.items()}
+        by_name.update({key: h_id for h_id, key in rules.EVIDENCE_KEYS.items()})
+        out = {}
+        for key, value in signals.items():
+            k = str(key).strip()
+            head = k.split("_", 1)[0].upper()  # "H3", "h3" or "H3_late_order"
+            k = head if head in rules.HYPOTHESIS_NAMES else by_name.get(k.lower(), k)
+            if isinstance(value, str):
+                value = {"signal": value, "reasoning": ""}
+            if isinstance(value, dict) and isinstance(value.get("signal"), str):
+                s = value["signal"].strip().lower()
+                s = _SIGNAL_ALIASES.get(s, s)
+                if s.endswith(" signal"):
+                    s = _SIGNAL_ALIASES.get(s, s[: -len(" signal")])
+                value = {**value, "signal": s}
+            out[k] = value
+        result = {**result, "hypothesis_signals": out}
+    for key in ("primary_leads", "data_limitations"):
+        if key not in result:
+            result = {**result, key: []}
+    return result
+
+
+def _validate_analysis(result) -> None:
+    """Raise ValueError unless the reply has every field and a valid signal for H1-H7."""
+    if not isinstance(result, dict):
+        raise ValueError("Data Analyst response must be a JSON object.")
+    required = {"analysis_summary": str, "hypothesis_signals": dict,
+                "primary_leads": list, "data_limitations": list}
+    missing = sorted(set(required) - set(result))
+    if missing:
+        raise ValueError("Data Analyst response is missing required fields: " + ", ".join(missing))
+    invalid = [name for name, kind in required.items() if not isinstance(result[name], kind)]
+    if invalid:
+        raise ValueError("Data Analyst response has invalid field types: " + ", ".join(invalid))
+    if not result["analysis_summary"].strip():
+        raise ValueError("Data Analyst response has an empty analysis_summary.")
+    signals = result["hypothesis_signals"]
+    missing_ids = sorted(set(rules.HYPOTHESIS_NAMES) - set(signals))
+    if missing_ids:
+        raise ValueError("Data Analyst response is missing hypothesis signals: " + ", ".join(missing_ids))
+    for h_id in sorted(rules.HYPOTHESIS_NAMES):
+        signal = signals[h_id]
+        if not isinstance(signal, dict) or signal.get("signal") not in _VALID_SIGNALS:
+            raise ValueError(f"Data Analyst signal {h_id} has an invalid or missing signal value.")
+        if not isinstance(signal.get("reasoning"), str):
+            raise ValueError(f"Data Analyst signal {h_id} is missing string reasoning.")
 
 
 def analyze_evidence(computed_evidence: dict, question: str) -> dict:
@@ -89,10 +159,100 @@ def analyze_evidence(computed_evidence: dict, question: str) -> dict:
     Interpret the deterministic computed_evidence from data_loader
     and return a structured analysis of which hypotheses have strong signals.
     """
-    return ask_agent(
-        EVIDENCE_SYSTEM,
-        {
-            "research_question": question,
-            "computed_evidence": computed_evidence,
-        },
+    if llm_enabled():
+        try:
+            result = ask_agent(
+                EVIDENCE_SYSTEM,
+                {
+                    "research_question": question,
+                    "computed_evidence": computed_evidence,
+                },
+            )
+            result = _normalise_analysis(result)
+            _validate_analysis(result)
+            return result
+        except Exception as exc:  # LLMError or a reply in the wrong shape
+            result = analyze_evidence_rule_based(computed_evidence, question)
+            result["_fallback_reason"] = f"{type(exc).__name__}: {str(exc)[:200]}"
+            return result
+    return analyze_evidence_rule_based(computed_evidence, question)
+
+
+# ---------------------------------------------------------------------------
+# Rule-based mode
+# ---------------------------------------------------------------------------
+
+def analyze_rule_based(profile: dict, question: str) -> dict:
+    """Describe a workbook profile (sheets, columns, rows, blank cells)."""
+    sheets = profile or {}
+    overview = []
+    issues = []
+    for name, sheet in sheets.items():
+        sheet = sheet or {}
+        columns = sheet.get("columns", [])
+        overview.append(
+            f"{name}: {sheet.get('row_count', 'unknown')} rows, {len(columns)} columns"
+        )
+        for i, record in enumerate(sheet.get("sample_records", []) or []):
+            blanks = [k for k, v in (record or {}).items() if v is None or v == ""]
+            if blanks:
+                issues.append(f"{name} sample row {i + 1}: empty {', '.join(blanks)}")
+    return {
+        "dataset_overview": "; ".join(overview) or "No sheets supplied.",
+        "data_quality_issues": issues,
+        "observed_patterns": [],
+        "evidence_gaps": [] if sheets else ["No workbook profile supplied."],
+        "recommended_tests": [
+            "Profile a specific stockout with tools.data_loader.profile_stockout "
+            "to compute the seven hypothesis checks."
+        ],
+        "_produced_by": RULE_BASED,
+    }
+
+
+def analyze_evidence_rule_based(computed_evidence: dict, question: str) -> dict:
+    """
+    Classify each hypothesis signal as strong / weak / none from the computed
+    flags, citing the numbers and row ids in computed_evidence.
+    """
+    ranked = rules.rank_hypotheses(computed_evidence)
+    signals = {}
+    limitations = []
+    for h_id in rules.ID_ORDER:
+        ev = rules.evidence_for(computed_evidence, h_id)
+        verdict = rules.deterministic_verdict(h_id, ev)
+        signals[h_id] = {
+            "signal": rules.signal(h_id, ev),
+            "reasoning": f"{rules.describe(h_id, ev)} Computed flag gives '{verdict}'.",
+            "evidence_ids": rules.evidence_ids(ev),
+        }
+        if ev.get("data_missing") or not ev:
+            limitations.append(f"{h_id} {rules.HYPOTHESIS_NAMES[h_id]}: computed evidence missing.")
+
+    leads = [r for r in ranked if r["verdict"] == "supported"]
+    if leads:
+        top = leads[0]
+        summary = (
+            f"Strongest computed signal: {top['hypothesis_id']} {top['hypothesis_name']}. "
+            f"{top['summary']}"
+        )
+        if len(leads) > 1:
+            summary += " Also supported: " + ", ".join(
+                f"{r['hypothesis_id']} {r['hypothesis_name']}" for r in leads[1:]
+            ) + "."
+    else:
+        summary = "No hypothesis passes its computed threshold; the cause is not established by this data."
+    limitations.append(
+        "Signals are threshold checks on one month of records; they show association, not causation."
     )
+
+    return {
+        "analysis_summary": summary,
+        "hypothesis_signals": signals,
+        "primary_leads": [
+            f"{r['hypothesis_id']} {r['hypothesis_name']}: {r['summary']}" for r in leads
+        ],
+        "primary_lead_ids": [r["hypothesis_id"] for r in leads],
+        "data_limitations": limitations,
+        "_produced_by": RULE_BASED,
+    }

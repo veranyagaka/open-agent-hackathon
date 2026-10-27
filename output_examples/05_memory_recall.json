@@ -1,0 +1,1375 @@
+{
+  "run_id": "e931861b",
+  "status": "no_stockout",
+  "facility_id": "FAC-009",
+  "commodity": "magnesium sulphate inj",
+  "month": "2026-04",
+  "question": "Why did FAC-009 run out of magnesium sulphate in April 2026?",
+  "dataset_dir": "data/sample",
+  "log_file": "run_e931861b_20261027T182851.jsonl",
+  "llm_mode": "rule-based",
+  "steps": {
+    "data_reader": {
+      "facility_id": "FAC-009",
+      "commodity": "magnesium sulphate inj",
+      "month": "2026-04",
+      "evidence": {
+        "dataset_summary": {
+          "stock_rows": 1,
+          "order_rows": 2,
+          "history_months_available": 6,
+          "has_payment_records": true,
+          "has_web_notes": false
+        },
+        "relevant_records": {
+          "stock_ids": [
+            "stock#1267",
+            "stock#1261",
+            "stock#1262",
+            "stock#1263",
+            "stock#1264",
+            "stock#1265",
+            "stock#1266"
+          ],
+          "order_ids": [
+            "orders#1266",
+            "orders#1267"
+          ],
+          "payment_months": [
+            "2026-01",
+            "2026-02",
+            "2026-03",
+            "2026-04"
+          ]
+        },
+        "data_quality_flags": [],
+        "evidence_for_hypotheses": {
+          "h1_late_order": "orders#1266 was placed 2026-03-04 against cutoff 2026-03-10 (6 days before the cutoff); delivery month 2026-04 vs expected 2026-04.",
+          "h2_supplier_underfill": "orders#1266 fill rate 0.9604 vs county average 0.9175 across 30 orders in the cycle (shortfall -0.0429; under-fill threshold 0.05).",
+          "h3_payment_arrears": "County payment records: arrears flag not set in the 4-month window, amount owed 0 KES (threshold 30,000,000 KES); county fill-rate drop vs previous month 0.0095.",
+          "h4_demand_surge": "stock#1267: consumed 240 vs 3-month average 214.67 (+11.8%; surge threshold +25%).",
+          "h5_record_error": "stock#1267: computed closing 489 vs reported 489 (discrepancy 0, identity holds); reported stockout days 0 plausible.",
+          "h6_expiry": "stock#1267: wastage 0 vs 3-month average 0, with average consumption 214.67 (high-wastage rule: >2x average and >10% of consumption).",
+          "h7_national_disruption": "no public notice for this commodity in the window; county fill-rate drop vs previous month 0.0095."
+        },
+        "missing_data_warnings": [],
+        "_produced_by": "rule-based"
+      },
+      "computed_evidence": {
+        "h1_late_order": {
+          "order_date": "2026-03-04",
+          "cutoff_date": "2026-03-10",
+          "days_late": -6,
+          "late": false,
+          "delivery_month": "2026-04",
+          "expected_delivery_month": "2026-04",
+          "delivery_slipped": false,
+          "order_id": "orders#1266",
+          "order_month": "2026-03"
+        },
+        "h2_supplier_underfill": {
+          "facility_fill_rate": 0.9604,
+          "county_avg_fill_rate": 0.9175,
+          "relative_shortfall": -0.0429,
+          "underfill": false,
+          "n_facilities_in_cycle": 30,
+          "order_id": "orders#1266"
+        },
+        "h3_payment_arrears": {
+          "arrears_in_month": false,
+          "amount_owed_kes": 0.0,
+          "major_arrears": false,
+          "fill_drop_vs_prev": 0.0095,
+          "county_fill_this_month": 0.9170717397810078,
+          "county_fill_prev_month": 0.9265599254130482
+        },
+        "h4_demand_surge": {
+          "consumed_this_month": 240.0,
+          "avg_consumed_3m": 214.67,
+          "reported_stockout_days": 0.0,
+          "pct_change_issues_only": 11.8,
+          "demand_basis": "issues_only",
+          "pct_change": 11.8,
+          "stock_id": "stock#1267",
+          "surge": false
+        },
+        "h5_record_error": {
+          "computed_closing": 489.0,
+          "reported_closing": 489.0,
+          "discrepancy": 0.0,
+          "identity_holds": true,
+          "stockout_days_plausible": true,
+          "reported_stockout_days": 0.0,
+          "stock_id": "stock#1267"
+        },
+        "h6_expiry": {
+          "wastage_this_month": 0.0,
+          "avg_wastage_3m": 0.0,
+          "avg_consumed_3m": 214.67,
+          "high_wastage": false,
+          "stock_id": "stock#1267"
+        },
+        "h7_national_disruption": {
+          "county_fill_drop": 0.0095,
+          "county_fill_this_month": 0.9170717397810078,
+          "county_fill_prev_month": 0.9265599254130482,
+          "web_notice_found": false,
+          "notice_details": null
+        }
+      },
+      "data_quality": [],
+      "missing_data_warnings": [],
+      "_produced_by": "rule-based",
+      "_profile": {
+        "facility_id": "FAC-009",
+        "commodity": "magnesium sulphate inj",
+        "month": "2026-04",
+        "stock_record": [
+          {
+            "id": "1267",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-04",
+            "opening": 0,
+            "received": 729,
+            "wastage": 0,
+            "consumed": 240,
+            "closing": 489,
+            "reported_stockout_days": 0
+          }
+        ],
+        "order_record": [
+          {
+            "id": "1267",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-04",
+            "cutoff_date": "2026-04-10 00:00:00",
+            "order_date": "2026-04-09 00:00:00",
+            "qty_requested": 0,
+            "qty_delivered": 0,
+            "delivery_month": "2026-05"
+          }
+        ],
+        "prev_order_record": [
+          {
+            "id": "1266",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-04 00:00:00",
+            "qty_requested": 530,
+            "qty_delivered": 509,
+            "delivery_month": "2026-04"
+          }
+        ],
+        "all_orders": [
+          {
+            "id": "114",
+            "facility_id": "FAC-001",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-04 00:00:00",
+            "qty_requested": 299,
+            "qty_delivered": 270,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "258",
+            "facility_id": "FAC-002",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-07 00:00:00",
+            "qty_requested": 108,
+            "qty_delivered": 106,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "402",
+            "facility_id": "FAC-003",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-09 00:00:00",
+            "qty_requested": 227,
+            "qty_delivered": 220,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "546",
+            "facility_id": "FAC-004",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-09 00:00:00",
+            "qty_requested": 115,
+            "qty_delivered": 105,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "690",
+            "facility_id": "FAC-005",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-10 00:00:00",
+            "qty_requested": 120,
+            "qty_delivered": 115,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "834",
+            "facility_id": "FAC-006",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-08 00:00:00",
+            "qty_requested": 165,
+            "qty_delivered": 162,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "978",
+            "facility_id": "FAC-007",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-08 00:00:00",
+            "qty_requested": 132,
+            "qty_delivered": 117,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "1122",
+            "facility_id": "FAC-008",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-04 00:00:00",
+            "qty_requested": 102,
+            "qty_delivered": 93,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "1266",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-04 00:00:00",
+            "qty_requested": 530,
+            "qty_delivered": 509,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "1410",
+            "facility_id": "FAC-010",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-09 00:00:00",
+            "qty_requested": 449,
+            "qty_delivered": 418,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "1554",
+            "facility_id": "FAC-011",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-10 00:00:00",
+            "qty_requested": 106,
+            "qty_delivered": 90,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "1698",
+            "facility_id": "FAC-012",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-08 00:00:00",
+            "qty_requested": 73,
+            "qty_delivered": 73,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "1842",
+            "facility_id": "FAC-013",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-05 00:00:00",
+            "qty_requested": 288,
+            "qty_delivered": 252,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "1986",
+            "facility_id": "FAC-014",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-09 00:00:00",
+            "qty_requested": 314,
+            "qty_delivered": 287,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "2130",
+            "facility_id": "FAC-015",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-04 00:00:00",
+            "qty_requested": 219,
+            "qty_delivered": 211,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "2274",
+            "facility_id": "FAC-016",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-08 00:00:00",
+            "qty_requested": 314,
+            "qty_delivered": 267,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "2418",
+            "facility_id": "FAC-017",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-06 00:00:00",
+            "qty_requested": 354,
+            "qty_delivered": 321,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "2562",
+            "facility_id": "FAC-018",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-05 00:00:00",
+            "qty_requested": 247,
+            "qty_delivered": 224,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "2706",
+            "facility_id": "FAC-019",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-10 00:00:00",
+            "qty_requested": 341,
+            "qty_delivered": 322,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "2850",
+            "facility_id": "FAC-020",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-06 00:00:00",
+            "qty_requested": 187,
+            "qty_delivered": 187,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "2994",
+            "facility_id": "FAC-021",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-06 00:00:00",
+            "qty_requested": 424,
+            "qty_delivered": 377,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "3138",
+            "facility_id": "FAC-022",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-04 00:00:00",
+            "qty_requested": 175,
+            "qty_delivered": 143,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "3282",
+            "facility_id": "FAC-023",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-08 00:00:00",
+            "qty_requested": 326,
+            "qty_delivered": 286,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "3426",
+            "facility_id": "FAC-024",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-10 00:00:00",
+            "qty_requested": 388,
+            "qty_delivered": 358,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "3570",
+            "facility_id": "FAC-025",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-09 00:00:00",
+            "qty_requested": 204,
+            "qty_delivered": 189,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "3714",
+            "facility_id": "FAC-026",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-08 00:00:00",
+            "qty_requested": 334,
+            "qty_delivered": 315,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "3858",
+            "facility_id": "FAC-027",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-10 00:00:00",
+            "qty_requested": 151,
+            "qty_delivered": 137,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "4002",
+            "facility_id": "FAC-028",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-08 00:00:00",
+            "qty_requested": 130,
+            "qty_delivered": 121,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "4146",
+            "facility_id": "FAC-029",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-06 00:00:00",
+            "qty_requested": 260,
+            "qty_delivered": 223,
+            "delivery_month": "2026-04"
+          },
+          {
+            "id": "4290",
+            "facility_id": "FAC-030",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "cutoff_date": "2026-03-10 00:00:00",
+            "order_date": "2026-03-08 00:00:00",
+            "qty_requested": 169,
+            "qty_delivered": 143,
+            "delivery_month": "2026-04"
+          }
+        ],
+        "payments_history": [
+          {
+            "id": "1",
+            "month": "2024-10",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "2",
+            "month": "2024-11",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "3",
+            "month": "2024-12",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "4",
+            "month": "2025-01",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "5",
+            "month": "2025-02",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "6",
+            "month": "2025-03",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "7",
+            "month": "2025-04",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "8",
+            "month": "2025-05",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "9",
+            "month": "2025-06",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "10",
+            "month": "2025-07",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "11",
+            "month": "2025-08",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "12",
+            "month": "2025-09",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "13",
+            "month": "2025-10",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "14",
+            "month": "2025-11",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "15",
+            "month": "2025-12",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "16",
+            "month": "2026-01",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "17",
+            "month": "2026-02",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "18",
+            "month": "2026-03",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "19",
+            "month": "2026-04",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "20",
+            "month": "2026-05",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "21",
+            "month": "2026-06",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "22",
+            "month": "2026-07",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "23",
+            "month": "2026-08",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          },
+          {
+            "id": "24",
+            "month": "2026-09",
+            "county_arrears_flag": 0,
+            "amount_owed_kes": 0
+          }
+        ],
+        "stock_history": [
+          {
+            "id": "1261",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2025-10",
+            "opening": 0,
+            "received": 756,
+            "wastage": 0,
+            "consumed": 254,
+            "closing": 502,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1262",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2025-11",
+            "opening": 502,
+            "received": 0,
+            "wastage": 0,
+            "consumed": 239,
+            "closing": 263,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1263",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2025-12",
+            "opening": 263,
+            "received": 132,
+            "wastage": 0,
+            "consumed": 228,
+            "closing": 167,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1264",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-01",
+            "opening": 167,
+            "received": 233,
+            "wastage": 0,
+            "consumed": 231,
+            "closing": 169,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1265",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-02",
+            "opening": 169,
+            "received": 244,
+            "wastage": 0,
+            "consumed": 263,
+            "closing": 150,
+            "reported_stockout_days": 0
+          },
+          {
+            "id": "1266",
+            "facility_id": "FAC-009",
+            "commodity": "magnesium sulphate inj",
+            "month": "2026-03",
+            "opening": 150,
+            "received": 0,
+            "wastage": 0,
+            "consumed": 150,
+            "closing": 0,
+            "reported_stockout_days": 13
+          }
+        ],
+        "facilities": [
+          {
+            "facility_id": "FAC-001",
+            "lat": -1.0174,
+            "lon": 38.3295,
+            "facility_name": "Ngieni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/14239550707"
+          },
+          {
+            "facility_id": "FAC-002",
+            "lat": -1.2527,
+            "lon": 38.2312,
+            "facility_name": "Itiko Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6303096758"
+          },
+          {
+            "facility_id": "FAC-003",
+            "lat": -1.1222,
+            "lon": 38.2126,
+            "facility_name": "Mui Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798318295"
+          },
+          {
+            "facility_id": "FAC-004",
+            "lat": -0.7479,
+            "lon": 37.9798,
+            "facility_name": "Tyaa Kamuthale Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi North",
+            "osm_id": "way/1171234022"
+          },
+          {
+            "facility_id": "FAC-005",
+            "lat": -0.7799,
+            "lon": 38.0206,
+            "facility_name": "Katuluni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/10883742550"
+          },
+          {
+            "facility_id": "FAC-006",
+            "lat": -0.8566,
+            "lon": 38.2555,
+            "facility_name": "Kamulewa Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798331031"
+          },
+          {
+            "facility_id": "FAC-007",
+            "lat": -1.0791,
+            "lon": 37.9143,
+            "facility_name": "Ngongoni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935335"
+          },
+          {
+            "facility_id": "FAC-008",
+            "lat": -0.8509,
+            "lon": 38.2466,
+            "facility_name": "Enziu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/6244576623"
+          },
+          {
+            "facility_id": "FAC-009",
+            "lat": -1.1835,
+            "lon": 37.8214,
+            "facility_name": "Katutu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui West",
+            "osm_id": "way/1318131957"
+          },
+          {
+            "facility_id": "FAC-010",
+            "lat": -1.1757,
+            "lon": 38.2125,
+            "facility_name": "Yoonye Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333661"
+          },
+          {
+            "facility_id": "FAC-011",
+            "lat": -1.436,
+            "lon": 38.2444,
+            "facility_name": "Zombe Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6244567617"
+          },
+          {
+            "facility_id": "FAC-012",
+            "lat": -1.4597,
+            "lon": 38.2037,
+            "facility_name": "Kaumu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798331033"
+          },
+          {
+            "facility_id": "FAC-013",
+            "lat": -0.93,
+            "lon": 38.2659,
+            "facility_name": "Yumbu Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798307186"
+          },
+          {
+            "facility_id": "FAC-014",
+            "lat": -0.9151,
+            "lon": 37.8612,
+            "facility_name": "Kyusyani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935320"
+          },
+          {
+            "facility_id": "FAC-015",
+            "lat": -0.8523,
+            "lon": 37.9696,
+            "facility_name": "Itongolani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935378"
+          },
+          {
+            "facility_id": "FAC-016",
+            "lat": -1.2274,
+            "lon": 38.1737,
+            "facility_name": "Mutito Sub-County Hospital",
+            "facility_type": "sub-county hospital",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333660"
+          },
+          {
+            "facility_id": "FAC-017",
+            "lat": -1.2194,
+            "lon": 38.2989,
+            "facility_name": "Manyoeni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333662"
+          },
+          {
+            "facility_id": "FAC-018",
+            "lat": -0.8772,
+            "lon": 38.1777,
+            "facility_name": "Mutuangombe Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "node/6243798527"
+          },
+          {
+            "facility_id": "FAC-019",
+            "lat": -1.4182,
+            "lon": 38.1553,
+            "facility_name": "Inyuu Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798331035"
+          },
+          {
+            "facility_id": "FAC-020",
+            "lat": -0.9704,
+            "lon": 37.9194,
+            "facility_name": "Winzyeei Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796944524"
+          },
+          {
+            "facility_id": "FAC-021",
+            "lat": -1.088,
+            "lon": 38.2191,
+            "facility_name": "Muyuni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi East",
+            "osm_id": "way/798307187"
+          },
+          {
+            "facility_id": "FAC-022",
+            "lat": -1.4736,
+            "lon": 37.8376,
+            "facility_name": "Kiusyani Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Kitui Rural",
+            "osm_id": "node/7549451145"
+          },
+          {
+            "facility_id": "FAC-023",
+            "lat": -0.9343,
+            "lon": 37.9649,
+            "facility_name": "Kiio Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877939679"
+          },
+          {
+            "facility_id": "FAC-024",
+            "lat": -1.1119,
+            "lon": 37.9241,
+            "facility_name": "Nzawa Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796943125"
+          },
+          {
+            "facility_id": "FAC-025",
+            "lat": -1.3841,
+            "lon": 38.2731,
+            "facility_name": "Ngelani Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "node/6244568075"
+          },
+          {
+            "facility_id": "FAC-026",
+            "lat": -1.5208,
+            "lon": 38.2481,
+            "facility_name": "Kasunguni Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/798333663"
+          },
+          {
+            "facility_id": "FAC-027",
+            "lat": -1.0611,
+            "lon": 37.8733,
+            "facility_name": "Kakululo Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2877935301"
+          },
+          {
+            "facility_id": "FAC-028",
+            "lat": -0.8435,
+            "lon": 37.9961,
+            "facility_name": "Kyethani Health Centre",
+            "facility_type": "health centre",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "node/2864248999"
+          },
+          {
+            "facility_id": "FAC-029",
+            "lat": -0.7821,
+            "lon": 37.9519,
+            "facility_name": "Wikithuki Dispensary",
+            "facility_type": "dispensary",
+            "county": "Kitui",
+            "sub_county": "Mwingi West",
+            "osm_id": "way/796948428"
+          },
+          {
+            "facility_id": "FAC-030",
+            "lat": -1.3751,
+            "lon": 37.9952,
+            "facility_name": "Kanyangi Sub-County Hospital",
+            "facility_type": "sub-county hospital",
+            "county": "Kitui",
+            "sub_county": "Kitui East",
+            "osm_id": "way/1132558742"
+          }
+        ],
+        "web_notes": [],
+        "computed_evidence": {
+          "h1_late_order": {
+            "order_date": "2026-03-04",
+            "cutoff_date": "2026-03-10",
+            "days_late": -6,
+            "late": false,
+            "delivery_month": "2026-04",
+            "expected_delivery_month": "2026-04",
+            "delivery_slipped": false,
+            "order_id": "orders#1266",
+            "order_month": "2026-03"
+          },
+          "h2_supplier_underfill": {
+            "facility_fill_rate": 0.9604,
+            "county_avg_fill_rate": 0.9175,
+            "relative_shortfall": -0.0429,
+            "underfill": false,
+            "n_facilities_in_cycle": 30,
+            "order_id": "orders#1266"
+          },
+          "h3_payment_arrears": {
+            "arrears_in_month": false,
+            "amount_owed_kes": 0.0,
+            "major_arrears": false,
+            "fill_drop_vs_prev": 0.0095,
+            "county_fill_this_month": 0.9170717397810078,
+            "county_fill_prev_month": 0.9265599254130482
+          },
+          "h4_demand_surge": {
+            "consumed_this_month": 240.0,
+            "avg_consumed_3m": 214.67,
+            "reported_stockout_days": 0.0,
+            "pct_change_issues_only": 11.8,
+            "demand_basis": "issues_only",
+            "pct_change": 11.8,
+            "stock_id": "stock#1267",
+            "surge": false
+          },
+          "h5_record_error": {
+            "computed_closing": 489.0,
+            "reported_closing": 489.0,
+            "discrepancy": 0.0,
+            "identity_holds": true,
+            "stockout_days_plausible": true,
+            "reported_stockout_days": 0.0,
+            "stock_id": "stock#1267"
+          },
+          "h6_expiry": {
+            "wastage_this_month": 0.0,
+            "avg_wastage_3m": 0.0,
+            "avg_consumed_3m": 214.67,
+            "high_wastage": false,
+            "stock_id": "stock#1267"
+          },
+          "h7_national_disruption": {
+            "county_fill_drop": 0.0095,
+            "county_fill_this_month": 0.9170717397810078,
+            "county_fill_prev_month": 0.9265599254130482,
+            "web_notice_found": false,
+            "notice_details": null
+          }
+        }
+      },
+      "world_model": {
+        "snapshot_id": "wm_cf86881d828093f2de08ccc9",
+        "schema_version": 1,
+        "entities": 95,
+        "relationships": 143
+      }
+    }
+  },
+  "approved_actions": [],
+  "rejected_actions": [],
+  "medical_disclaimer": "This system provides decision-support information only. It does not constitute medical advice, clinical guidance, or authorisation to act. All proposed actions must be reviewed and approved by a qualified pharmacist or supply-chain officer before implementation.",
+  "requires_pharmacist_approval": true,
+  "data_backend": "csv:data/sample",
+  "scout": {
+    "decision": "allow",
+    "intent": "stockout.explain",
+    "band": "high",
+    "reason": "Bound to facility_id=FAC-009, commodity=magnesium sulphate inj, month=2026-04",
+    "params": {
+      "facility_id": "FAC-009",
+      "commodity": "magnesium sulphate inj",
+      "month": "2026-04"
+    },
+    "suggestions": {}
+  },
+  "contract": {
+    "contractId": "1793125731812-9c73643674",
+    "parentId": null,
+    "traceId": "cacd8993f6924ac1a7166757718818d9",
+    "intent": "stockout.explain",
+    "risk": {
+      "level": "low",
+      "flags": [
+        "memory.write"
+      ],
+      "approvals": []
+    },
+    "scope": {
+      "capabilities": [
+        "data.read",
+        "llm.call",
+        "memory.read",
+        "memory.write"
+      ],
+      "params": {
+        "facility_id": "FAC-009",
+        "commodity": "magnesium sulphate inj",
+        "month": "2026-04"
+      },
+      "role": "pharmacist"
+    },
+    "issuedAt": "2026-10-27T18:28:51.812159+00:00",
+    "expiresAt": "2026-10-27T18:33:51.812159+00:00",
+    "registryVersion": 3,
+    "policyPackVersion": "stockwhy-default-2",
+    "signature": "daeacf9e4ce45809a0d8204086e892f0dc91ddb5b3eac8e0fdfed5c73c13c9b2",
+    "signedBy": "scout"
+  },
+  "canonical_question": "Why did facility FAC-009 report a stockout of magnesium sulphate inj in 2026-04?",
+  "memory": {
+    "recalled": [
+      {
+        "id": "22550fd841cc47aa9e575b2848497d1c",
+        "facility_id": "FAC-009",
+        "commodity": "magnesium sulphate inj",
+        "month": "2026-03",
+        "cause": "H1 late_order",
+        "summary": "late_order (H1): orders#1265 was placed 2026-02-22 against cutoff 2026-02-10 (12 days after the cutoff); delivery month 2026-04 vs expected 2026-03. Verdict 'supported': the computed flag passes its threshold.",
+        "citations": [
+          "orders#1265"
+        ],
+        "status": "pending_approval",
+        "confidence": 1.0,
+        "note": "",
+        "provenance": {
+          "origin": "stockwhy",
+          "run_id": "fc09bdd2",
+          "citations": [
+            "orders#1265"
+          ],
+          "learnedAt": 1793125731035,
+          "label": "StockWhy run fc09bdd2"
+        },
+        "stored_at": 1793125731035,
+        "dataset_key": "data/sample",
+        "action_decisions": {}
+      }
+    ],
+    "prioritised": [],
+    "dataset_key": "data/sample"
+  },
+  "world_model": {
+    "snapshot_id": "wm_cf86881d828093f2de08ccc9",
+    "schema_version": 1,
+    "entities": 95,
+    "relationships": 143
+  },
+  "summary": "FAC-009 reported no stock-out of magnesium sulphate inj in 2026-04: 0 stock-out days and closing stock 489 (stock#1267).",
+  "citations": [
+    "stock#1267"
+  ],
+  "most_likely_cause": "No stock-out in this month",
+  "actions": [],
+  "contracts": {
+    "main": {
+      "contractId": "1793125731812-9c73643674",
+      "parentId": null,
+      "traceId": "cacd8993f6924ac1a7166757718818d9",
+      "intent": "stockout.explain",
+      "risk": {
+        "level": "low",
+        "flags": [
+          "memory.write"
+        ],
+        "approvals": []
+      },
+      "scope": {
+        "capabilities": [
+          "data.read",
+          "llm.call",
+          "memory.read",
+          "memory.write"
+        ],
+        "params": {
+          "facility_id": "FAC-009",
+          "commodity": "magnesium sulphate inj",
+          "month": "2026-04"
+        },
+        "role": "pharmacist"
+      },
+      "issuedAt": "2026-10-27T18:28:51.812159+00:00",
+      "expiresAt": "2026-10-27T18:33:51.812159+00:00",
+      "registryVersion": 3,
+      "policyPackVersion": "stockwhy-default-2",
+      "signature": "daeacf9e4ce45809a0d8204086e892f0dc91ddb5b3eac8e0fdfed5c73c13c9b2",
+      "signedBy": "scout"
+    },
+    "child": null,
+    "phases": [
+      {
+        "phase": "read",
+        "contract": {
+          "contractId": "1793125731813-cd28171f54",
+          "parentId": "1793125731812-9c73643674",
+          "traceId": "cacd8993f6924ac1a7166757718818d9",
+          "intent": "stockout.explain",
+          "risk": {
+            "level": "low",
+            "flags": [],
+            "approvals": []
+          },
+          "scope": {
+            "capabilities": [
+              "data.read",
+              "llm.call",
+              "memory.read"
+            ],
+            "params": {
+              "facility_id": "FAC-009",
+              "commodity": "magnesium sulphate inj",
+              "month": "2026-04"
+            },
+            "role": "pharmacist"
+          },
+          "issuedAt": "2026-10-27T18:28:51.813587+00:00",
+          "expiresAt": "2026-10-27T18:33:51.813587+00:00",
+          "registryVersion": 3,
+          "policyPackVersion": "stockwhy-default-2",
+          "signature": "34ccbfe4bc04ae908628e463256e0ddd9b1e46818ca85dd1d6eb713729d863a9",
+          "signedBy": "scout"
+        }
+      }
+    ],
+    "checks": 2,
+    "granted": 2,
+    "skipped": 0,
+    "denied": 0
+  },
+  "trace": [
+    {
+      "agent": "orchestrator",
+      "action": "run_start",
+      "target_agent": "scout",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "data_backend=csv; llm_mode=rule-based; scout=on; memory=on"
+    },
+    {
+      "agent": "data_reader",
+      "action": "load_dataset",
+      "target_agent": "scout",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "loaded from csv:data/sample: stock=4320, orders=4320, payments=24, web_notes=2"
+    },
+    {
+      "agent": "scout",
+      "action": "scout_gate",
+      "target_agent": "memory",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "allow (stockout.explain, band high): Bound to facility_id=FAC-009, commodity=magnesium sulphate inj, month=2026-04"
+    },
+    {
+      "agent": "scout",
+      "action": "scan_web_notes",
+      "target_agent": "memory",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "no injection text found"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.issued",
+      "target_agent": "orchestrator",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "child contract 1793125731813-cd28171f54 for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "memory_recall",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793125731813-cd28171f54 signature, expiry and capability verified"
+    },
+    {
+      "agent": "memory",
+      "action": "memory_recall",
+      "target_agent": "data_reader",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "1 prior finding(s); prioritise approved none; 1 pending approval, shown but not acted on: 2026-03 H1 late_order"
+    },
+    {
+      "agent": "scout",
+      "action": "contract.verified",
+      "target_agent": "data_reader",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "contract 1793125731813-cd28171f54 signature, expiry and capability verified"
+    },
+    {
+      "agent": "data_reader",
+      "action": "read_and_profile",
+      "target_agent": "data_analyst",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "Profile complete. Warnings: 0"
+    },
+    {
+      "agent": "data_reader",
+      "action": "stockout_check",
+      "target_agent": "user",
+      "retry_count": 0,
+      "status": "no_stockout",
+      "summary": "FAC-009 reported no stock-out of magnesium sulphate inj in 2026-04: 0 stock-out days and closing stock 489 (stock#1267)."
+    },
+    {
+      "agent": "orchestrator",
+      "action": "contract_summary",
+      "target_agent": "none",
+      "retry_count": 0,
+      "status": "ok",
+      "summary": "2 granted, 0 denied, 0 skipped (no Scout contract)"
+    },
+    {
+      "agent": "orchestrator",
+      "action": "pipeline_complete",
+      "target_agent": "user",
+      "retry_count": 0,
+      "status": "no_stockout",
+      "summary": "status=no_stockout. Most likely cause: No stock-out in this month. Approved actions: 0. LLM calls: 0"
+    }
+  ],
+  "contract_checks": [
+    {
+      "step": "memory_recall",
+      "capability": "memory.read",
+      "result": "granted",
+      "contract_id": "1793125731813-cd28171f54"
+    },
+    {
+      "step": "data_reader",
+      "capability": "data.read",
+      "result": "granted",
+      "contract_id": "1793125731813-cd28171f54"
+    }
+  ]
+}

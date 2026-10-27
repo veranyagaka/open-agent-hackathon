@@ -28,4 +28,4 @@ statement pages (`/hackathons/<id>` redirected to the dashboard). Workshop video
 | https://forums.developer.nvidia.com/t/request-for-nvidia-build-api-rate-limit-increase-40-rpm-200-rpm/377433 (via search) | Rate limit (unofficial) |
 | https://docs.brightdata.com/scraping-automation/web-unlocker/introduction | Web Unlocker API |
 | https://docs.brightdata.com/scraping-automation/serp-api/introduction | SERP API |
-| Local: docs/datapack/README_FIRST.md, DATA_DICTIONARY.md, PUBLIC_DATA_SOURCES.md, 01_demo_county_30/zetaris_register.sql | Checked our Zetaris SQL against the command reference |
+| data/sample/zetaris_register.sql, data/DATA_DICTIONARY.md, data/PUBLIC_DATA_SOURCES.md | Checked our Zetaris SQL against the command reference |

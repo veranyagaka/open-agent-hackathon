@@ -1,0 +1,15 @@
+{
+  "status": "clarify",
+  "question": "Why did FAC-011 run out of ORS?",
+  "message": "Please say which month (e.g. March 2026).",
+  "error": "Clarify: Please say which month (e.g. March 2026).",
+  "hint": "Ask again with the facility id, medicine and month.",
+  "missing": [
+    "month"
+  ],
+  "candidates": {},
+  "parsed": {
+    "facility_id": "FAC-011",
+    "commodity": "ORS sachet"
+  }
+}
