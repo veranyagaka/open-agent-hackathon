@@ -149,6 +149,8 @@ class _Run:
         self.trace = []
         self.contract_checks = []
         self.child_contract = None
+        self.phase_contracts = []
+        self.last_phase = None
 
     def log(self, agent, action, input_summary, output_summary, *, target="none",
             model=None, confidence=None, retry=0, status="ok", **extra):
@@ -396,7 +398,9 @@ class StockWhy:
                     model="deterministic", status="skipped")
         else:
             try:
-                self._require(ctx, contract, "memory.read", "memory_recall")
+                read_contract = self._phase(ctx, contract, "read", "stockout.explain",
+                                            {"memory.read", "data.read", "llm.call"})
+                self._require(ctx, read_contract, "memory.read", "memory_recall")
                 prior = list(_call_compat(self.memory.recall, facility_id, commodity, limit=5,
                                           dataset_key=dataset_key) or [])
                 # Never recall the month being asked about (that would be the answer).
@@ -423,8 +427,10 @@ class StockWhy:
         # -- 3. Data Reader
         print("[2/7] Data Reader Agent — loading and profiling data...")
         try:
-            self._require(ctx, contract, "data.read", "data_reader")
-            self._require_llm(ctx, contract, "data_reader")
+            read_contract = self._phase(ctx, contract, "read", "stockout.explain",
+                                        {"memory.read", "data.read", "llm.call"})
+            self._require(ctx, read_contract, "data.read", "data_reader")
+            self._require_llm(ctx, read_contract, "data_reader")
             profile = read_and_profile(dataset_dir, facility_id, commodity, month, dataset=dataset)
         except ContractDenied as exc:
             return self._fail(ctx, result, "data_reader", "read_and_profile", "Contract violation", exc,
@@ -450,7 +456,8 @@ class StockWhy:
         # -- 4. Data Analyst
         print("[3/7] Data Analyst — interpreting evidence signals...")
         try:
-            self._require_llm(ctx, contract, "data_analyst")
+            analyse_contract = self._phase(ctx, contract, "analyse", "stockout.explain", {"llm.call"})
+            self._require_llm(ctx, analyse_contract, "data_analyst")
             analysis = analyze_evidence(computed_evidence, question)
         except ContractDenied as exc:
             return self._fail(ctx, result, "data_analyst", "analyze_evidence", "Contract violation", exc,
@@ -468,7 +475,7 @@ class StockWhy:
         # -- 5. Theory Generator
         print("[4/7] Theory Generator — generating 7 hypothesis theories...")
         try:
-            self._require_llm(ctx, contract, "theory_generator")
+            self._require_llm(ctx, analyse_contract, "theory_generator")
             theories = generate(question, analysis)
         except ContractDenied as exc:
             return self._fail(ctx, result, "theory_generator", "generate", "Contract violation", exc,
@@ -504,6 +511,12 @@ class StockWhy:
         result["wave_plan"] = {"wave1": wave1, "held_back": list(held), "reasons": reasons}
 
         # -- 7. Investigate / evaluate loop
+        try:
+            investigate_contract = self._phase(ctx, contract, "investigate", "stockout.explain",
+                                               {"data.read", "llm.call"})
+        except ContractDenied as exc:
+            return self._fail(ctx, result, "evidence_investigator", "investigate_wave",
+                              "Contract violation", exc, "The Scout contract does not allow this step.")
         final, dropped, waves = {}, [], []
         if fault_id:
             result["fault_drill"] = {"target": fault_id, "injected": False, "caught": False,
@@ -517,7 +530,7 @@ class StockWhy:
                 try:
                     self._investigate_and_evaluate(
                         ctx, result, theory_by_id, pending, computed_evidence, dataset,
-                        month, wave_no, final, dropped, contract)
+                        month, wave_no, final, dropped, investigate_contract)
                 except ContractDenied as exc:
                     return self._fail(ctx, result, "evidence_investigator", "investigate_wave",
                                       "Contract violation", exc, "The Scout contract does not allow this step.")
@@ -1068,7 +1081,8 @@ class StockWhy:
             "confidence": final[top].get("evaluator_confidence"),
         }
         try:
-            self._require(ctx, contract, "memory.write", "memory_store")
+            memory_contract = self._phase(ctx, contract, "memory", "stockout.explain", {"memory.write"})
+            self._require(ctx, memory_contract, "memory.write", "memory_store")
             memory_id = _call_compat(self.memory.store, finding, citations, ctx.run_id,
                                      dataset_key=dataset_key)
             result.setdefault("memory", {})["stored_id"] = memory_id
@@ -1113,33 +1127,74 @@ class StockWhy:
         if contract is None:
             ctx.contract_checks.append({"step": step, "capability": capability, "result": "skipped"})
             return
+        cid = getattr(contract, "id", None)
         try:
             contract.check(capability)
         except Exception as exc:
             ctx.contract_checks.append({"step": step, "capability": capability, "result": "denied",
-                                        "contract_id": getattr(contract, "id", None)})
+                                        "contract_id": cid})
+            event = "contract.expired" if "expired" in str(exc).lower() else "contract.refused"
+            ctx.log("scout", event, f"{step} needs '{capability}' (contract {cid})", _one_line(exc),
+                    target="user", model="deterministic", status="error")
             raise ContractDenied(f"{step} lacks capability '{capability}': {_one_line(exc)}") from exc
         ctx.contract_checks.append({"step": step, "capability": capability, "result": "granted",
-                                    "contract_id": getattr(contract, "id", None)})
+                                    "contract_id": cid})
+        ctx.log("scout", "contract.verified", f"{step} needs '{capability}'",
+                f"contract {cid} signature, expiry and capability verified",
+                target=step, model="deterministic", confidence=1.0)
 
     def _require_llm(self, ctx, contract, step):
         if ctx.llm_mode:
             self._require(ctx, contract, "llm.call", step)
 
     @staticmethod
-    def _child_contract(ctx, contract):
+    def _granted(contract) -> set:
+        caps = getattr(contract, "capabilities", None)
+        if caps is None:
+            caps = getattr(contract, "caps", None)
+        return set(caps or [])
+
+    def _phase(self, ctx, contract, phase, intent, caps):
+        """
+        A signed child contract for one phase of the run (parentId = the Scout
+        contract). Explain phases get only capabilities the parent granted;
+        "action.draft" is the re-planned drafting intent. The contract is not
+        extended: if the parent has expired, the child is issued from the last
+        valid phase contract, still pointing at the original as its parent.
+        """
         if contract is None or not hasattr(contract, "child"):
             return contract
-        caps = {"data.read", "action.draft"} | ({"llm.call"} if ctx.llm_mode else set())
+        for done in ctx.phase_contracts:
+            if done["phase"] == phase:
+                return done["contract"]
+        want = set(caps) if intent == "action.draft" else set(caps) & self._granted(contract)
+        root_id = getattr(contract, "id", None)
         try:
-            child = contract.child("action.draft", caps)
+            child = _call_compat(contract.child, intent, want, parent_id=root_id)
         except Exception as exc:
-            raise ContractDenied(f"action_strategist: child contract refused: {_one_line(exc)}") from exc
-        ctx.child_contract = child
-        ctx.log("orchestrator", "child_contract", f"parent {getattr(contract, 'id', '?')}",
-                f"child contract {getattr(child, 'id', '?')} for action.draft ({sorted(caps)})",
-                target="action_strategist", model="deterministic", confidence=1.0)
+            expired = "expired" in str(exc).lower()
+            ctx.log("scout", "contract.expired" if expired else "contract.refused",
+                    f"{phase}: child of {root_id}", _one_line(exc), target="orchestrator",
+                    model="deterministic", status="warning" if expired else "error")
+            if not (expired and ctx.last_phase is not None):
+                raise ContractDenied(f"{phase}: child contract refused: {_one_line(exc)}") from exc
+            try:
+                child = _call_compat(ctx.last_phase.child, intent, want, parent_id=root_id)
+            except Exception as exc2:
+                raise ContractDenied(f"{phase}: child contract refused: {_one_line(exc2)}") from exc2
+        ctx.phase_contracts.append({"phase": phase, "contract": child})
+        ctx.last_phase = child
+        if intent == "action.draft":
+            ctx.child_contract = child
+        ctx.log("scout", "contract.issued", f"phase {phase}; parent {root_id}",
+                f"child contract {getattr(child, 'id', '?')} for {intent} ({sorted(want)})",
+                target="orchestrator", model="deterministic", confidence=1.0,
+                contract_id=getattr(child, "id", None), parent_id=root_id, phase=phase)
         return child
+
+    def _child_contract(self, ctx, contract):
+        caps = {"data.read", "action.draft"} | ({"llm.call"} if ctx.llm_mode else set())
+        return self._phase(ctx, contract, "draft", "action.draft", caps)
 
     def _scan_web_notes(self, ctx, dataset):
         """Scan web-note text with the Scout guard before it can become evidence."""
@@ -1190,6 +1245,10 @@ class StockWhy:
         result["contracts"] = {
             "main": result.get("contract"),
             "child": child.to_dict() if child is not None and hasattr(child, "to_dict") else None,
+            "phases": [{"phase": p["phase"],
+                        "contract": (p["contract"].to_dict() if hasattr(p["contract"], "to_dict")
+                                     else getattr(p["contract"], "id", None))}
+                       for p in ctx.phase_contracts],
             "checks": len(checks), "granted": len(granted),
             "skipped": len(skipped), "denied": len(denied),
         }

@@ -234,3 +234,21 @@ def test_wrong_cause_is_rejected(offline, monkeypatch):
     memory = FakeMemory()
     _run(SAMPLE, "FAC-009", "magnesium sulphate inj", "2026-03", memory=memory, interactive=True)
     assert memory.feedbacks == [("mem-1", "rejected")]
+
+
+# ---------------------------------------------------------------------------
+# Scout contracts per phase
+# ---------------------------------------------------------------------------
+
+def test_every_phase_has_a_signed_child_of_the_scout_contract(offline):
+    r = _run(SAMPLE, "FAC-009", "magnesium sulphate inj", "2026-03")
+    root = r["contract"]["contractId"]
+    phases = r["contracts"]["phases"]
+    assert [p["phase"] for p in phases] == ["read", "analyse", "investigate", "draft", "memory"]
+    for p in phases:
+        assert p["contract"]["parentId"] == root
+        assert p["contract"]["signedBy"] == "scout" and p["contract"]["signature"]
+    draft = next(p for p in phases if p["phase"] == "draft")["contract"]
+    assert "action.draft" in draft["scope"]["capabilities"]
+    read = next(p for p in phases if p["phase"] == "read")["contract"]
+    assert "action.draft" not in read["scope"]["capabilities"]

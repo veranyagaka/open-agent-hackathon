@@ -274,7 +274,13 @@ def test_child_contract(dataset):
         child.check("memory.write")
     assert "pharmacist-confirm" in child.approvals
     d = child.to_dict()
-    assert d["parent_id"] == parent.id and d["signature"] == child.signature
+    assert d["parentId"] == parent.id and d["signature"] == child.signature
+    assert d["contractId"] == child.id and d["signedBy"] == "scout"
+    assert d["scope"]["capabilities"] == ["action.draft", "data.read"]
+    assert d["risk"]["approvals"] == ["pharmacist-confirm"]
+    root = parent.child("stockout.explain", {"data.read"})
+    grandchild = root.child("stockout.explain", {"data.read"}, parent_id=parent.id)
+    assert grandchild.parent_id == parent.id
     json.dumps(d)  # loggable
 
 

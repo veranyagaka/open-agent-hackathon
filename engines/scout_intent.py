@@ -34,8 +34,9 @@ from difflib import get_close_matches
 from pathlib import Path
 
 BANDS = [(0.80, "high"), (0.55, "medium"), (0.40, "low"), (0.0, "reject")]
-# 5 minutes by default; a slow live LLM run can raise it with SCOUT_CONTRACT_TTL_MINUTES
-TTL = timedelta(minutes=float(os.environ.get("SCOUT_CONTRACT_TTL_MINUTES") or 5))
+# Every contract lives 5 minutes. A long run does not extend it: the orchestrator
+# issues a fresh child contract per phase (parentId = the original contract).
+TTL = timedelta(minutes=5)
 POLICY_PACK = "stockwhy-default-2"
 REGISTRY_PATH = Path(__file__).with_name("intents.json")
 
@@ -225,8 +226,12 @@ class Contract:
             raise ContractViolation(f"capability '{capability}' is not granted by contract {self.id} "
                                     f"(intent {self.intent})")
 
-    def child(self, intent: str, capabilities) -> "Contract":
-        """Re-plan: a signed child contract (same trace, parent_id = this id) for a follow-on intent."""
+    def child(self, intent: str, capabilities, parent_id: str | None = None) -> "Contract":
+        """
+        Re-plan: a signed child contract (same trace) for a follow-on intent or phase.
+        parent_id defaults to this contract's id; a phase contract issued from the
+        previous phase passes the original contract's id so every phase points at it.
+        """
         self.verify()
         capabilities = set(capabilities)
         registered = REGISTRY["intents"].get(intent)
@@ -235,11 +240,28 @@ class Contract:
         outside = capabilities - set(registered["capabilities"])
         if outside:
             raise ContractViolation(f"intent '{intent}' does not allow {sorted(outside)}")
-        return Contract.issue(intent, capabilities, params=self.params, role=self.role, parent_id=self.id,
-                              trace_id=self.trace_id)
+        return Contract.issue(intent, capabilities, params=self.params, role=self.role,
+                              parent_id=parent_id or self.id, trace_id=self.trace_id)
 
     def to_dict(self) -> dict:
-        return {**self._body(), "signature": self.signature}
+        """Spec field names (ExecutionContract). The signature is HMAC-SHA256 over the canonical JSON body."""
+        flags = sorted(c for c in self.capabilities if c in ("action.draft", "memory.write"))
+        return {
+            "contractId": self.id,
+            "parentId": self.parent_id,
+            "traceId": self.trace_id,
+            "intent": self.intent,
+            "risk": {"level": "medium" if "action.draft" in self.capabilities else "low",
+                     "flags": flags, "approvals": list(self.approvals)},
+            "scope": {"capabilities": sorted(self.capabilities), "params": dict(self.params),
+                      "role": self.role},
+            "issuedAt": self.issued_at.isoformat(),
+            "expiresAt": self.expires_at.isoformat(),
+            "registryVersion": REGISTRY["version"],
+            "policyPackVersion": POLICY_PACK,
+            "signature": self.signature,
+            "signedBy": "scout",
+        }
 
     def __repr__(self) -> str:
         return f"Contract(id={self.id!r}, intent={self.intent!r}, capabilities={sorted(self.capabilities)})"
