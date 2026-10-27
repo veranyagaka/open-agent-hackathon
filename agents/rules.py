@@ -211,6 +211,18 @@ def describe(hypothesis_id: str, hypothesis_evidence: dict) -> str:
             return "No stock record for the month, so consumption could not be compared."
         pct = ev.get("pct_change")
         pct_text = "n/a" if pct is None else f"{pct:+}%"
+        if ev.get("demand_basis") == "stockout_adjusted":
+            issues = ev.get("pct_change_issues_only")
+            issues_text = "n/a" if issues is None else f"{issues:+}%"
+            days = _num(ev.get("reported_stockout_days"))
+            return (
+                f"{ev.get('stock_id', 'Stock record')}: consumed {_num(ev.get('consumed_this_month'))} "
+                f"with {days} reported stock-out days; stock-out-adjusted demand "
+                f"{_num(ev.get('consumed_this_month'))} x 30 / (30 - {days}) = "
+                f"{_num(ev.get('adjusted_demand'))} vs 3-month average "
+                f"{_num(ev.get('avg_consumed_3m'))} ({pct_text}; issues only {issues_text}; "
+                f"surge threshold +25%)."
+            )
         return (
             f"{ev.get('stock_id', 'Stock record')}: consumed {_num(ev.get('consumed_this_month'))} "
             f"vs 3-month average {_num(ev.get('avg_consumed_3m'))} ({pct_text}; surge threshold +25%)."
@@ -294,3 +306,125 @@ def rank_hypotheses(computed_evidence: dict) -> list:
         })
     rows.sort(key=lambda r: rank_key(r["verdict"], r["evidence_strength"], r["hypothesis_id"]))
     return rows
+
+
+# ---------------------------------------------------------------------------
+# H4: demand basis
+# ---------------------------------------------------------------------------
+
+def h4_issues_only(hypothesis_evidence: dict) -> dict:
+    """
+    H4 evidence recomputed from issues (consumed) only, without the
+    stock-out adjustment. Used when the Evaluator's record check shows the
+    facility had stock on hand, so the reported stock-out days cannot have
+    suppressed demand.
+    """
+    ev = dict(hypothesis_evidence or {})
+    if ev.get("demand_basis") != "stockout_adjusted":
+        return ev
+    pct = ev.get("pct_change_issues_only")
+    ev["pct_change"] = pct
+    ev["surge"] = bool(pct is not None and pct > 25)
+    ev["demand_basis"] = "issues_only"
+    ev.pop("adjusted_demand", None)
+    return ev
+
+
+# ---------------------------------------------------------------------------
+# Transfer candidates (deterministic, from the dataset)
+# ---------------------------------------------------------------------------
+
+def _prev_months(month: str, n: int) -> list:
+    """The n calendar months strictly before *month* (YYYY-MM), newest first."""
+    y, mo = int(month[:4]), int(month[5:7])
+    out = []
+    for _ in range(n):
+        mo -= 1
+        if mo == 0:
+            mo, y = 12, y - 1
+        out.append(f"{y:04d}-{mo:02d}")
+    return out
+
+
+def haversine_km(lat1, lon1, lat2, lon2) -> float:
+    import math
+    r = 6371.0088
+    p1, p2 = math.radians(float(lat1)), math.radians(float(lat2))
+    dp = p2 - p1
+    dl = math.radians(float(lon2) - float(lon1))
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
+
+
+def _finite(value):
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return None
+    return v if v == v and v not in (float("inf"), float("-inf")) else None
+
+
+def transfer_candidates(dataset: dict, facility: str, commodity: str, month: str,
+                        k: float = 1.0) -> list:
+    """
+    Facilities that could lend stock, nearest first.
+
+    surplus = closing stock in *month* - k x the facility's average `consumed`
+    over the 3 previous months. Only surplus > 0 counts; units = floor(surplus).
+    Every number cites the rows it came from: the source's stock row, its three
+    history rows and both facilities# rows. Facilities with missing coordinates
+    or fewer than 3 history months are skipped.
+    """
+    import math
+    stock = (dataset or {}).get("stock")
+    facilities = (dataset or {}).get("facilities")
+    if stock is None or facilities is None or not hasattr(stock, "columns") \
+            or not hasattr(facilities, "columns") or not month:
+        return []
+    coords = {}
+    for _, row in facilities.iterrows():
+        lat, lon = _finite(row.get("lat")), _finite(row.get("lon"))
+        if lat is not None and lon is not None:
+            coords[str(row.get("facility_id")).strip()] = (lat, lon)
+    if facility not in coords:
+        return []
+    window = _prev_months(month, 3)
+    rows = stock[stock["commodity"] == commodity]
+    out = []
+    for source, group in rows.groupby("facility_id"):
+        source = str(source).strip()
+        if source == facility or source not in coords:
+            continue
+        current = group[group["month"] == month]
+        history = group[group["month"].isin(window)].sort_values("month")
+        if current.empty or len(history) < 3:
+            continue
+        closing = _finite(current.iloc[0].get("closing"))
+        used = [_finite(v) for v in history["consumed"]]
+        if closing is None or any(v is None for v in used):
+            continue
+        avg = sum(used) / len(used)
+        surplus = closing - k * avg
+        if surplus <= 0:
+            continue
+        distance = haversine_km(*coords[facility], *coords[source])
+        out.append({
+            "source_facility": source,
+            "units": int(math.floor(surplus)),
+            "distance_km": round(distance, 1),
+            "source_closing": closing,
+            "source_avg_consumed_3m": round(avg, 2),
+            "k": k,
+            "stock_row": f"stock#{current.iloc[0]['id']}",
+            "history_rows": [f"stock#{i}" for i in history["id"]],
+            "citations": ([f"stock#{current.iloc[0]['id']}"]
+                          + [f"stock#{i}" for i in history["id"]]
+                          + [f"facilities#{facility}", f"facilities#{source}"]),
+        })
+    out.sort(key=lambda c: (c["distance_km"], c["source_facility"]))
+    return out
+
+
+def transfer_rule_text(k: float = 1.0) -> str:
+    months = "1 month" if k == 1 else f"{_num(k)} months"
+    return f"surplus beyond {months} of the source's 3-month average use"

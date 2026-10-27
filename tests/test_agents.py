@@ -251,21 +251,25 @@ class TestTheoryGeneratorAgent:
         assert ids == {"H1", "H2", "H3", "H4", "H5", "H6", "H7"}
 
     @patch("agents.theory_generator.ask_agent")
-    def test_wrong_count_raises(self, mock_ask):
+    def test_wrong_count_falls_back_to_rules(self, mock_ask, monkeypatch):
+        monkeypatch.setenv("STOCKWHY_USE_LLM", "true")
         mock_ask.return_value = {"theories": [{"id": "H1", "hypothesis_name": "late_order"}]}
         from agents.theory_generator import generate
-        with pytest.raises(ValueError, match="Expected 7"):
-            generate("Why?", {})
+        result = generate("Why?", {})
+        assert [t["id"] for t in result["theories"]] == [f"H{i}" for i in range(1, 8)]
+        assert "Expected 7" in result["_fallback_reason"]
 
     @patch("agents.theory_generator.ask_agent")
-    def test_missing_hypothesis_id_raises(self, mock_ask):
+    def test_missing_hypothesis_id_falls_back_to_rules(self, mock_ask, monkeypatch):
         # 7 theories but H4 is missing, duplicate H1 instead
+        monkeypatch.setenv("STOCKWHY_USE_LLM", "true")
         resp = _theories_response()
         resp["theories"][3]["id"] = "H1_dup"
         mock_ask.return_value = resp
         from agents.theory_generator import generate
-        with pytest.raises(ValueError):
-            generate("Why?", {})
+        result = generate("Why?", {})
+        assert {t["id"] for t in result["theories"]} == {f"H{i}" for i in range(1, 8)}
+        assert "H4" in result["_fallback_reason"]
 
     def test_each_theory_has_required_fields(self):
         """All theory dicts in a valid response must have required fields."""

@@ -29,46 +29,27 @@ import re
 
 from agents import rules
 
-HYPOTHESIS_NAMES = {
-    "H1": "late_order",
-    "H2": "supplier_underfill",
-    "H3": "payment_arrears",
-    "H4": "demand_surge",
-    "H5": "record_error",
-    "H6": "expiry",
-    "H7": "national_disruption",
-}
+HYPOTHESIS_NAMES = rules.HYPOTHESIS_NAMES
+EVIDENCE_KEYS = rules.EVIDENCE_KEYS
+HYPOTHESIS_ORDER = list(rules.ID_ORDER)
+_prev_months = rules._prev_months
 
-EVIDENCE_KEYS = {
-    "H1": "h1_late_order",
-    "H2": "h2_supplier_underfill",
-    "H3": "h3_payment_arrears",
-    "H4": "h4_demand_surge",
-    "H5": "h5_record_error",
-    "H6": "h6_expiry",
-    "H7": "h7_national_disruption",
-}
-
-HYPOTHESIS_ORDER = ["H1", "H2", "H3", "H4", "H5", "H6", "H7"]
-
-# A citation looks like "stock#1506", "orders#3161", "payments#17", "web_notes#0".
+# A citation looks like "stock#1506", "orders#3161", "payments#17", "web_notes#1",
+# "facilities#FAC-009". web_notes ids are the notes' own `id` (Zetaris) or, for a
+# JSON file without ids, the 1-based position in the file; both number the same
+# notes the same way (see web_note_id).
 ROW_ID_RE = re.compile(r"^(stock|orders|payments|web_notes|facilities)#([\w\-.]+)$")
+
+# Row months a hypothesis may cite, relative to the case month (stock history
+# covers six months; the order cycle two; the arrears window three).
+TABLE_WINDOW = {"stock": 6, "orders": 2, "payments": 3}
+
+RECORD_CHECK_CRITIQUE = ("Record check shows stock was on hand. Recompute demand from issues only.")
 
 
 # ---------------------------------------------------------------------------
 # Small helpers
 # ---------------------------------------------------------------------------
-
-def _prev_months(month: str, n: int) -> list:
-    y, mo = int(month[:4]), int(month[5:7])
-    out = []
-    for _ in range(n):
-        mo -= 1
-        if mo == 0:
-            mo, y = 12, y - 1
-        out.append(f"{y:04d}-{mo:02d}")
-    return out
-
 
 def _num(value):
     """Return a finite float or None."""
@@ -118,6 +99,15 @@ def hypothesis_evidence(computed_evidence: dict, h_id: str) -> dict:
 # Row lookup — re-read the row from the loaded dataset
 # ---------------------------------------------------------------------------
 
+def web_note_id(note: dict, index: int) -> str:
+    """One numbering for web notes: the note's `id` if it has one, else its 1-based position."""
+    raw = (note or {}).get("id")
+    if raw is not None and str(raw).strip() not in ("", "None", "nan"):
+        text = str(raw).strip()
+        return text[:-2] if text.endswith(".0") else text
+    return str(index + 1)
+
+
 def lookup_row(dataset: dict, row_id: str):
     """Return the row a citation points at as a dict, or None if it does not exist."""
     if not dataset or not is_row_id(row_id):
@@ -125,12 +115,10 @@ def lookup_row(dataset: dict, row_id: str):
     table, key = ROW_ID_RE.match(row_id.strip()).groups()
 
     if table == "web_notes":
-        notes = dataset.get("web_notes") or []
-        try:
-            idx = int(key)
-        except ValueError:
-            return None
-        return dict(notes[idx]) if 0 <= idx < len(notes) else None
+        for i, note in enumerate(dataset.get("web_notes") or []):
+            if isinstance(note, dict) and web_note_id(note, i) == key:
+                return dict(note)
+        return None
 
     df = dataset.get(table)
     if df is None or not hasattr(df, "columns"):
@@ -188,6 +176,8 @@ def derive_claims(h_id: str, evidence: dict, dataset: dict = None, month: str = 
         put(ev.get("order_id"), fill_rate=ev.get("facility_fill_rate"))
     elif h_id == "H4":
         put(ev.get("stock_id"), consumed=ev.get("consumed_this_month"))
+        if ev.get("demand_basis") == "stockout_adjusted":
+            put(ev.get("stock_id"), reported_stockout_days=ev.get("reported_stockout_days"))
     elif h_id == "H5":
         put(ev.get("stock_id"), closing=ev.get("reported_closing"),
             reported_stockout_days=ev.get("reported_stockout_days"),
@@ -208,7 +198,8 @@ def derive_claims(h_id: str, evidence: dict, dataset: dict = None, month: str = 
             if (note.get("month") == notice.get("month")
                     and note.get("commodity") == notice.get("commodity")
                     and note.get("title") == notice.get("title")):
-                put(f"web_notes#{i}", month=note.get("month"), commodity=note.get("commodity"))
+                put(f"web_notes#{web_note_id(note, i)}", month=note.get("month"),
+                    commodity=note.get("commodity"))
                 break
     return claims
 
@@ -217,7 +208,7 @@ def attach_claims(evaluation: dict, computed_evidence: dict, dataset: dict = Non
                   month: str = None) -> dict:
     """Add `cited_values` (row-level claims) to an evaluation, keeping any it already has."""
     h_id = evaluation.get("theory_id", "")
-    derived = derive_claims(h_id, hypothesis_evidence(computed_evidence, h_id), dataset, month)
+    derived = derive_claims(h_id, evidence_used(evaluation, computed_evidence), dataset, month)
     own = evaluation.get("cited_values")
     if isinstance(own, dict):
         for rid, fields in own.items():
@@ -225,6 +216,23 @@ def attach_claims(evaluation: dict, computed_evidence: dict, dataset: dict = Non
                 derived.setdefault(rid, {}).update(fields)
     evaluation["cited_values"] = derived
     return evaluation
+
+
+def evidence_used(evaluation: dict, computed_evidence: dict) -> dict:
+    """The evidence an evaluation actually rests on (H4 may have been recomputed from issues only)."""
+    h_id = evaluation.get("theory_id", "")
+    ev = hypothesis_evidence(computed_evidence, h_id)
+    if h_id == "H4" and evaluation.get("demand_basis") == "issues_only":
+        return rules.h4_issues_only(ev)
+    return ev
+
+
+def demand_basis(evaluation: dict, computed_evidence: dict):
+    """H4 only: "stockout_adjusted" | "issues_only" | None."""
+    if evaluation.get("theory_id") != "H4":
+        return None
+    return (evaluation.get("demand_basis")
+            or hypothesis_evidence(computed_evidence, "H4").get("demand_basis"))
 
 
 def cited_row_ids(evaluation: dict) -> list:
@@ -241,10 +249,52 @@ def cited_row_ids(evaluation: dict) -> list:
 # 1. Citations
 # ---------------------------------------------------------------------------
 
-def verify_citations(evaluation: dict, dataset: dict) -> dict:
+def _months_back(month: str, n: int) -> set:
+    return {month, *_prev_months(month, n)}
+
+
+def out_of_scope(table: str, row: dict, scope: dict) -> str:
     """
-    Re-read every cited row. A claim fails if its row does not exist or a
-    cited number does not match the row.
+    Why a row lies outside the case, or "" if it is in scope.
+
+    scope = {facility_id, commodity, month, transfer_sources?}. Stock and
+    orders rows must be this facility and medicine and fall in the window the
+    hypotheses read; payments rows must fall in the arrears window; web notes
+    must be about this medicine; facilities rows only for this facility or a
+    proposed transfer source.
+    """
+    if not scope:
+        return ""
+    facility, commodity, month = scope.get("facility_id"), scope.get("commodity"), scope.get("month")
+
+    def same(a, b):
+        return _text(a).lower() == _text(b).lower()
+
+    if table in ("stock", "orders"):
+        if facility and not same(row.get("facility_id"), facility):
+            return f"row is facility {_text(row.get('facility_id'))}, not {facility}"
+        if commodity and not same(row.get("commodity"), commodity):
+            return f"row is {_text(row.get('commodity'))}, not {commodity}"
+        if month and _text(row.get("month"))[:7] not in _months_back(month, TABLE_WINDOW[table]):
+            return f"row month {_text(row.get('month'))} is outside the window for {month}"
+    elif table == "payments":
+        if month and _text(row.get("month"))[:7] not in _months_back(month, TABLE_WINDOW["payments"]):
+            return f"payment month {_text(row.get('month'))} is outside the window for {month}"
+    elif table == "web_notes":
+        if commodity and not same(row.get("commodity"), commodity):
+            return f"notice is about {_text(row.get('commodity'))}, not {commodity}"
+    elif table == "facilities":
+        allowed = {facility, *(scope.get("transfer_sources") or [])} - {None}
+        if _text(row.get("facility_id")) not in allowed:
+            return f"facility {_text(row.get('facility_id'))} is neither the case facility nor a transfer source"
+    return ""
+
+
+def verify_citations(evaluation: dict, dataset: dict, scope: dict = None) -> dict:
+    """
+    Re-read every cited row. A claim fails if its row does not exist, lies
+    outside the case scope (another facility, medicine or month), or a cited
+    number does not match the row.
 
     Returns {"ok", "verified": [row ids], "failures": [...], "core_failed": bool}
     `core_failed` means a number the verdict rests on is wrong; a failure that
@@ -262,6 +312,11 @@ def verify_citations(evaluation: dict, dataset: dict) -> dict:
             core_failed = core_failed or is_core
             continue
         table = ROW_ID_RE.match(rid).group(1)
+        why = out_of_scope(table, row, scope)
+        if why:
+            failures.append({"row_id": rid, "reason": f"out of scope: {why}", "core": is_core})
+            core_failed = core_failed or is_core
+            continue
         row_ok = True
         for field, claimed in (claims.get(rid) or {}).items():
             try:
@@ -293,43 +348,49 @@ def verify_citations(evaluation: dict, dataset: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 def expected_verdict(h_id: str, evidence: dict) -> str:
-    """The verdict the computed flags imply. Independent of the investigator's code."""
-    ev = evidence or {}
-    if not ev or ev.get("data_missing"):
+    """
+    The verdict the computed flags imply (rules.deterministic_verdict).
+
+    The investigators already take their verdict from the same rule; this is
+    a guard against an LLM overriding it, not an independent second rule.
+    """
+    if not evidence:
         return "inconclusive"
-    if h_id == "H1":
-        return "supported" if ev.get("late") or ev.get("delivery_slipped") else "weakened"
-    if h_id == "H2":
-        return "supported" if ev.get("underfill") else "weakened"
-    if h_id == "H3":
-        return "supported" if ev.get("major_arrears") else "weakened"
-    if h_id == "H4":
-        pct = _num(ev.get("pct_change"))
-        return "supported" if ev.get("surge") or (pct is not None and pct > 25) else "weakened"
-    if h_id == "H5":
-        if ev.get("identity_holds") is False or ev.get("stockout_days_plausible") is False:
-            return "supported"
-        return "weakened"
-    if h_id == "H6":
-        return "supported" if ev.get("high_wastage") else "weakened"
-    if h_id == "H7":
-        drop = _num(ev.get("county_fill_drop")) or 0.0
-        if ev.get("web_notice_found") and drop > 0.1:
-            return "supported"
-        if ev.get("web_notice_found") or drop > 0.1:
-            return "inconclusive"
-        return "weakened"
-    return "inconclusive"
+    return rules.deterministic_verdict(h_id, evidence)
 
 
-def check_consistency(evaluation: dict, computed_evidence: dict) -> dict:
+def record_check(evaluation: dict, computed_evidence: dict, dataset: dict) -> dict:
+    """
+    H4 only. A stock-out-adjusted demand estimate assumes the facility had no
+    stock on its reported stock-out days. Re-read the stock row: if closing
+    stock is above zero, stock was on hand and the adjustment is invalid.
+    """
+    if demand_basis(evaluation, computed_evidence) != "stockout_adjusted":
+        return {"ok": True, "reason": ""}
+    ev = hypothesis_evidence(computed_evidence, "H4")
+    rid = ev.get("stock_id")
+    row = lookup_row(dataset, rid) if rid else None
+    if row is None:
+        return {"ok": True, "reason": ""}
+    closing, days = _num(row.get("closing")), _num(row.get("reported_stockout_days"))
+    if closing is not None and closing > 0 and days and days > 0:
+        return {"ok": False, "row_id": rid, "closing": closing, "reported_stockout_days": days,
+                "reason": (f"{RECORD_CHECK_CRITIQUE} ({rid}: closing {closing:g} with "
+                           f"{days:g} reported stock-out days)")}
+    return {"ok": True, "reason": ""}
+
+
+def check_consistency(evaluation: dict, computed_evidence: dict, record_ok: bool = True) -> dict:
     """
     Reject a verdict that disagrees with the computed flag on whether the
     hypothesis is supported. (inconclusive vs weakened is tolerated.)
     """
     h_id = evaluation.get("theory_id", "")
     verdict = evaluation.get("verdict", "inconclusive")
-    expected = expected_verdict(h_id, hypothesis_evidence(computed_evidence, h_id))
+    ev = evidence_used(evaluation, computed_evidence)
+    if h_id == "H4" and not record_ok:
+        ev = rules.h4_issues_only(ev)
+    expected = expected_verdict(h_id, ev)
     ok = (verdict == "supported") == (expected == "supported")
     reason = "" if ok else (
         f"{h_id} verdict '{verdict}' disagrees with the computed flags, which give '{expected}'"
@@ -402,7 +463,8 @@ def cross_critique(evaluations: list, computed_evidence: dict, month: str = None
 # One review pass over a batch of evaluations
 # ---------------------------------------------------------------------------
 
-def review(evaluations: list, computed_evidence: dict, dataset: dict, month: str = None) -> dict:
+def review(evaluations: list, computed_evidence: dict, dataset: dict, month: str = None,
+           scope: dict = None) -> dict:
     """
     Run citations, consistency and cross-critique over a batch.
 
@@ -416,16 +478,17 @@ def review(evaluations: list, computed_evidence: dict, dataset: dict, month: str
     reports, failed = {}, []
     for ev in evaluations:
         h_id = ev.get("theory_id")
-        cites = verify_citations(ev, dataset)
-        cons = check_consistency(ev, computed_evidence)
+        cites = verify_citations(ev, dataset, scope)
+        record = record_check(ev, computed_evidence, dataset)
+        cons = check_consistency(ev, computed_evidence, record_ok=record["ok"])
         mine = [c for c in critiques if c["target"] == h_id]
-        ok = cites["ok"] and cons["ok"] and not mine
+        ok = cites["ok"] and cons["ok"] and record["ok"] and not mine
         n_cited = len(cited_row_ids(ev))
         confidence = round(len(cites["verified"]) / n_cited, 2) if n_cited else (1.0 if cons["ok"] else 0.0)
         if not cons["ok"]:
             confidence = 0.0
-        reports[h_id] = {"citations": cites, "consistency": cons, "critiques": mine,
-                         "ok": ok, "confidence": confidence}
+        reports[h_id] = {"citations": cites, "consistency": cons, "record_check": record,
+                         "critiques": mine, "ok": ok, "confidence": confidence}
         if not ok:
             failed.append(h_id)
     return {"reports": reports, "critiques": critiques, "failed": failed}
@@ -434,6 +497,9 @@ def review(evaluations: list, computed_evidence: dict, dataset: dict, month: str
 def critique_text(report: dict) -> str:
     """One paragraph the investigator receives when asked to revise."""
     parts = []
+    record = report.get("record_check") or {}
+    if record and not record.get("ok", True):
+        parts.append(record["reason"])
     for f in report["citations"]["failures"]:
         if "field" in f:
             parts.append(f"{f['row_id']}.{f['field']}: you cited {f.get('claimed')!r}, "
@@ -459,6 +525,8 @@ def settle(evaluation: dict, report: dict) -> tuple:
     """
     if report["citations"]["core_failed"]:
         return None, "cited numbers still do not match the dataset"
+    if not (report.get("record_check") or {}).get("ok", True):
+        return None, report["record_check"]["reason"]
     if not report["consistency"]["ok"]:
         return None, report["consistency"]["reason"]
     note = ""
@@ -473,6 +541,70 @@ def settle(evaluation: dict, report: dict) -> tuple:
         evaluation["contest_reason"] = " ".join(c["reason"] for c in report["critiques"])
         note = (note + "; " if note else "") + "contested by cross-critique, downgraded to inconclusive"
     return evaluation, note
+
+
+# ---------------------------------------------------------------------------
+# Transfer drafts: re-read the rows and recompute the numbers
+# ---------------------------------------------------------------------------
+
+def verify_transfer(action: dict, dataset: dict, scope: dict) -> dict:
+    """
+    Check a transfer_request action against the rows it cites: the source's
+    stock row for the case month, its three previous months and both
+    facilities rows. Units and distance are recomputed from those rows and
+    must match the draft. Returns {"ok", "verified", "failures"}.
+    """
+    scope = dict(scope or {})
+    source = action.get("source_facility")
+    month, commodity, facility = scope.get("month"), scope.get("commodity"), scope.get("facility_id")
+    failures, verified = [], []
+    current, history, coords = None, [], {}
+    for rid in action.get("citations") or []:
+        row = lookup_row(dataset, rid)
+        if row is None:
+            failures.append({"row_id": rid, "reason": "row not found in dataset"})
+            continue
+        table = ROW_ID_RE.match(rid).group(1)
+        if table == "stock":
+            if _text(row.get("facility_id")) != source or _text(row.get("commodity")) != commodity:
+                failures.append({"row_id": rid, "reason": "not the source facility's row for this medicine"})
+                continue
+            m = _text(row.get("month"))[:7]
+            if m == month:
+                current = row
+            elif m in _prev_months(month, 3):
+                history.append(row)
+            else:
+                failures.append({"row_id": rid, "reason": f"month {m} outside the 3-month window"})
+                continue
+        elif table == "facilities":
+            fid = _text(row.get("facility_id"))
+            if fid not in (facility, source):
+                failures.append({"row_id": rid, "reason": "facility is neither the case nor the source"})
+                continue
+            coords[fid] = (_num(row.get("lat")), _num(row.get("lon")))
+        else:
+            failures.append({"row_id": rid, "reason": "not a stock or facilities row"})
+            continue
+        verified.append(rid)
+
+    k = _num(action.get("k")) or 1.0
+    if current is None or len(history) != 3:
+        failures.append({"row_id": source or "?", "reason": "needs the source's stock row and 3 history rows"})
+    elif facility not in coords or source not in coords or None in coords[facility] + coords[source]:
+        failures.append({"row_id": source or "?", "reason": "facility coordinates not cited"})
+    else:
+        avg = sum(_num(r.get("consumed")) or 0.0 for r in history) / 3
+        units = int(math.floor((_num(current.get("closing")) or 0.0) - k * avg))
+        distance = round(rules.haversine_km(*coords[facility], *coords[source]), 1)
+        if units <= 0 or units != action.get("units"):
+            failures.append({"row_id": source, "field": "units", "claimed": action.get("units"),
+                             "actual": units, "reason": "units do not match the rows"})
+        if abs(distance - (_num(action.get("distance_km")) or -1)) > 0.1:
+            failures.append({"row_id": source, "field": "distance_km",
+                             "claimed": action.get("distance_km"), "actual": distance,
+                             "reason": "distance does not match the coordinates"})
+    return {"ok": not failures, "verified": verified, "failures": failures}
 
 
 # ---------------------------------------------------------------------------

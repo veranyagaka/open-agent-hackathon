@@ -1,17 +1,17 @@
 """
 agents/theory_generator.py
 
-Theory Generator Agent: generates exactly 7 theories, one per StockyWhy hypothesis.
+Theory Generator Agent: generates exactly 7 theories, one per StockWhy hypothesis.
 With the LLM disabled (llm_client.llm_enabled) the theories come from fixed
 domain templates, annotated with the analyst's computed signal for each.
 """
 
 from agents import rules
-from llm_client import RULE_BASED, LLMCallCapReached, ask_agent, llm_enabled
+from llm_client import RULE_BASED, ask_agent, llm_enabled
 
 
 SYSTEM = """
-You are the StockyWhy Theory Generator.
+You are the StockWhy Theory Generator.
 
 Generate exactly SEVEN theories answering the research question — one theory
 per hypothesis below. Map each theory to its hypothesis ID.
@@ -146,35 +146,32 @@ def generate(question: str, data_analysis: dict) -> dict:
     """
     Generate 7 theories (one per hypothesis) from the data analysis.
     """
-    if llm_enabled():
-        try:
-            result = ask_agent(
-                SYSTEM,
-                {
-                    "research_question": question,
-                    "data_analysis": data_analysis,
-                },
-            )
-        except LLMCallCapReached as exc:
-            result = generate_rule_based(question, data_analysis)
-            result["_fallback_reason"] = str(exc)
-    else:
+    if not llm_enabled():
+        return generate_rule_based(question, data_analysis)
+    try:
+        result = ask_agent(
+            SYSTEM,
+            {
+                "research_question": question,
+                "data_analysis": data_analysis,
+            },
+        )
+        validate_theories(result)
+        return result
+    except Exception as exc:  # LLMError or a reply in the wrong shape
         result = generate_rule_based(question, data_analysis)
+        result["_fallback_reason"] = f"{type(exc).__name__}: {str(exc)[:200]}"
+        return result
 
-    theories = result.get("theories", [])
 
-    if len(theories) != 7:
-        raise ValueError(
-            f"Expected 7 theories (one per hypothesis), got {len(theories)}"
-        )
-
-    # Validate hypothesis IDs
-    expected_ids = {"H1", "H2", "H3", "H4", "H5", "H6", "H7"}
-    returned_ids = {t.get("id") for t in theories}
-    missing = expected_ids - returned_ids
+def validate_theories(result) -> None:
+    """Raise ValueError unless there is exactly one theory per hypothesis H1-H7."""
+    theories = result.get("theories") if isinstance(result, dict) else None
+    if not isinstance(theories, list) or len(theories) != 7:
+        n = len(theories) if isinstance(theories, list) else 0
+        raise ValueError(f"Expected 7 theories (one per hypothesis), got {n}")
+    if any(not isinstance(t, dict) for t in theories):
+        raise ValueError("Every theory must be an object")
+    missing = set(rules.ID_ORDER) - {t.get("id") for t in theories}
     if missing:
-        raise ValueError(
-            f"Missing hypothesis IDs in theories: {missing}"
-        )
-
-    return result
+        raise ValueError(f"Missing hypothesis IDs in theories: {sorted(missing)}")

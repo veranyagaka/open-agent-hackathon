@@ -13,11 +13,11 @@ computed numbers and row ids.
 import concurrent.futures
 
 from agents import rules
-from llm_client import RULE_BASED, ask_agent, llm_enabled
+from llm_client import RULE_BASED, LLMError, ask_agent, llm_enabled
 
 
 SYSTEM = """
-You are the StockyWhy Evidence Investigator.
+You are the StockWhy Evidence Investigator.
 
 Evaluate every proposed theory using the supplied data profile,
 actual computed test results, and evidence references.
@@ -55,7 +55,7 @@ Return JSON:
 """
 
 SINGLE_HYPOTHESIS_SYSTEM = """
-You are the StockyWhy Evidence Investigator.
+You are the StockWhy Evidence Investigator.
 
 You are evaluating ONE specific hypothesis about a drug stockout.
 
@@ -100,9 +100,9 @@ Return valid JSON matching exactly this structure (no extra fields, no markdown)
 }}
 """
 
-# Maps hypothesis ID to snake_case name / computed_evidence key
-HYPOTHESIS_NAMES = dict(rules.HYPOTHESIS_NAMES)
-EVIDENCE_KEYS = dict(rules.EVIDENCE_KEYS)
+HYPOTHESIS_NAMES = rules.HYPOTHESIS_NAMES
+EVIDENCE_KEYS = rules.EVIDENCE_KEYS
+VERDICTS = ("supported", "weakened", "inconclusive")
 
 # What each computed check cannot establish (rule-based limitations).
 LIMITATIONS = {
@@ -131,18 +131,34 @@ def investigate(
     data_analysis: dict,
     test_results: list,
 ) -> dict:
-    """Original sequential investigate function — kept intact."""
+    """Sequential mode: one call for all theories; falls back to rules on any LLM failure."""
     if llm_enabled():
-        return ask_agent(
-            SYSTEM,
-            {
-                "research_question": question,
-                "theories": theories,
-                "data_analysis": data_analysis,
-                "computed_test_results": test_results,
-            },
-        )
+        try:
+            result = ask_agent(
+                SYSTEM,
+                {
+                    "research_question": question,
+                    "theories": theories,
+                    "data_analysis": data_analysis,
+                    "computed_test_results": test_results,
+                },
+            )
+            _check_sequential_shape(result)
+            return result
+        except (LLMError, ValueError) as exc:
+            result = investigate_rule_based(theories, data_analysis)
+            result["_fallback_reason"] = f"{type(exc).__name__}: {str(exc)[:200]}"
+            return result
     return investigate_rule_based(theories, data_analysis)
+
+
+def _check_sequential_shape(result) -> None:
+    if not isinstance(result, dict) or not isinstance(result.get("evaluations"), list):
+        raise ValueError("LLM reply has no 'evaluations' list")
+    for e in result["evaluations"]:
+        if not isinstance(e, dict) or e.get("theory_id") not in rules.ID_ORDER \
+                or e.get("verdict") not in VERDICTS:
+            raise ValueError("LLM evaluation lacks a valid theory_id H1-H7 or verdict")
 
 
 def investigate_rule_based(theories: dict, data_analysis: dict) -> dict:
@@ -218,14 +234,31 @@ def _investigate_one(
     h_id = theory.get("id", "H?")
     h_name = theory.get("hypothesis_name", HYPOTHESIS_NAMES.get(h_id, "unknown"))
 
+    # Revision: the Evaluator re-read the stock row and found stock on hand,
+    # so demand is recomputed from issues only (no stock-out adjustment).
+    recomputed = False
+    if (h_id == "H4" and theory.get("revision_request")
+            and "issues only" in str(theory.get("evaluator_critique", "")).lower()
+            and (hypothesis_evidence or {}).get("demand_basis") == "stockout_adjusted"):
+        hypothesis_evidence = rules.h4_issues_only(hypothesis_evidence)
+        recomputed = True
+
     # Step 1: Assign the verdict deterministically from computed flags
     deterministic = _deterministic_verdict(h_id, hypothesis_evidence)
     strength = rules.evidence_strength(h_id, hypothesis_evidence)
 
-    if not llm_enabled():
-        result = _rule_based_evaluation(h_id, h_name, hypothesis_evidence, deterministic)
+    def finish(result: dict) -> dict:
         result["evidence_strength"] = strength
+        if h_id == "H4" and (hypothesis_evidence or {}).get("demand_basis"):
+            result["demand_basis"] = hypothesis_evidence["demand_basis"]
+        if recomputed:
+            result["recomputed_after_critique"] = (
+                "demand recomputed from issues only: "
+                f"{rules.describe(h_id, hypothesis_evidence)}")
         return result
+
+    if not llm_enabled():
+        return finish(_rule_based_evaluation(h_id, h_name, hypothesis_evidence, deterministic))
 
     system = SINGLE_HYPOTHESIS_SYSTEM.format(
         hypothesis_id=h_id,
@@ -246,21 +279,25 @@ def _investigate_one(
 
     try:
         result = ask_agent(system, payload, lane="fast")
+        if not isinstance(result, dict) or not isinstance(result.get("reasoning"), str):
+            raise ValueError("LLM reply has no 'reasoning' text")
         # Step 2: Always override the LLM's verdict with the deterministic one
         # The LLM is responsible for reasoning/explanation, not the verdict
         result["theory_id"] = h_id
         result["hypothesis_name"] = h_name
         result["verdict"] = deterministic  # authoritative
         result["verdict_source"] = "deterministic"
-        result["evidence_strength"] = strength
-        return result
-    except Exception as exc:
+        for key in ("supporting_evidence_ids", "contradicting_evidence_ids", "limitations",
+                    "additional_analysis_needed"):
+            if not isinstance(result.get(key), list):
+                result[key] = []
+        return finish(result)
+    except Exception as exc:  # LLMError, bad JSON shape, or any client failure
         # The explanation falls back to rules; the label says so.
         result = _rule_based_evaluation(h_id, h_name, hypothesis_evidence, deterministic)
-        result["evidence_strength"] = strength
         result["limitations"] = result["limitations"] + ["Agent call error"]
-        result["_fallback_reason"] = f"LLM explanation unavailable: {exc}"
-        return result
+        result["_fallback_reason"] = f"LLM explanation unavailable: {str(exc)[:200]}"
+        return finish(result)
 
 
 def investigate_parallel(
@@ -315,7 +352,7 @@ def investigate_parallel(
                 })
 
     # Sort by hypothesis ID for deterministic output
-    id_order = ["H1", "H2", "H3", "H4", "H5", "H6", "H7"]
+    id_order = rules.ID_ORDER
     evaluations.sort(key=lambda e: id_order.index(e.get("theory_id", "H7"))
                      if e.get("theory_id") in id_order else 99)
 

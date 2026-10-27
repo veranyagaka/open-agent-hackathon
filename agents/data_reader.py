@@ -5,16 +5,15 @@ The Data Reader Agent: loads data deterministically then asks the LLM
 to interpret the structured evidence profile and flag data quality issues.
 """
 
-import json
 import math
 
 from agents import rules
-from llm_client import RULE_BASED, LLMCallCapReached, ask_agent, llm_enabled
+from llm_client import RULE_BASED, ask_agent, llm_enabled
 from tools.data_loader import _prev_months, load_dataset, profile_stockout
 
 
 SYSTEM = """
-You are the StockyWhy Data Reader Agent.
+You are the StockWhy Data Reader Agent.
 
 Your job is to profile all available data for a given facility/commodity/month
 combination and identify relevant evidence for a drug stockout investigation.
@@ -116,9 +115,15 @@ def read_and_profile(
     if llm_enabled():
         try:
             interpretation = ask_agent(SYSTEM, payload, lane="fast")
-        except LLMCallCapReached as exc:
+            if not isinstance(interpretation, dict) or not isinstance(
+                    interpretation.get("evidence_for_hypotheses"), dict):
+                raise ValueError("LLM reply has no 'evidence_for_hypotheses' object")
+            for key in ("data_quality_flags", "missing_data_warnings"):
+                if not isinstance(interpretation.get(key), list):
+                    interpretation[key] = []
+        except Exception as exc:  # LLMError or a reply in the wrong shape
             interpretation = interpret_rule_based(profile)
-            interpretation["_fallback_reason"] = str(exc)
+            interpretation["_fallback_reason"] = f"{type(exc).__name__}: {str(exc)[:200]}"
     else:
         interpretation = interpret_rule_based(profile)
 
