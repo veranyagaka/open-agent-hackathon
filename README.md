@@ -64,7 +64,7 @@ Every step is written to a JSONL trace in `logs/`.
 | H1 | late_order | Previous month's order placed after cutoff, or delivery slipped past the stock-out month |
 | H2 | supplier_underfill | Facility fill rate vs county average in the same cycle |
 | H3 | payment_arrears | County owes ≥ 30M KES and county-wide fill of the supply arriving this month dropped |
-| H4 | demand_surge | Consumption > 25% above the 3-month average |
+| H4 | demand_surge | Consumption > 25% above the 3-month average. When the month has stock-out days, demand is adjusted to consumed × 30 / (30 − days); if stock was on hand at month end, the Evaluator rejects the adjustment and demand is recomputed from issues only |
 | H5 | record_error | Stock identity (opening − wastage + received − consumed = closing) broken, or impossible stock-out days |
 | H6 | expiry | Wastage > 2× its average and > 10% of average consumption |
 | H7 | national_disruption | Public notice for the medicine and a county-wide drop in the supply arriving this month |
@@ -167,7 +167,14 @@ its CSV files and the run records a warning. Facility ids, months and medicine n
 reach SQL, one statement per call. Details: `ZETARIS_INTEGRATION.md`.
 
 **Meterless Nightshift (AI provider).** Start Nightshift, copy its runtime token into `.env`
-(`METERLESS_RUNTIME_TOKEN`), and pin Nemotron routes in Nightshift for the deep and fast lanes. With
+(`METERLESS_RUNTIME_TOKEN`), and pin two NVIDIA Nemotron models in Nightshift:
+
+| Lane | Nemotron model | Used by |
+|---|---|---|
+| deep (`METERLESS_MODEL_DEEP`, default `meterless/deep`) | `nvidia/nemotron-3.5-super-vl-120b-a12b` | Data Analyst, Theory Generator, Action Strategist |
+| fast (`METERLESS_MODEL_FAST`, default `meterless/fast`) | `nvidia/nemotron-3.5-lightning-30b-a3b` | Data Reader, the parallel Evidence Investigators |
+
+With
 `SAMPLE_MODE` unset (or `STOCKWHY_USE_LLM=true`) the agents call Nightshift; the trace records the model that
 served each call (`model` / `_served_model`, or `unreported` when Nightshift does not say) next to the lane
 requested (`requested_model`), plus any `meterless-*` / `x-*` routing headers. `<think>` blocks are stripped
@@ -277,7 +284,7 @@ accuracy on real data. Only `scripts/evaluate.py` reads `eval/answer_key.csv`; t
 
 ## Models, frameworks and tools
 
-- **AI provider:** Meterless Nightshift (OpenAI-compatible runtime), NVIDIA Nemotron routes pinned in Nightshift.
+- **AI provider:** Meterless Nightshift (OpenAI-compatible runtime) with two NVIDIA Nemotron models pinned in Nightshift: `nvidia/nemotron-3.5-super-vl-120b-a12b` (deep lane) and `nvidia/nemotron-3.5-lightning-30b-a3b` (fast lane).
   The NVIDIA key lives in Nightshift, never in this repo.
 - **Meterless engines:** Scout Intent and H-MEM, implemented in Python from the specs at
   https://github.com/meterless/meterless; their conformance fixtures are in `tests/fixtures/` (Apache-2.0).

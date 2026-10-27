@@ -48,7 +48,7 @@ Public-notice stand-ins: `month`, `commodity`, `source`, `title`, `url`, and `sy
 | 1 | Late or missed ordering | orders | Days between `order_date` and `cutoff_date`; delivery slipped? |
 | 2 | Supplier under-fill (facility-specific) | orders | This facility's fill rate versus other facilities in the same cycle |
 | 3 | Payment arrears | payments, orders | County-wide fill drop plus a major arrears record |
-| 4 | Demand surge | stock | `consumed` versus the facility's recent average |
+| 4 | Demand surge | stock | `consumed` versus the facility's recent average; with stock-out days, stock-out-adjusted demand `consumed × 30 / (30 − reported_stockout_days)`, recomputed from `consumed` alone if `closing` > 0 |
 | 5 | Stock-record error | stock | Reported stock-out days versus normal issues and stock left at month end |
 | 6 | Expiry or wastage | stock | `wastage` relative to normal monthly use |
 | 7 | National supply disruption | orders, web_notes | County-wide fill drop plus a public notice for that medicine |
