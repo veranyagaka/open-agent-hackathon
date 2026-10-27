@@ -142,7 +142,7 @@ DESCRIBE DATASOURCE TABLE <datasource>.<table>
 ```
 Documented example options: `jdbcdriver "org.postgresql.Driver"`, `jdbcurl "jdbc:postgresql://host:5432/db"`, `username`, `password`, `fetchsize "1000"`. "Registers an external source (JDBC, Cassandra, MongoDB or DynamoDB, detected from the options) after testing the connection."
 
-Our datapack's `zetaris_register.sql` matches this syntax. The instance must be able to reach the Postgres host (for example Neon). INFERRED: a local Docker Zetaris can reach a cloud Postgres.
+Our `data/sample/zetaris_register.sql` matches this syntax. The instance must be able to reach the Postgres host (for example Neon). INFERRED: a local Docker Zetaris can reach a cloud Postgres.
 
 ### Option B: CSV/Parquet on S3
 ```sql

@@ -34,10 +34,10 @@ Stock identity: `opening - wastage + received - consumed = closing`. A facility 
 
 ## facilities.csv
 `facility_id`, `lat`, `lon`, `facility_name`, `facility_type` (dispensary, health centre, sub-county hospital), `county`, `sub_county`, `osm_id`.
-These are real public health facilities in Kitui County, Kenya, taken from OpenStreetMap. The action drafter uses them to name facilities and to find the nearest facility with spare stock. The stock, order and payment records attached to these facilities are synthetic and do not describe what really happened at them.
+These are real public health facilities in Kitui County, Kenya, taken from OpenStreetMap. Scout, the action drafter and the Evaluator use them to name facilities and to find the nearest facility with spare stock. The stock, order and payment records attached to these facilities are synthetic and do not describe what really happened at them.
 
 ## web_notes.json
-Public-notice stand-ins: `month`, `commodity`, `source`, `title`, `url`, and `synthetic: true`. The live version of this comes from Bright Data.
+Public-notice stand-ins: `month`, `commodity`, `source`, `title`, `url`, and `synthetic: true`. In live mode the same notices are read through Zetaris (`stockwhy_web`).
 
 ## manifest.json
 `seed`, `n_facilities`, `synthetic: true`. The planted cause is deliberately **not** stored anywhere in a dataset folder.
@@ -53,7 +53,7 @@ Public-notice stand-ins: `month`, `commodity`, `source`, `title`, `url`, and `sy
 | 6 | Expiry or wastage | stock | `wastage` relative to normal monthly use |
 | 7 | National supply disruption | orders, web_notes | County-wide fill drop plus a public notice for that medicine |
 
-`facilities.csv` is used only by the action drafter.
+`facilities.csv` is used by Scout (binding facility ids), the action drafter (names, nearest facility with spare stock) and the Evaluator (re-checks the transfer's units and distance).
 
 ## Honest caveats
 - Everything is generated. Real facility records are messier and the causes are tangled.

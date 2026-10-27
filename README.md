@@ -114,7 +114,7 @@ python run.py --serve --host 0.0.0.0           # reachable from the network (no 
 | Method | Path | |
 |---|---|---|
 | GET | `/` | Web page (`index.html`) |
-| POST | `/run` | Same JSON as `--input`: `{"question"}` or `{"facility_id","commodity","month"}`, optional `"dataset"` (a folder under `data/`), `"role"` |
+| POST | `/run` (alias `/api/run`) | Same JSON as `--input`: `{"question"}` or `{"facility_id","commodity","month"}`, optional `"dataset"` (a folder under `data/`), `"role"` |
 | POST | `/api/review` | Pharmacist decision on a stored finding: `{"memory_id", "decision": "approved"\|"rejected"\|"partial", "note"?, "action_decisions"?: {"A1": "accepted"\|"rejected"}}` → `{"ok", "memory_id", "status"}`. `memory_id` is `result.memory.stored_id`. The page's *Approve finding* / *Reject finding* buttons call it. |
 | GET | `/api/facilities`, `/api/commodities`, `/api/cases` | Lists for the page |
 | GET | `/health` | Liveness (`{"status": "ok", "service": "stockwhy"}`) |
@@ -136,15 +136,17 @@ curl -X POST http://localhost:8000/run -H "Content-Type: application/json" \
 
 | Input | Shows | Result |
 |---|---|---|
-| `01_late_order_question.json` | Plain-English question on the demo county | late_order, `orders#1265` |
+| `01_late_order_question.json` | Plain-English question on the demo county | late_order, `orders#1265`; transfer draft of 205 units from Nzawa Health Centre (FAC-024), 13.9 km |
 | `02_demand_surge.json` | Planted case | demand_surge, `stock#1506` |
 | `03_national_disruption.json` | Planted case (CSV): a public notice plus a county-wide drop in supply arriving | national_disruption |
 | `04_noisy_payment_arrears.json` | Noisy data, two supported causes | payment_arrears leads supplier_underfill |
-| `05_memory_recall.json` | H-MEM recalls the finding from 01 and investigates H1 first | late_order |
+| `05_memory_recall.json` | Run after 01: H-MEM recalls the March finding (still pending approval, so shown but not prioritised); April has no stock-out, so StockWhy says so instead of inventing a cause | no_stockout, `stock#1267` |
 | `06_fault_drill.json` | Evaluator catches a corrupted citation; investigator retries | caught and recovered |
 | `07_blocked_injection.json` | Scout guard | block |
 | `08_refused_order.json` | No `order.send` capability | refuse |
 | `09_clarify_missing_month.json` | Scout asks for the month | clarify |
+
+Video note: the narration says the FAC-024 transfer is "12 km". Since the facilities became real Kitui locations it is 13.9 km. In the video, "Planner" is the orchestrator (`orchestrator.py`) with H-MEM recall and wave planning, "Reasoner" is the root-cause ranking in `agents/rules.py`, and "Action Drafter" is `agents/action_strategist.py`.
 
 ---
 
@@ -179,7 +181,7 @@ by another provider; if a call fails the agent falls back to its rule-based reas
 ## Architecture
 
 ```
-run.py                       CLI, --input/--json, HTTP server (index.html, /run, /api/review, /api/*)
+run.py                       CLI, --input/--json, HTTP server (index.html, /run (/api/run), /api/review, /api/*)
 orchestrator.py              the loop: Scout → memory → agents → Evaluator → retry/second wave → strategist
   engines/scout_intent.py    Meterless Scout Intent: guard, binding, signed contracts
   engines/hmem.py            Meterless H-MEM: case memory, feedback, append-only ledger
@@ -194,7 +196,7 @@ orchestrator.py              the loop: Scout → memory → agents → Evaluator
 llm_client.py                Meterless Nightshift client (lanes, retries, call cap, model logging)
 logger.py                    JSONL traces
 scripts/trace_view.py        one readable line per trace event: agent, handoff, model, confidence, retries
-scripts/                     setup_live, check_zetaris, evaluate, make_examples
+scripts/                     setup_live, check_zetaris, evaluate, make_examples, try_data_analyst, pg_init_web.sh
 ```
 
 ### Traces
@@ -225,18 +227,21 @@ python scripts/evaluate.py         # back-test on the 16 planted cases → eval/
 | File | Tests | Covers |
 |---|---|---|
 | `test_data_loader.py` | 51 | H1–H7 checks, loading, known cases |
-| `test_zetaris_loader.py` | 25 | Zetaris path against an in-memory stand-in: CSV/Zetaris parity, SQL validation, notices fallback |
+| `test_zetaris_loader.py` | 26 | Zetaris path against an in-memory stand-in: CSV/Zetaris parity, SQL validation, notices fallback |
 | `test_agents.py` | 42 | every agent online (mocked) and rule-based |
 | `test_llm_client.py` | 34 | Nightshift contract against a local fake server: lanes, empty-answer retry, 429 backoff, call cap, `<think>` stripping, model reporting, URL normalisation, deadline |
 | `test_evaluator.py` | 20 | citation re-check, consistency, cross-critique, coverage |
 | `test_orchestrator.py` | 33 | the loop, retries, waves, escalation, Scout and memory wiring, CLI |
-| `test_engine_scout_intent.py` | 34 | guard on Meterless's adversarial set (precision/recall floors) and our own; contracts |
+| `test_engine_scout_intent.py` | 45 | guard on Meterless's adversarial set (precision/recall floors) and our own; contracts |
 | `test_engine_hmem.py` | 25 | official H-MEM conformance vectors; memory round trip, dataset namespace, upsert, partial feedback, two writers, corrupt file |
 | `test_logger.py` | 10 | trace fields, requested/served model |
 | `test_run.py` | 14 | question parsing (Swahili, conflicts), `--case`, HTTP server hardening, `/api/review`, UTF-8 output |
 | `test_zetaris_client.py` | 5 | Zetaris row shapes (headerless, upper-case), optional facility columns, timeout and 5xx retry |
+| `test_agent_loop.py` | 15 | transfer draft computed and re-verified, H4 record-check revision, cross-facility citation rejection, no-stock-out month, LLM-failure fallback, signed child contracts per phase |
 
-Back-test (offline, rule-based): **15 of 16** planted cases get the right primary cause (8/8 normal, 7/8 noisy).
+320 tests in total.
+
+Back-test (offline, rule-based): **16 of 16** planted cases get the right primary cause (8/8 normal, 8/8 noisy); contributing causes 4/4.
 The rules were written while looking at these same cases, so treat this as a regression check, not proof of
 accuracy on real data. Only `scripts/evaluate.py` reads `eval/answer_key.csv`; the agent never does.
 
@@ -284,7 +289,7 @@ accuracy on real data. Only `scripts/evaluate.py` reads `eval/answer_key.csv`; t
 ## Pre-existing components (declared)
 
 - Commits before the build window: `b2bebb7` (14 Oct 2026), `287305b` and `7233d97` (20 Oct 2026).
-- The synthetic datapack in `data/` was prepared around 22 Oct 2026.
+- The synthetic datapack in `data/` was prepared around 22 Oct 2026. The real Kitui facility names and locations (OpenStreetMap, ODbL) were added during the build.
 - Meterless test fixtures in `tests/fixtures/` (third-party, Apache-2.0).
 
 ## Limitations

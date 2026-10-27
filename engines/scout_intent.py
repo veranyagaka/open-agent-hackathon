@@ -44,7 +44,7 @@ REGISTRY_PATH = Path(__file__).with_name("intents.json")
 # `order.send` and `clinical.advise` are intentionally absent: intents that need them are refused.
 CAPABILITY_GRAPH = {
     "data.read": "tools.data_loader (CSV or Zetaris)",
-    "llm.call": "llm_client (Nightshift / Groq)",
+    "llm.call": "llm_client (Nightshift)",
     "memory.read": "engines.hmem.CaseMemory.recall",
     "memory.write": "engines.hmem.CaseMemory.store",
     "action.draft": "agents.action_strategist (drafts for pharmacist approval)",
