@@ -606,3 +606,13 @@ class TestCLI:
         has_legacy_groq = "GROQ_API_KEY" in content and "GROQ_MODEL" in content
         assert has_nightshift or has_legacy_groq
         assert "gsk_" not in content
+
+
+def test_trace_says_unreported_when_nightshift_names_no_model():
+    from orchestrator import _model_of
+    reply = {"_requested_model": "meterless/deep", "_produced_by": "meterless/deep",
+             "_served_model": "meterless/deep", "model": "unreported"}
+    assert _model_of(reply, True) == "unreported via meterless/deep"
+    served = {**reply, "_produced_by": "nvidia/nemotron-3.5-bolt-e4b", "model": "nvidia/nemotron-3.5-bolt-e4b"}
+    assert _model_of(served, True) == "nvidia/nemotron-3.5-bolt-e4b"
+

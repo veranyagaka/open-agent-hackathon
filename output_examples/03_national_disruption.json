@@ -1,12 +1,12 @@
 {
-  "run_id": "de54e336",
+  "run_id": "e5b28485",
   "status": "complete",
   "facility_id": "FAC-030",
   "commodity": "magnesium sulphate inj",
   "month": "2026-03",
   "question": "Why did facility FAC-030 report a stockout of magnesium sulphate inj in 2026-03?",
   "dataset_dir": "data/cases/normal/case_05",
-  "log_file": "run_de54e336_20261027T152308.jsonl",
+  "log_file": "run_e5b28485_20261027T182851.jsonl",
   "llm_mode": "rule-based",
   "steps": {
     "data_reader": {
@@ -1106,6 +1106,12 @@
             }
           }
         }
+      },
+      "world_model": {
+        "snapshot_id": "wm_dbfdae30e244bc2f90f2b1dc",
+        "schema_version": 1,
+        "entities": 96,
+        "relationships": 145
       }
     },
     "data_analyst": {
@@ -1316,6 +1322,7 @@
           "additional_analysis_needed": [
             "Check KEMSA / supplier notices for this commodity."
           ],
+          "explanation_source": "rule_based",
           "_produced_by": "rule-based",
           "evidence_strength": 1.0,
           "cited_values": {
@@ -1401,9 +1408,9 @@
     "suggestions": {}
   },
   "contract": {
-    "contractId": "1793114588857-ea85abfa85",
+    "contractId": "1793125731263-ef642a9cd1",
     "parentId": null,
-    "traceId": "a2897e7b49934ae398388aaeb871782b",
+    "traceId": "2d773d89cd95496697ca3827f9dbf64b",
     "intent": "stockout.explain",
     "risk": {
       "level": "low",
@@ -1426,11 +1433,11 @@
       },
       "role": "pharmacist"
     },
-    "issuedAt": "2026-10-27T15:23:08.857812+00:00",
-    "expiresAt": "2026-10-27T15:28:08.857812+00:00",
+    "issuedAt": "2026-10-27T18:28:51.263089+00:00",
+    "expiresAt": "2026-10-27T18:33:51.263089+00:00",
     "registryVersion": 3,
     "policyPackVersion": "stockwhy-default-2",
-    "signature": "c2d9f10a89bdae7572245e3795184a565d99f648669cb73728cdce5ab2e563e0",
+    "signature": "31100bdaacfcd57cf48d2c5bb46f6a6944747c324cd18fe8e24635ece62bbee2",
     "signedBy": "scout"
   },
   "canonical_question": "Why did facility FAC-030 report a stockout of magnesium sulphate inj in 2026-03?",
@@ -1438,8 +1445,14 @@
     "recalled": [],
     "prioritised": [],
     "dataset_key": "data/cases/normal/case_05",
-    "stored_id": "ea6a4c9e275b4d0d8b04c81e1c6f8fc6",
+    "stored_id": "3dcb0d0d8b7b4fc48ea74250664e722a",
     "stored_status": "pending_approval"
+  },
+  "world_model": {
+    "snapshot_id": "wm_dbfdae30e244bc2f90f2b1dc",
+    "schema_version": 1,
+    "entities": 96,
+    "relationships": 145
   },
   "wave_plan": {
     "wave1": [
@@ -1574,9 +1587,9 @@
   "removed_actions": [],
   "contracts": {
     "main": {
-      "contractId": "1793114588857-ea85abfa85",
+      "contractId": "1793125731263-ef642a9cd1",
       "parentId": null,
-      "traceId": "a2897e7b49934ae398388aaeb871782b",
+      "traceId": "2d773d89cd95496697ca3827f9dbf64b",
       "intent": "stockout.explain",
       "risk": {
         "level": "low",
@@ -1599,17 +1612,17 @@
         },
         "role": "pharmacist"
       },
-      "issuedAt": "2026-10-27T15:23:08.857812+00:00",
-      "expiresAt": "2026-10-27T15:28:08.857812+00:00",
+      "issuedAt": "2026-10-27T18:28:51.263089+00:00",
+      "expiresAt": "2026-10-27T18:33:51.263089+00:00",
       "registryVersion": 3,
       "policyPackVersion": "stockwhy-default-2",
-      "signature": "c2d9f10a89bdae7572245e3795184a565d99f648669cb73728cdce5ab2e563e0",
+      "signature": "31100bdaacfcd57cf48d2c5bb46f6a6944747c324cd18fe8e24635ece62bbee2",
       "signedBy": "scout"
     },
     "child": {
-      "contractId": "1793114588903-46b22f8d5c",
-      "parentId": "1793114588857-ea85abfa85",
-      "traceId": "a2897e7b49934ae398388aaeb871782b",
+      "contractId": "1793125731343-f642980e10",
+      "parentId": "1793125731263-ef642a9cd1",
+      "traceId": "2d773d89cd95496697ca3827f9dbf64b",
       "intent": "action.draft",
       "risk": {
         "level": "medium",
@@ -1632,20 +1645,20 @@
         },
         "role": "pharmacist"
       },
-      "issuedAt": "2026-10-27T15:23:08.903559+00:00",
-      "expiresAt": "2026-10-27T15:28:08.903559+00:00",
+      "issuedAt": "2026-10-27T18:28:51.343510+00:00",
+      "expiresAt": "2026-10-27T18:33:51.343510+00:00",
       "registryVersion": 3,
       "policyPackVersion": "stockwhy-default-2",
-      "signature": "ea0ca024dfb41b6ba5bf4e3b23151d447403d0e2fb0993ab7e6784570ab3d41a",
+      "signature": "5fa199f7099e55e2de807e0d3ad17d97735a392ea7a5c6f43323003f9f385478",
       "signedBy": "scout"
     },
     "phases": [
       {
         "phase": "read",
         "contract": {
-          "contractId": "1793114588859-467ee1ec40",
-          "parentId": "1793114588857-ea85abfa85",
-          "traceId": "a2897e7b49934ae398388aaeb871782b",
+          "contractId": "1793125731264-37c0b7fa12",
+          "parentId": "1793125731263-ef642a9cd1",
+          "traceId": "2d773d89cd95496697ca3827f9dbf64b",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1665,20 +1678,20 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:23:08.859254+00:00",
-          "expiresAt": "2026-10-27T15:28:08.859254+00:00",
+          "issuedAt": "2026-10-27T18:28:51.264584+00:00",
+          "expiresAt": "2026-10-27T18:33:51.264584+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "9fe8a0b0b37b87dffa5c750e70d75334d88201090b05d5cdb5b01131a0fa428d",
+          "signature": "dadadf206e174eddcc8143c0c333d2669d426bd426577a76798e64f185fde118",
           "signedBy": "scout"
         }
       },
       {
         "phase": "analyse",
         "contract": {
-          "contractId": "1793114588899-4e9d4bb939",
-          "parentId": "1793114588857-ea85abfa85",
-          "traceId": "a2897e7b49934ae398388aaeb871782b",
+          "contractId": "1793125731339-ab6007ca47",
+          "parentId": "1793125731263-ef642a9cd1",
+          "traceId": "2d773d89cd95496697ca3827f9dbf64b",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1696,20 +1709,20 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:23:08.899862+00:00",
-          "expiresAt": "2026-10-27T15:28:08.899862+00:00",
+          "issuedAt": "2026-10-27T18:28:51.339275+00:00",
+          "expiresAt": "2026-10-27T18:33:51.339275+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "707b89a42aa80db4b8d51b9e303dfe862c40ac10f341dde88bd124f63dcc4bd3",
+          "signature": "a86cfd70541e4b0bdd6d9d7c93c3bcb9d486ee46667c5d5cd32558944fbe9ae5",
           "signedBy": "scout"
         }
       },
       {
         "phase": "investigate",
         "contract": {
-          "contractId": "1793114588901-afe2f275b8",
-          "parentId": "1793114588857-ea85abfa85",
-          "traceId": "a2897e7b49934ae398388aaeb871782b",
+          "contractId": "1793125731340-30f002e2d3",
+          "parentId": "1793125731263-ef642a9cd1",
+          "traceId": "2d773d89cd95496697ca3827f9dbf64b",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1728,20 +1741,20 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:23:08.901415+00:00",
-          "expiresAt": "2026-10-27T15:28:08.901415+00:00",
+          "issuedAt": "2026-10-27T18:28:51.340841+00:00",
+          "expiresAt": "2026-10-27T18:33:51.340841+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "443de0099797e8e76f5347c86270ae0a76f326a4a4e557b0faed9ea26ee99b8f",
+          "signature": "dcbd2e7662d17df8f6102f10f0dd7b9b71dde33abf327271a1bf3a01b472d44c",
           "signedBy": "scout"
         }
       },
       {
         "phase": "draft",
         "contract": {
-          "contractId": "1793114588903-46b22f8d5c",
-          "parentId": "1793114588857-ea85abfa85",
-          "traceId": "a2897e7b49934ae398388aaeb871782b",
+          "contractId": "1793125731343-f642980e10",
+          "parentId": "1793125731263-ef642a9cd1",
+          "traceId": "2d773d89cd95496697ca3827f9dbf64b",
           "intent": "action.draft",
           "risk": {
             "level": "medium",
@@ -1764,20 +1777,20 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:23:08.903559+00:00",
-          "expiresAt": "2026-10-27T15:28:08.903559+00:00",
+          "issuedAt": "2026-10-27T18:28:51.343510+00:00",
+          "expiresAt": "2026-10-27T18:33:51.343510+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "ea0ca024dfb41b6ba5bf4e3b23151d447403d0e2fb0993ab7e6784570ab3d41a",
+          "signature": "5fa199f7099e55e2de807e0d3ad17d97735a392ea7a5c6f43323003f9f385478",
           "signedBy": "scout"
         }
       },
       {
         "phase": "memory",
         "contract": {
-          "contractId": "1793114588965-037d585f52",
-          "parentId": "1793114588857-ea85abfa85",
-          "traceId": "a2897e7b49934ae398388aaeb871782b",
+          "contractId": "1793125731413-35ce18f5eb",
+          "parentId": "1793125731263-ef642a9cd1",
+          "traceId": "2d773d89cd95496697ca3827f9dbf64b",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1797,11 +1810,11 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:23:08.965653+00:00",
-          "expiresAt": "2026-10-27T15:28:08.965653+00:00",
+          "issuedAt": "2026-10-27T18:28:51.413903+00:00",
+          "expiresAt": "2026-10-27T18:33:51.413903+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "fcf049b6a19b05f89c9b6eb22c8b333344f1f76149c9b124553b20ba652789f9",
+          "signature": "5cc2941b21d390e67ce59f9811acd698168f377281f6102c44eb7423a61c280e",
           "signedBy": "scout"
         }
       }
@@ -1850,7 +1863,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114588859-467ee1ec40 for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+      "summary": "child contract 1793125731264-37c0b7fa12 for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
     },
     {
       "agent": "scout",
@@ -1858,7 +1871,7 @@
       "target_agent": "memory_recall",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114588859-467ee1ec40 signature, expiry and capability verified"
+      "summary": "contract 1793125731264-37c0b7fa12 signature, expiry and capability verified"
     },
     {
       "agent": "memory",
@@ -1874,7 +1887,7 @@
       "target_agent": "data_reader",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114588859-467ee1ec40 signature, expiry and capability verified"
+      "summary": "contract 1793125731264-37c0b7fa12 signature, expiry and capability verified"
     },
     {
       "agent": "data_reader",
@@ -1890,7 +1903,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114588899-4e9d4bb939 for stockout.explain (['llm.call'])"
+      "summary": "child contract 1793125731339-ab6007ca47 for stockout.explain (['llm.call'])"
     },
     {
       "agent": "data_analyst",
@@ -1922,7 +1935,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114588901-afe2f275b8 for stockout.explain (['data.read', 'llm.call'])"
+      "summary": "child contract 1793125731340-30f002e2d3 for stockout.explain (['data.read', 'llm.call'])"
     },
     {
       "agent": "evidence_investigator",
@@ -1970,7 +1983,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114588903-46b22f8d5c for action.draft (['action.draft', 'data.read'])"
+      "summary": "child contract 1793125731343-f642980e10 for action.draft (['action.draft', 'data.read'])"
     },
     {
       "agent": "scout",
@@ -1978,7 +1991,7 @@
       "target_agent": "action_strategist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114588903-46b22f8d5c signature, expiry and capability verified"
+      "summary": "contract 1793125731343-f642980e10 signature, expiry and capability verified"
     },
     {
       "agent": "orchestrator",
@@ -2002,7 +2015,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114588965-037d585f52 for stockout.explain (['memory.write'])"
+      "summary": "child contract 1793125731413-35ce18f5eb for stockout.explain (['memory.write'])"
     },
     {
       "agent": "scout",
@@ -2010,7 +2023,7 @@
       "target_agent": "memory_store",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114588965-037d585f52 signature, expiry and capability verified"
+      "summary": "contract 1793125731413-35ce18f5eb signature, expiry and capability verified"
     },
     {
       "agent": "memory",
@@ -2018,7 +2031,7 @@
       "target_agent": "pharmacist",
       "retry_count": 0,
       "status": "ok",
-      "summary": "stored ea6a4c9e275b4d0d8b04c81e1c6f8fc6 as pending_approval"
+      "summary": "stored 3dcb0d0d8b7b4fc48ea74250664e722a as pending_approval"
     },
     {
       "agent": "orchestrator",
@@ -2042,25 +2055,25 @@
       "step": "memory_recall",
       "capability": "memory.read",
       "result": "granted",
-      "contract_id": "1793114588859-467ee1ec40"
+      "contract_id": "1793125731264-37c0b7fa12"
     },
     {
       "step": "data_reader",
       "capability": "data.read",
       "result": "granted",
-      "contract_id": "1793114588859-467ee1ec40"
+      "contract_id": "1793125731264-37c0b7fa12"
     },
     {
       "step": "action_strategist",
       "capability": "action.draft",
       "result": "granted",
-      "contract_id": "1793114588903-46b22f8d5c"
+      "contract_id": "1793125731343-f642980e10"
     },
     {
       "step": "memory_store",
       "capability": "memory.write",
       "result": "granted",
-      "contract_id": "1793114588965-037d585f52"
+      "contract_id": "1793125731413-35ce18f5eb"
     }
   ]
 }

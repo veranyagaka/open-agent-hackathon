@@ -134,8 +134,8 @@ def read_and_profile(
         world_model = {
             "snapshot_id": snapshot["snapshot_id"],
             "schema_version": snapshot["schema_version"],
-            "entities": snapshot["entities"],
-            "relationships": snapshot["relationships"],
+            "entities": len(snapshot["entities"]),
+            "relationships": len(snapshot["relationships"]),
         }
     except Exception as exc:
         world_model = {"error": f"{type(exc).__name__}: {str(exc)[:200]}"}

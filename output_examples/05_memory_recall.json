@@ -1,12 +1,12 @@
 {
-  "run_id": "8e3a38c9",
+  "run_id": "e931861b",
   "status": "no_stockout",
   "facility_id": "FAC-009",
   "commodity": "magnesium sulphate inj",
   "month": "2026-04",
   "question": "Why did FAC-009 run out of magnesium sulphate in April 2026?",
   "dataset_dir": "data/sample",
-  "log_file": "run_8e3a38c9_20261027T152309.jsonl",
+  "log_file": "run_e931861b_20261027T182851.jsonl",
   "llm_mode": "rule-based",
   "steps": {
     "data_reader": {
@@ -1081,6 +1081,12 @@
             "notice_details": null
           }
         }
+      },
+      "world_model": {
+        "snapshot_id": "wm_cf86881d828093f2de08ccc9",
+        "schema_version": 1,
+        "entities": 95,
+        "relationships": 143
       }
     }
   },
@@ -1102,9 +1108,9 @@
     "suggestions": {}
   },
   "contract": {
-    "contractId": "1793114589318-105d48997e",
+    "contractId": "1793125731812-9c73643674",
     "parentId": null,
-    "traceId": "d24b413413604db1b5847ae4587e42bc",
+    "traceId": "cacd8993f6924ac1a7166757718818d9",
     "intent": "stockout.explain",
     "risk": {
       "level": "low",
@@ -1127,18 +1133,18 @@
       },
       "role": "pharmacist"
     },
-    "issuedAt": "2026-10-27T15:23:09.318689+00:00",
-    "expiresAt": "2026-10-27T15:28:09.318689+00:00",
+    "issuedAt": "2026-10-27T18:28:51.812159+00:00",
+    "expiresAt": "2026-10-27T18:33:51.812159+00:00",
     "registryVersion": 3,
     "policyPackVersion": "stockwhy-default-2",
-    "signature": "d4ac2aff6189c1a0f97c68b12b1bfe7dd4322b7a6a99bc0950bbd6803a32a0b6",
+    "signature": "daeacf9e4ce45809a0d8204086e892f0dc91ddb5b3eac8e0fdfed5c73c13c9b2",
     "signedBy": "scout"
   },
   "canonical_question": "Why did facility FAC-009 report a stockout of magnesium sulphate inj in 2026-04?",
   "memory": {
     "recalled": [
       {
-        "id": "c558ff85f44e430ca2f92743b176cc91",
+        "id": "22550fd841cc47aa9e575b2848497d1c",
         "facility_id": "FAC-009",
         "commodity": "magnesium sulphate inj",
         "month": "2026-03",
@@ -1152,20 +1158,26 @@
         "note": "",
         "provenance": {
           "origin": "stockwhy",
-          "run_id": "1f350c5b",
+          "run_id": "fc09bdd2",
           "citations": [
             "orders#1265"
           ],
-          "learnedAt": 1793114588681,
-          "label": "StockWhy run 1f350c5b"
+          "learnedAt": 1793125731035,
+          "label": "StockWhy run fc09bdd2"
         },
-        "stored_at": 1793114588681,
+        "stored_at": 1793125731035,
         "dataset_key": "data/sample",
         "action_decisions": {}
       }
     ],
     "prioritised": [],
     "dataset_key": "data/sample"
+  },
+  "world_model": {
+    "snapshot_id": "wm_cf86881d828093f2de08ccc9",
+    "schema_version": 1,
+    "entities": 95,
+    "relationships": 143
   },
   "summary": "FAC-009 reported no stock-out of magnesium sulphate inj in 2026-04: 0 stock-out days and closing stock 489 (stock#1267).",
   "citations": [
@@ -1175,9 +1187,9 @@
   "actions": [],
   "contracts": {
     "main": {
-      "contractId": "1793114589318-105d48997e",
+      "contractId": "1793125731812-9c73643674",
       "parentId": null,
-      "traceId": "d24b413413604db1b5847ae4587e42bc",
+      "traceId": "cacd8993f6924ac1a7166757718818d9",
       "intent": "stockout.explain",
       "risk": {
         "level": "low",
@@ -1200,11 +1212,11 @@
         },
         "role": "pharmacist"
       },
-      "issuedAt": "2026-10-27T15:23:09.318689+00:00",
-      "expiresAt": "2026-10-27T15:28:09.318689+00:00",
+      "issuedAt": "2026-10-27T18:28:51.812159+00:00",
+      "expiresAt": "2026-10-27T18:33:51.812159+00:00",
       "registryVersion": 3,
       "policyPackVersion": "stockwhy-default-2",
-      "signature": "d4ac2aff6189c1a0f97c68b12b1bfe7dd4322b7a6a99bc0950bbd6803a32a0b6",
+      "signature": "daeacf9e4ce45809a0d8204086e892f0dc91ddb5b3eac8e0fdfed5c73c13c9b2",
       "signedBy": "scout"
     },
     "child": null,
@@ -1212,9 +1224,9 @@
       {
         "phase": "read",
         "contract": {
-          "contractId": "1793114589320-6087960a0d",
-          "parentId": "1793114589318-105d48997e",
-          "traceId": "d24b413413604db1b5847ae4587e42bc",
+          "contractId": "1793125731813-cd28171f54",
+          "parentId": "1793125731812-9c73643674",
+          "traceId": "cacd8993f6924ac1a7166757718818d9",
           "intent": "stockout.explain",
           "risk": {
             "level": "low",
@@ -1234,11 +1246,11 @@
             },
             "role": "pharmacist"
           },
-          "issuedAt": "2026-10-27T15:23:09.320000+00:00",
-          "expiresAt": "2026-10-27T15:28:09.320000+00:00",
+          "issuedAt": "2026-10-27T18:28:51.813587+00:00",
+          "expiresAt": "2026-10-27T18:33:51.813587+00:00",
           "registryVersion": 3,
           "policyPackVersion": "stockwhy-default-2",
-          "signature": "1050bbda08eb93c6b815f962a2786423ffe3ba8c2e8b7e5c4d7d10a03ef53264",
+          "signature": "34ccbfe4bc04ae908628e463256e0ddd9b1e46818ca85dd1d6eb713729d863a9",
           "signedBy": "scout"
         }
       }
@@ -1287,7 +1299,7 @@
       "target_agent": "orchestrator",
       "retry_count": 0,
       "status": "ok",
-      "summary": "child contract 1793114589320-6087960a0d for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
+      "summary": "child contract 1793125731813-cd28171f54 for stockout.explain (['data.read', 'llm.call', 'memory.read'])"
     },
     {
       "agent": "scout",
@@ -1295,7 +1307,7 @@
       "target_agent": "memory_recall",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114589320-6087960a0d signature, expiry and capability verified"
+      "summary": "contract 1793125731813-cd28171f54 signature, expiry and capability verified"
     },
     {
       "agent": "memory",
@@ -1311,7 +1323,7 @@
       "target_agent": "data_reader",
       "retry_count": 0,
       "status": "ok",
-      "summary": "contract 1793114589320-6087960a0d signature, expiry and capability verified"
+      "summary": "contract 1793125731813-cd28171f54 signature, expiry and capability verified"
     },
     {
       "agent": "data_reader",
@@ -1351,13 +1363,13 @@
       "step": "memory_recall",
       "capability": "memory.read",
       "result": "granted",
-      "contract_id": "1793114589320-6087960a0d"
+      "contract_id": "1793125731813-cd28171f54"
     },
     {
       "step": "data_reader",
       "capability": "data.read",
       "result": "granted",
-      "contract_id": "1793114589320-6087960a0d"
+      "contract_id": "1793125731813-cd28171f54"
     }
   ]
 }

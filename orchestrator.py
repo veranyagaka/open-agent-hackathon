@@ -74,6 +74,9 @@ def _model_of(output, llm_mode: bool) -> str:
     if isinstance(output, dict) and isinstance(output.get("evaluations"), list):
         candidates += [e for e in output["evaluations"] if isinstance(e, dict)]
     for item in candidates:
+        # A Nightshift reply that names no model is "unreported via <lane>", never the lane alone.
+        if item.get("_requested_model") and item.get("model") == "unreported":
+            return f"unreported via {item['_requested_model']}"
         for key in ("_produced_by", "_served_model", "_requested_model"):
             if item.get(key):
                 return str(item[key])
@@ -438,6 +441,10 @@ class StockWhy:
             return self._fail(ctx, result, "data_reader", "read_and_profile", "Data Reader failed", exc,
                               "Check the dataset folder and that the facility, medicine and month exist.")
         result["steps"]["data_reader"] = profile
+        wm = profile.get("world_model") or {}
+        if wm:
+            # Snapshot id and counts; the full snapshot is in the World Model store.
+            result["world_model"] = wm
         computed_evidence = profile.get("computed_evidence") or {}
         if rejected_notes:
             self._neutralise_notes(ctx, computed_evidence, rejected_notes)

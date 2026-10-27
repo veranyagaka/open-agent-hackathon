@@ -186,6 +186,7 @@ def investigate_rule_based(theories: dict, data_analysis: dict) -> dict:
             "reasoning": entry.get("reasoning") or f"Analyst signal: {sig or 'not available'}.",
             "limitations": list(LIMITATIONS.get(h_id, [])),
             "additional_analysis_needed": list(FOLLOW_UPS.get(h_id, [])),
+            "explanation_source": "rule_based",
             "_produced_by": RULE_BASED,
         })
     return {"evaluations": evaluations, "analysis_requests": [], "_produced_by": RULE_BASED}
@@ -221,6 +222,7 @@ def _rule_based_evaluation(h_id: str, h_name: str, hypothesis_evidence: dict, ve
         "reasoning": f"{rules.describe(h_id, hypothesis_evidence)} Verdict '{verdict}': {rule}.",
         "limitations": list(LIMITATIONS.get(h_id, [])),
         "additional_analysis_needed": list(FOLLOW_UPS.get(h_id, [])),
+        "explanation_source": "rule_based",
         "_produced_by": RULE_BASED,
     }
 
@@ -352,6 +354,7 @@ def investigate_parallel(
                     "reasoning": f"Parallel investigation failed: {exc}",
                     "limitations": ["Thread execution error"],
                     "additional_analysis_needed": [],
+                    "explanation_source": "local_deterministic_fallback",
                     "_produced_by": RULE_BASED,
                 })
 

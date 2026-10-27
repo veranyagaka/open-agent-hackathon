@@ -95,6 +95,37 @@ def analyze(profile: dict, question: str) -> dict:
 
 
 _VALID_SIGNALS = {"strong", "weak", "none", "inconclusive"}
+_SIGNAL_ALIASES = {"no": "none", "absent": "none", "no signal": "none", "moderate": "weak"}
+
+
+def _normalise_analysis(result):
+    """Accept harmless variants (evidence-key names, plain-string signals, "Strong signal")
+    without inventing anything; missing list fields become empty lists."""
+    if not isinstance(result, dict):
+        return result
+    signals = result.get("hypothesis_signals")
+    if isinstance(signals, dict):
+        by_name = {name: h_id for h_id, name in rules.HYPOTHESIS_NAMES.items()}
+        by_name.update({key: h_id for h_id, key in rules.EVIDENCE_KEYS.items()})
+        out = {}
+        for key, value in signals.items():
+            k = str(key).strip()
+            head = k.split("_", 1)[0].upper()  # "H3", "h3" or "H3_late_order"
+            k = head if head in rules.HYPOTHESIS_NAMES else by_name.get(k.lower(), k)
+            if isinstance(value, str):
+                value = {"signal": value, "reasoning": ""}
+            if isinstance(value, dict) and isinstance(value.get("signal"), str):
+                s = value["signal"].strip().lower()
+                s = _SIGNAL_ALIASES.get(s, s)
+                if s.endswith(" signal"):
+                    s = _SIGNAL_ALIASES.get(s, s[: -len(" signal")])
+                value = {**value, "signal": s}
+            out[k] = value
+        result = {**result, "hypothesis_signals": out}
+    for key in ("primary_leads", "data_limitations"):
+        if key not in result:
+            result = {**result, key: []}
+    return result
 
 
 def _validate_analysis(result) -> None:
@@ -137,6 +168,7 @@ def analyze_evidence(computed_evidence: dict, question: str) -> dict:
                     "computed_evidence": computed_evidence,
                 },
             )
+            result = _normalise_analysis(result)
             _validate_analysis(result)
             return result
         except Exception as exc:  # LLMError or a reply in the wrong shape

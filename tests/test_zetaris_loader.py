@@ -106,8 +106,10 @@ def test_full_read_converts_types_and_records_source(fake_zetaris):
     assert dataset["stock"]["id"].iloc[0] == "1"
     # Pages of 100: stock and orders take 44 calls each (4,320 rows), payments,
     # facilities and the notices one each.
-    assert len(fake_zetaris.calls) == 44 + 44 + 1 + 1 + 1
-    assert all("LIMIT 100" in sql for sql in fake_zetaris.calls[:88])
+    # 44 full pages each for stock and orders, then one page per small table; every
+    # table ends with an empty page.
+    assert len(fake_zetaris.calls) == (44 + 1) * 2 + 2 * 3
+    assert all("LIMIT 100" in sql for sql in fake_zetaris.calls[:90])
     assert any("facility_name" in sql for sql in fake_zetaris.calls)
     assert dataset["facilities"]["facility_name"].iloc[0] == "Ngieni Dispensary"
     assert not any("SELECT *" in sql for sql in fake_zetaris.calls)
@@ -209,8 +211,9 @@ def test_pagination_continues_on_full_pages(monkeypatch, fake_zetaris):
     dataset = data_loader.load_zetaris_dataset(str(SAMPLE_DIR))
     assert len(dataset["stock"]) == 4320
     stock_calls = [s for s in fake_zetaris.calls if "FROM stockwhy_pg.stock" in s]
-    assert len(stock_calls) == 5
-    assert stock_calls[-1].endswith("LIMIT 1000 OFFSET 4000")
+    assert len(stock_calls) == 6
+    assert stock_calls[-2].endswith("LIMIT 1000 OFFSET 4000")
+    assert stock_calls[-1].endswith("LIMIT 1000 OFFSET 4320")
 
 
 # ---------------------------------------------------------------------------
@@ -299,7 +302,7 @@ def test_facility_name_columns_are_optional(monkeypatch):
     monkeypatch.setattr("scripts.check_zetaris.run_sql", fake.run_sql)
     dataset = data_loader.load_zetaris_dataset(str(SAMPLE_DIR))
     fac = [sql for sql in fake.calls if "stockwhy_pg.facilities" in sql]
-    assert len(fac) == 2 and "facility_name" in fac[0] and "facility_name" not in fac[1]
+    assert "facility_name" in fac[0] and all("facility_name" not in sql for sql in fac[1:])
     assert list(dataset["facilities"].columns[:3]) == ["facility_id", "lat", "lon"]
 
 
@@ -316,3 +319,26 @@ def test_server_row_cap_does_not_truncate_tables(monkeypatch):
     dataset = data_loader.load_zetaris_dataset(str(SAMPLE_DIR))
     assert len(dataset["stock"]) == 4320
     assert len(dataset["orders"]) == 4320
+
+
+def test_server_cap_below_page_size_does_not_truncate(monkeypatch):
+    """A larger page size against a 100-row server cap still reads every row, none skipped."""
+    fake = FakeZetaris()
+
+    def capped(sql, limit=100):
+        response = fake.run_sql(sql, limit=limit)
+        response["data"] = response["data"][:100]
+        return response
+
+    monkeypatch.setenv("ZETARIS_PAGE_SIZE", "5000")
+    monkeypatch.setattr("scripts.check_zetaris.run_sql", capped)
+    dataset = data_loader.load_zetaris_dataset(str(SAMPLE_DIR))
+    assert len(dataset["stock"]) == 4320 and dataset["stock"]["id"].is_unique
+    assert len(dataset["orders"]) == 4320 and dataset["orders"]["id"].is_unique
+
+
+@pytest.mark.parametrize("value", ["0", "-5", "abc", "1.5"])
+def test_bad_page_size_setting_is_rejected(monkeypatch, fake_zetaris, value):
+    monkeypatch.setenv("ZETARIS_PAGE_SIZE", value)
+    with pytest.raises(ValueError, match="ZETARIS_PAGE_SIZE"):
+        data_loader.load_zetaris_dataset(str(SAMPLE_DIR))

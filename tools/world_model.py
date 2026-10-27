@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -141,10 +142,13 @@ class WorldModelStore:
     """SQLite event log with stable snapshot IDs and idempotent append."""
 
     def __init__(self, database_path=None):
+        repo_root = Path(__file__).resolve().parent.parent
         self.database_path = database_path or os.getenv(
             "STOCKWHY_WORLD_MODEL_DB",
-            str(Path(__file__).resolve().parent.parent / "logs" / "stockwhy_world_model.sqlite3"),
+            str(repo_root / "logs" / "stockwhy_world_model.sqlite3"),
         )
+        if self.database_path != ":memory:" and not Path(self.database_path).is_absolute():
+            self.database_path = str(repo_root / self.database_path)
         self._memory_connection = (
             sqlite3.connect(":memory:")
             if self.database_path == ":memory:"
@@ -170,8 +174,16 @@ class WorldModelStore:
                 "ON world_events(world_id, created_at)"
             )
 
+    @contextmanager
     def _connect(self):
-        return self._memory_connection or sqlite3.connect(self.database_path)
+        """Commit on success, roll back on error, and close file connections."""
+        connection = self._memory_connection or sqlite3.connect(self.database_path)
+        try:
+            with connection:
+                yield connection
+        finally:
+            if connection is not self._memory_connection:
+                connection.close()
 
     def append_snapshot(self, snapshot):
         if snapshot.get("schema_version") != SCHEMA_VERSION:

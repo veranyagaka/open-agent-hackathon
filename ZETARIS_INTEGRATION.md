@@ -40,8 +40,10 @@ and checked live on `data/sample`, FAC-009, magnesium sulphate inj, 2026-03).
 ## Queries
 
 - One SQL statement per REST call (`POST /sql-editor/sqls/run`, client in `scripts/check_zetaris.py`).
-- Full reads take one call per table: 5,000 rows a page (stock and orders have 4,320 rows). The old
-  100-row paging needed about 90 calls.
+- Full reads are paged: `ZETARIS_PAGE_SIZE` rows a call (default 100, matching the SQL Editor's
+  per-call cap). The offset moves by the rows actually returned and reading stops at an empty page,
+  so a server cap smaller than the page size cannot truncate a table. Stock and orders (4,320 rows
+  each) take 44 calls apiece.
 - Passing `facility_id`, `commodity` and `month` pushes filters into SQL, reading only what
   `profile_stockout` uses: stock `WHERE facility_id = ... AND commodity = ...`; orders
   `WHERE commodity = ... AND month IN (previous month, month)` (the county average needs every facility

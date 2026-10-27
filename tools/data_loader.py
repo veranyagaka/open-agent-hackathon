@@ -333,6 +333,15 @@ def _to_frame(rows: list, columns: list, table: str = "") -> pd.DataFrame:
     return frame
 
 
+def _page_size_setting() -> int:
+    raw = os.getenv("ZETARIS_PAGE_SIZE", "").strip()
+    if not raw:
+        return ZETARIS_PAGE_SIZE
+    if not raw.isdigit() or int(raw) < 1:
+        raise ValueError(f"ZETARIS_PAGE_SIZE must be a positive whole number, not {raw!r}")
+    return int(raw)
+
+
 class _ZetarisReader:
     """Runs one SQL statement per call and records each call for the trace."""
 
@@ -340,7 +349,7 @@ class _ZetarisReader:
         # Reuse the proven authentication, endpoint and request headers.
         from scripts.check_zetaris import run_sql
         self._run_sql = run_sql
-        self.page_size = page_size or int(os.getenv("ZETARIS_PAGE_SIZE", "0") or 0) or ZETARIS_PAGE_SIZE
+        self.page_size = page_size or _page_size_setting()
         self.queries: list = []
 
     def rows(self, sql: str, limit: Optional[int] = None, columns: Optional[list] = None) -> list:
@@ -360,18 +369,27 @@ class _ZetarisReader:
         return rows
 
     def table(self, sql_base: str, order_by: str, columns: Optional[list] = None) -> list:
-        """Read every row of *sql_base*, a page of ``page_size`` rows per call."""
+        """Read every row of *sql_base*, up to ``page_size`` rows per call.
+
+        The server may return fewer rows than asked for (a per-call cap), so a short
+        page is not taken as the end: the offset moves by the rows actually returned
+        and reading stops only at an empty page.
+        """
         rows: list = []
         offset = 0
+        previous = None
         while True:
             sql = f"{sql_base} ORDER BY {order_by} LIMIT {self.page_size}"
             if offset:
                 sql += f" OFFSET {offset}"
             page = self.rows(sql, columns=columns)
-            rows.extend(page)
-            if len(page) < self.page_size:
+            # An empty page ends the table; so does a repeat of the last page, which
+            # means the server ignored OFFSET (its rows are already kept once).
+            if not page or page == previous:
                 return rows
-            offset += self.page_size
+            rows.extend(page)
+            offset += len(page)
+            previous = page
             if offset > 1_000_000:
                 raise RuntimeError(f"Aborting Zetaris pagination: safety limit exceeded ({sql_base})")
 
@@ -411,8 +429,8 @@ def load_zetaris_dataset(
     """
     Load the StockWhy tables from Zetaris, preserving the CSV schema and types.
 
-    Without a scope every table is read in full (one call per table for the
-    demo county). With a scope the filters are pushed into SQL, reading only
+    Without a scope every table is read in full, in pages of ``page_size`` rows
+    until an empty page. With a scope the filters are pushed into SQL, reading only
     what ``profile_stockout`` uses for that case:
 
     - stock:      WHERE facility_id = ... AND commodity = ...  (history + month)

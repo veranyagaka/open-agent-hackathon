@@ -171,7 +171,9 @@ class TestDataReaderAgent:
         assert "evidence" in result
         assert "computed_evidence" in result
         assert "missing_data_warnings" in result
-        assert "world_model" in result
+        assert set(result["world_model"]) == {"snapshot_id", "schema_version",
+                                              "entities", "relationships"}
+        assert isinstance(result["world_model"]["entities"], int)
         assert result["facility_id"] == "FAC-011"
 
     @patch("agents.data_reader.load_dataset")
@@ -224,7 +226,28 @@ class TestDataAnalystAgent:
         assert "hypothesis_signals" in result or "analysis_summary" in result
 
     # A malformed analyst reply is never patched up: the agent drops it and uses the rules,
-    # and _fallback_reason says why.
+    # and _fallback_reason says why. Only harmless spelling variants are normalised.
+    @patch("agents.data_analyst.llm_enabled", return_value=True)
+    @patch("agents.data_analyst.ask_agent")
+    def test_analyze_evidence_accepts_harmless_reply_variants(self, mock_ask, _llm):
+        mock_ask.return_value = {
+            "analysis_summary": "Late order and a demand rise.",
+            "hypothesis_signals": {
+                "h1": "Strong signal", "supplier_underfill": "weak",
+                "H3_payment_arrears": {"signal": "No signal", "reasoning": "paid"},
+                "h4_demand_surge": {"signal": "STRONG", "reasoning": "up 60%"},
+                "H5": "none", "H6": "inconclusive", "H7": "none",
+            },
+        }
+        from agents.data_analyst import analyze_evidence
+
+        result = analyze_evidence({}, "Why?")
+        assert "_fallback_reason" not in result
+        signals = result["hypothesis_signals"]
+        assert signals["H1"]["signal"] == "strong" and signals["H3"]["signal"] == "none"
+        assert signals["H4"] == {"signal": "strong", "reasoning": "up 60%"}
+        assert result["primary_leads"] == [] and result["data_limitations"] == []
+
     @patch("agents.data_analyst.llm_enabled", return_value=True)
     @patch("agents.data_analyst.ask_agent")
     def test_analyze_evidence_rejects_missing_fields_without_filling_them(self, mock_ask, _llm):
@@ -638,3 +661,11 @@ class TestOfflineFallbacks:
                                                            "stock_id": "stock#9"}}, "Why?")
         assert result["_produced_by"] == "rule-based"
         assert "cap" in result["_fallback_reason"]
+
+
+def test_rule_based_evaluations_say_where_the_explanation_came_from():
+    from agents.evidence_investigator import investigate_rule_based, _rule_based_evaluation
+    out = investigate_rule_based({"theories": [{"id": "H1", "hypothesis_name": "late_order"}]},
+                                 {"hypothesis_signals": {}})
+    assert all(e["explanation_source"] == "rule_based" for e in out["evaluations"])
+    assert _rule_based_evaluation("H1", "late_order", {}, "weakened")["explanation_source"] == "rule_based"

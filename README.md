@@ -235,11 +235,11 @@ python scripts/evaluate.py         # back-test on the 16 planted cases → eval/
 | File | Tests | Covers |
 |---|---|---|
 | `test_data_loader.py` | 54 | H1–H7 checks, loading, missing columns, known cases |
-| `test_zetaris_loader.py` | 27 | Zetaris path against an in-memory stand-in: CSV/Zetaris parity, 100-row paging and a server-side row cap, SQL validation, notices fallback |
-| `test_agents.py` | 45 | every agent online (mocked) and rule-based; malformed analyst replies fall back to rules; explanation source labels |
+| `test_zetaris_loader.py` | 32 | Zetaris path against an in-memory stand-in: CSV/Zetaris parity, paging to an empty page, a server row cap below the page size, page-size validation, SQL validation, notices fallback |
+| `test_agents.py` | 47 | every agent online (mocked) and rule-based; malformed analyst replies fall back to rules, harmless variants are normalised; explanation source labels |
 | `test_llm_client.py` | 34 | Nightshift contract against a local fake server: lanes, empty-answer retry, 429 backoff, call cap, `<think>` stripping, model reporting, URL normalisation, deadline |
 | `test_evaluator.py` | 20 | citation re-check, consistency, cross-critique, coverage |
-| `test_orchestrator.py` | 33 | the loop, retries, waves, escalation, Scout and memory wiring, CLI |
+| `test_orchestrator.py` | 34 | the loop, retries, waves, escalation, Scout and memory wiring, CLI |
 | `test_engine_scout_intent.py` | 45 | guard on Meterless's adversarial set (precision/recall floors) and our own; contracts |
 | `test_engine_hmem.py` | 25 | official H-MEM conformance vectors; memory round trip, dataset namespace, upsert, partial feedback, two writers, corrupt file |
 | `test_logger.py` | 10 | trace fields, requested/served model |
@@ -248,7 +248,7 @@ python scripts/evaluate.py         # back-test on the 16 planted cases → eval/
 | `test_world_model.py` | 3 | World Model snapshots: stable ids with provenance, append-only and idempotent store, entities without a source rejected |
 | `test_agent_loop.py` | 15 | transfer draft computed and re-verified, H4 record-check revision, cross-facility citation rejection, no-stock-out month, LLM-failure fallback, signed child contracts per phase |
 
-330 tests in total.
+338 tests in total.
 
 Back-test (offline, rule-based): **16 of 16** planted cases get the right primary cause (8/8 normal, 8/8 noisy); contributing causes 4/4.
 The rules were written while looking at these same cases, so treat this as a regression check, not proof of
