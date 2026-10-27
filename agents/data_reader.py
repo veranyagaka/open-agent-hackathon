@@ -9,6 +9,7 @@ import json
 
 from llm_client import ask_agent
 from tools.data_loader import load_dataset, profile_stockout
+from tools.world_model import persist_snapshot
 
 
 SYSTEM = """
@@ -88,8 +89,9 @@ def read_and_profile(
     }
     """
     # Step 1: deterministic load + calculations (no LLM)
-    dataset = load_dataset(dataset_dir)
+    dataset = load_dataset(dataset_dir, facility_id, commodity, month)
     profile = profile_stockout(dataset, facility_id, commodity, month)
+    world_model = persist_snapshot(profile)
 
     # Step 2: ask LLM to interpret the structured evidence
     payload = {
@@ -102,6 +104,12 @@ def read_and_profile(
         "stock_history": profile["stock_history"],
         "web_notes": profile["web_notes"],
         "computed_evidence": profile["computed_evidence"],
+        "world_model": {
+            "snapshot_id": world_model["snapshot_id"],
+            "schema_version": world_model["schema_version"],
+            "entities": world_model["entities"],
+            "relationships": world_model["relationships"],
+        },
     }
 
     interpretation = ask_agent(SYSTEM, payload)
@@ -114,5 +122,6 @@ def read_and_profile(
         "computed_evidence": profile["computed_evidence"],
         "data_quality": interpretation.get("data_quality_flags", []),
         "missing_data_warnings": interpretation.get("missing_data_warnings", []),
+        "world_model": world_model,
         "_profile": profile,
     }

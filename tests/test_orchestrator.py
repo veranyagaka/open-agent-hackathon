@@ -173,6 +173,168 @@ SAMPLE_DIR = str(Path(__file__).parent.parent / "data" / "sample")
 # ---------------------------------------------------------------------------
 
 class TestOrchestrator:
+    def test_nemotron_served_model_is_recordable_per_investigation_call(self):
+        from orchestrator import _log_model_fields
+
+        metadata = _log_model_fields({
+            "evaluations": [
+                {
+                    "theory_id": "H1",
+                    "_provider": "Meterless Nightshift",
+                    "_requested_model": "meterless/auto",
+                    "_served_model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+                    "_reasoning_content": "verifies the computed signal",
+                },
+                {
+                    "theory_id": "H2",
+                    "_provider": "Meterless Nightshift",
+                    "_requested_model": "meterless/auto",
+                    "_served_model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+                },
+            ]
+        })
+
+        assert metadata["provider"] == "Meterless Nightshift"
+        assert metadata["model"] == "nvidia/nemotron-3.5-lightning-30b-a3b"
+        assert [
+            call["hypothesis_id"] for call in metadata["llm_requests"]
+        ] == ["H1", "H2"]
+        assert all(
+            call["served_model"] == "nvidia/nemotron-3.5-lightning-30b-a3b"
+            for call in metadata["llm_requests"]
+        )
+        assert "reasoning_content" not in metadata["llm_requests"][0]
+
+    @patch("orchestrator.recommend_actions", return_value=_actions_resp())
+    @patch("orchestrator.investigate_parallel")
+    @patch("orchestrator.generate", return_value=_theories_resp())
+    @patch("orchestrator.analyze_evidence", return_value=_analyst_resp())
+    @patch("orchestrator.read_and_profile")
+    def test_investigator_fallback_is_logged_as_non_live(
+        self,
+        mock_reader,
+        mock_analyst,
+        mock_theory,
+        mock_investigator,
+        mock_actions,
+        tmp_path,
+        monkeypatch,
+    ):
+        monkeypatch.chdir(tmp_path)
+        mock_reader.return_value = _data_reader_resp(
+            "FAC-011", "ORS sachet", "2026-03"
+        )
+        mock_investigator.return_value = {
+            "evaluations": [{
+                "theory_id": "H1",
+                "hypothesis_name": "late_order",
+                "verdict": "supported",
+                "verdict_source": "deterministic",
+                "explanation_source": "local_deterministic_fallback",
+                "_provider": "Local deterministic fallback",
+                "_requested_model": "meterless/deep",
+                "_served_model": None,
+                "_request_error_category": "http_error",
+                "_request_metadata": {
+                    "provider": "Meterless Nightshift",
+                    "requested_model": "meterless/deep",
+                    "served_model": None,
+                    "endpoint": "http://localhost:8088/v1/chat/completions",
+                    "http_status": 503,
+                    "duration_ms": 15.2,
+                    "request_outcome": "http_error",
+                    "request_attempted": True,
+                    "response_received": True,
+                    "response_parsed": False,
+                    "correlation_id": "test-correlation-id",
+                    "error_category": "http_error",
+                },
+            }],
+            "analysis_requests": [],
+        }
+
+        from orchestrator import StockyWhy
+
+        result = StockyWhy().run(
+            dataset_dir=SAMPLE_DIR,
+            facility_id="FAC-011",
+            commodity="ORS sachet",
+            month="2026-03",
+            interactive=False,
+        )
+
+        assert "error" not in result
+        entries = [
+            json.loads(line)
+            for line in (tmp_path / "logs" / result["log_file"])
+            .read_text(encoding="utf-8").splitlines()
+        ]
+        hypothesis = next(
+            entry for entry in entries
+            if entry.get("action") == "investigate_hypothesis"
+        )
+        assert hypothesis["hypothesis_id"] == "H1"
+        assert hypothesis["status"] == "warning"
+        assert hypothesis["explanation_source"] == "local_deterministic_fallback"
+        assert hypothesis["provider"] == "Local deterministic fallback"
+        assert hypothesis["request_metadata"]["request_outcome"] == "http_error"
+        aggregate = next(
+            entry for entry in entries
+            if entry.get("action") == "investigate_parallel"
+        )
+        assert aggregate["status"] == "warning"
+
+    def test_sample_mode_runs_full_pipeline_without_external_services(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("SAMPLE_MODE", "true")
+        monkeypatch.setenv("STOCKWHY_DATA_SOURCE", "zetaris")
+        monkeypatch.setenv("METERLESS_BASE_URL", "")
+        monkeypatch.setenv("METERLESS_RUNTIME_TOKEN", "")
+
+        from orchestrator import StockyWhy
+
+        result = StockyWhy().run(
+            dataset_dir="/nonexistent/path",
+            facility_id="FAC-011",
+            commodity="ORS sachet",
+            month="2026-03",
+            interactive=False,
+        )
+
+        capsys.readouterr()
+        assert "error" not in result
+        assert set(result["steps"]) == {
+            "data_reader",
+            "data_analyst",
+            "theory_generator",
+            "evidence_investigator",
+            "action_strategist",
+        }
+        assert result["steps"]["data_reader"]["evidence"]["_provider"] == (
+            "StockWhy offline sample provider"
+        )
+        assert result["steps"]["evidence_investigator"]["evaluations"]
+        assert result["actions"]
+        assert all(
+            item["likelihood"] == "not assessed (offline)"
+            for item in result["ranked_hypotheses"]
+        )
+        assert all(
+            action["pharmacist_review_required"]
+            for action in result["actions"]
+        )
+        log_entries = [
+            json.loads(line)
+            for line in (tmp_path / "logs" / result["log_file"]).read_text(
+                encoding="utf-8"
+            ).splitlines()
+        ]
+        assert any(
+            entry.get("provider") == "StockWhy offline sample provider"
+            for entry in log_entries
+        )
 
     @patch("orchestrator.recommend_actions")
     @patch("orchestrator.investigate_parallel")
@@ -217,6 +379,41 @@ class TestOrchestrator:
         assert "evidence_investigator" in result["steps"]
         assert "action_strategist" in result["steps"]
         assert result["most_likely_cause"] == "demand_surge"
+
+    @patch("orchestrator.generate", side_effect=RuntimeError(
+        "Nightshift returned unusable JSON"
+    ))
+    @patch("orchestrator.analyze_evidence", return_value=_analyst_resp())
+    @patch("orchestrator.read_and_profile")
+    def test_theory_generator_json_failure_returns_stage_error(
+        self, mock_reader, mock_analyst, mock_theory, tmp_path, monkeypatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        mock_reader.return_value = _data_reader_resp(
+            "FAC-011", "ORS sachet", "2026-03"
+        )
+
+        from orchestrator import StockyWhy
+
+        result = StockyWhy().run(
+            dataset_dir=SAMPLE_DIR,
+            facility_id="FAC-011",
+            commodity="ORS sachet",
+            month="2026-03",
+            interactive=False,
+        )
+
+        assert result["error"] == (
+            "Theory Generator failed: Nightshift returned unusable JSON"
+        )
+        assert "theory_generator" not in result["steps"]
+        log_entries = [
+            json.loads(line)
+            for line in (tmp_path / "logs" / result["log_file"])
+            .read_text(encoding="utf-8").splitlines()
+        ]
+        assert log_entries[-1]["status"] == "error"
+        assert log_entries[-1]["agent_name"] == "theory_generator"
 
     @patch("orchestrator.recommend_actions")
     @patch("orchestrator.investigate_parallel")
@@ -415,9 +612,10 @@ class TestOrchestrator:
 class TestCLI:
     """Test that run.py CLI parses arguments and rejects invalid input."""
 
-    def _run_cli(self, args: list, env=None) -> subprocess.CompletedProcess:
+    def _run_cli(self, args: list, env=None, cwd=None) -> subprocess.CompletedProcess:
         """Run run.py as a subprocess with explicit UTF-8 decoding."""
-        cmd = [sys.executable, "run.py"] + args
+        project_root = Path(__file__).parent.parent
+        cmd = [sys.executable, str(project_root / "run.py")] + args
         my_env = os.environ.copy()
 
         if env:
@@ -431,7 +629,7 @@ class TestCLI:
             text=True,
             encoding="utf-8",
             errors="replace",
-            cwd=str(Path(__file__).parent.parent),
+            cwd=str(cwd or project_root),
             env=my_env,
             timeout=30,
         )
@@ -443,6 +641,9 @@ class TestCLI:
             "StockyWhy" in result.stdout
             or "STOCKYWHY" in result.stdout.upper()
         )
+        assert "METERLESS_BASE_URL" in result.stdout
+        assert "STOCKWHY_DATASET" in result.stdout
+        assert "GROQ_API_KEY" not in result.stdout
 
     def test_missing_required_args_exits_nonzero(self):
         result = self._run_cli(["--dataset", "data/sample"])
@@ -464,11 +665,63 @@ class TestCLI:
         assert result.returncode != 0
         assert "Traceback" not in output
 
+    def test_case_argument_resolves_case_question_and_runs_offline(self, tmp_path):
+        project_root = Path(__file__).parent.parent
+        case_path = project_root / "data" / "cases" / "normal" / "case_01"
+        result = self._run_cli(
+            ["--case", str(case_path), "--no-review"],
+            env={
+                "SAMPLE_MODE": "true",
+                "STOCKWHY_DATA_SOURCE": "zetaris",
+                "METERLESS_BASE_URL": "",
+                "METERLESS_RUNTIME_TOKEN": "",
+                "STOCKWHY_WORLD_MODEL_DB": str(tmp_path / "world-model.sqlite3"),
+            },
+            cwd=tmp_path,
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "Facility  : FAC-011" in result.stdout
+        assert "Most Likely Cause" in result.stdout
+
     def test_help_flag_works(self):
         result = self._run_cli(["--help"])
         assert result.returncode == 0
         assert "--dataset" in result.stdout
         assert "--facility" in result.stdout
+
+    def test_stockwhy_dataset_environment_is_used(self, monkeypatch, tmp_path, capsys):
+        import run
+
+        captured = {}
+
+        class FakeStockyWhy:
+            def run(self, **kwargs):
+                captured.update(kwargs)
+                return {
+                    "facility_id": kwargs["facility_id"],
+                    "commodity": kwargs["commodity"],
+                    "month": kwargs["month"],
+                    "run_id": "test",
+                    "most_likely_cause": "inconclusive",
+                    "log_file": "test.jsonl",
+                    "actions": [],
+                }
+
+        monkeypatch.setenv("SAMPLE_MODE", "false")
+        monkeypatch.setenv("STOCKWHY_DATASET", str(tmp_path))
+        monkeypatch.setattr("orchestrator.StockyWhy", FakeStockyWhy)
+        monkeypatch.setattr(
+            "sys.argv",
+            [
+                "run.py", "--facility", "FAC-001", "--commodity", "test",
+                "--month", "2026-03", "--no-review",
+            ],
+        )
+
+        run.main()
+        capsys.readouterr()
+        assert captured["dataset_dir"] == str(tmp_path)
 
     def test_env_example_has_provider_configuration(self):
         """The example environment file should document provider settings."""
@@ -477,15 +730,10 @@ class TestCLI:
 
         content = env_example.read_text(encoding="utf-8")
 
-        # Support the current Nightshift configuration or a legacy example.
-        has_nightshift = (
-            "METERLESS_BASE_URL" in content
-            and "METERLESS_RUNTIME_TOKEN" in content
-        )
-        has_legacy_groq = (
-            "GROQ_API_KEY" in content
-            and "GROQ_MODEL" in content
-        )
-
-        assert has_nightshift or has_legacy_groq
-        assert "gsk_" not in content
+        assert "METERLESS_BASE_URL" in content
+        assert "METERLESS_RUNTIME_TOKEN" in content
+        assert "ZETARIS_REST_URL" in content
+        assert "ZETARIS_API_KEY" in content
+        assert "STOCKWHY_DATASET" in content
+        assert "GROQ_API_KEY" not in content
+        assert "NVIDIA_API_KEY" not in content

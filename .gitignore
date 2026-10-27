@@ -2,5 +2,10 @@
 *.pyc
 .DS_Store
 __pycache__/
+.pytest_cache/
 docs/datapack/
 docs/*.pdf
+*.bak
+logs/run_*.jsonl
+logs/stockwhy_world_model.sqlite3*
+outputs/*.json

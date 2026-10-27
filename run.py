@@ -11,11 +11,15 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="stockywhy",
-        description="StockyWhy — Drug Stockout Investigation System",
+        description="StockyWhy - Drug Stockout Investigation System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
@@ -31,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dataset",
         help="Path to dataset directory (CSV/JSON files). "
-             "Overridden by SAMPLE_MODE=true.",
+             "Defaults to STOCKWHY_DATASET. Overridden by SAMPLE_MODE=true.",
     )
     parser.add_argument("--facility", help="Facility ID, e.g. FAC-011")
     parser.add_argument(
@@ -79,36 +83,36 @@ def _resolve_case(case_path: str) -> dict:
     - A case directory path (contains stock.csv etc.)
     - A row from data/cases/questions.csv matched by dataset path prefix
     """
-    questions_csv = Path("data/cases/questions.csv")
+    project_root = Path(__file__).resolve().parent
+    questions_csv = project_root / "data" / "cases" / "questions.csv"
     case_p = Path(case_path)
 
-    # If it looks like a directory that exists, use it directly
-    if case_p.is_dir():
-        # Try to load manifest.json for metadata, else require explicit args
-        manifest = case_p / "manifest.json"
-        if manifest.exists():
-            with open(manifest) as f:
-                m = json.load(f)
-        return {"dataset": str(case_p), "facility_id": None, "commodity": None, "month": None}
-
-    # Try matching against questions.csv
     if questions_csv.exists():
         with open(questions_csv, newline="") as f:
             reader = csv.DictReader(f)
             for row in reader:
+                row_dataset = project_root / row["dataset"]
                 if (
-                    row["dataset"] == case_path
-                    or row["dataset"].endswith(case_path)
-                    or case_path in row["dataset"]
+                    row_dataset.resolve() == case_p.resolve()
+                    or row["dataset"].replace("\\", "/").endswith(
+                        case_path.replace("\\", "/").rstrip("/")
+                    )
                 ):
                     return {
-                        "dataset": row["dataset"],
+                        "dataset": str(row_dataset),
                         "facility_id": row["facility_id"],
                         "commodity": row["commodity"],
                         "month": row["month"],
                     }
 
-    # Treat the path as a dataset directory
+    if case_p.is_dir():
+        return {
+            "dataset": str(case_p),
+            "facility_id": None,
+            "commodity": None,
+            "month": None,
+        }
+
     return {"dataset": case_path, "facility_id": None, "commodity": None, "month": None}
 
 
@@ -123,7 +127,7 @@ def _print_results(result: dict) -> None:
     print(f"  Run ID    : {result.get('run_id', '')}")
 
     if "error" in result:
-        print(f"\n  ⚠️  ERROR: {result['error']}")
+        print(f"\n  WARNING: ERROR: {result['error']}")
         return
 
     print(f"\n  Most Likely Cause: {result.get('most_likely_cause', 'Unknown')}")
@@ -135,7 +139,7 @@ def _print_results(result: dict) -> None:
             print(
                 f"    [{h.get('likelihood','?').upper():6}] "
                 f"{h.get('hypothesis_id','?')} {h.get('hypothesis_name','')}"
-                f" — {h.get('verdict','?')}"
+                f" - {h.get('verdict','?')}"
             )
 
     actions = result.get("approved_actions") or result.get("actions", [])
@@ -145,7 +149,7 @@ def _print_results(result: dict) -> None:
             flag = " [AMENDED]" if "pharmacist_amendment" in a else ""
             print(
                 f"    {a.get('action_id','?')} [{a.get('priority','?').upper()}]{flag}"
-                f" — {a.get('action','')}"
+                f" - {a.get('action','')}"
             )
             print(f"         Owner: {a.get('proposed_owner','')}  "
                   f"By: {a.get('timeframe','')}")
@@ -247,6 +251,9 @@ def _serve(port: int = 8000) -> None:
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
+
     argv = sys.argv[1:]
 
     # Display the custom help screen for bare "help" command
@@ -278,6 +285,9 @@ def main():
         facility_id = facility_id or resolved.get("facility_id")
         commodity = commodity or resolved.get("commodity")
         month = month or resolved.get("month")
+
+    if not dataset:
+        dataset = os.getenv("STOCKWHY_DATASET")
 
     if sample_mode:
         dataset = os.path.join(os.path.dirname(__file__), "data", "sample")

@@ -228,16 +228,37 @@ def _investigate_one(
         result["hypothesis_name"] = h_name
         result["verdict"] = deterministic  # authoritative
         result["verdict_source"] = "deterministic"
+        result["explanation_source"] = (
+            "meterless_nightshift"
+            if result.get("_provider") == "Meterless Nightshift"
+            else "local_provider"
+        )
         return result
     except Exception as exc:
+        request_metadata = getattr(exc, "request_metadata", None)
         return {
             "theory_id": h_id,
             "hypothesis_name": h_name,
             "verdict": deterministic,
             "verdict_source": "deterministic",
+            "explanation_source": "local_deterministic_fallback",
+            "_provider": "Local deterministic fallback",
+            "_requested_model": (
+                request_metadata.get("requested_model")
+                if isinstance(request_metadata, dict) else None
+            ),
+            "_served_model": None,
+            "_request_metadata": request_metadata,
+            "_request_error_category": (
+                request_metadata.get("error_category")
+                if isinstance(request_metadata, dict) else "unclassified_error"
+            ),
             "supporting_evidence_ids": [],
             "contradicting_evidence_ids": [],
-            "reasoning": f"Deterministic verdict: {deterministic}. LLM explanation unavailable: {exc}",
+            "reasoning": (
+                f"Deterministic verdict: {deterministic}. "
+                "Nightshift explanation unavailable; see request telemetry."
+            ),
             "limitations": ["Agent call error"],
             "additional_analysis_needed": [],
         }
@@ -288,6 +309,13 @@ def investigate_parallel(
                     "supporting_evidence_ids": [],
                     "contradicting_evidence_ids": [],
                     "reasoning": f"Parallel investigation failed: {exc}",
+                    "explanation_source": "local_parallel_fallback",
+                    "_provider": "Local parallel fallback",
+                    "_served_model": None,
+                    "_request_metadata": getattr(
+                        exc, "request_metadata", None
+                    ),
+                    "_request_error_category": "parallel_execution_error",
                     "limitations": ["Thread execution error"],
                     "additional_analysis_needed": [],
                 })

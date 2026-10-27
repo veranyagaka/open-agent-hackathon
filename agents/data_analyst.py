@@ -6,6 +6,8 @@ Data Analyst Agent: interprets workbook profiles and computed evidence.
 
 from llm_client import ask_agent
 
+HYPOTHESIS_IDS = ("H1", "H2", "H3", "H4", "H5", "H6", "H7")
+
 
 SYSTEM = """
 You are the StockyWhy Data Analyst.
@@ -38,7 +40,7 @@ You will receive computed_evidence — deterministic calculations for all 7
 stockout hypotheses — plus the investigation question.
 
 Your job is to interpret what these numbers mean for each hypothesis and
-identify which signals are strong, weak, or absent.
+identify which signals are strong, weak, absent, or inconclusive due to missing data.
 
 Hypotheses:
   H1 late_order         — order placed after cutoff; delivery slipped a month
@@ -59,13 +61,13 @@ Return valid JSON:
 {
   "analysis_summary": "...",
   "hypothesis_signals": {
-    "H1": {"signal": "strong|weak|none", "reasoning": "..."},
-    "H2": {"signal": "strong|weak|none", "reasoning": "..."},
-    "H3": {"signal": "strong|weak|none", "reasoning": "..."},
-    "H4": {"signal": "strong|weak|none", "reasoning": "..."},
-    "H5": {"signal": "strong|weak|none", "reasoning": "..."},
-    "H6": {"signal": "strong|weak|none", "reasoning": "..."},
-    "H7": {"signal": "strong|weak|none", "reasoning": "..."}
+    "H1": {"signal": "strong|weak|none|inconclusive", "reasoning": "..."},
+    "H2": {"signal": "strong|weak|none|inconclusive", "reasoning": "..."},
+    "H3": {"signal": "strong|weak|none|inconclusive", "reasoning": "..."},
+    "H4": {"signal": "strong|weak|none|inconclusive", "reasoning": "..."},
+    "H5": {"signal": "strong|weak|none|inconclusive", "reasoning": "..."},
+    "H6": {"signal": "strong|weak|none|inconclusive", "reasoning": "..."},
+    "H7": {"signal": "strong|weak|none|inconclusive", "reasoning": "..."}
   },
   "primary_leads": [],
   "data_limitations": []
@@ -89,10 +91,60 @@ def analyze_evidence(computed_evidence: dict, question: str) -> dict:
     Interpret the deterministic computed_evidence from data_loader
     and return a structured analysis of which hypotheses have strong signals.
     """
-    return ask_agent(
+    result = ask_agent(
         EVIDENCE_SYSTEM,
         {
             "research_question": question,
             "computed_evidence": computed_evidence,
         },
     )
+    if not isinstance(result, dict):
+        raise ValueError("Data Analyst response must be a JSON object.")
+
+    required = {
+        "analysis_summary": str,
+        "hypothesis_signals": dict,
+        "primary_leads": list,
+        "data_limitations": list,
+    }
+    missing = sorted(set(required) - set(result))
+    if missing:
+        raise ValueError(
+            "Data Analyst response is missing required fields: "
+            + ", ".join(missing)
+        )
+    invalid = [
+        name for name, expected_type in required.items()
+        if not isinstance(result[name], expected_type)
+    ]
+    if invalid:
+        raise ValueError(
+            "Data Analyst response has invalid field types: "
+            + ", ".join(invalid)
+        )
+    if not result["analysis_summary"].strip():
+        raise ValueError("Data Analyst response has an empty analysis_summary.")
+
+    signals = result["hypothesis_signals"]
+    missing_hypotheses = sorted(set(HYPOTHESIS_IDS) - set(signals))
+    if missing_hypotheses:
+        raise ValueError(
+            "Data Analyst response is missing hypothesis signals: "
+            + ", ".join(missing_hypotheses)
+        )
+    for hypothesis_id in HYPOTHESIS_IDS:
+        signal = signals[hypothesis_id]
+        if not isinstance(signal, dict):
+            raise ValueError(
+                f"Data Analyst signal {hypothesis_id} must be a JSON object."
+            )
+        if signal.get("signal") not in {"strong", "weak", "none", "inconclusive"}:
+            raise ValueError(
+                f"Data Analyst signal {hypothesis_id} has an invalid or missing "
+                "signal value."
+            )
+        if not isinstance(signal.get("reasoning"), str):
+            raise ValueError(
+                f"Data Analyst signal {hypothesis_id} is missing string reasoning."
+            )
+    return result

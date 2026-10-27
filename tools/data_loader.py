@@ -7,8 +7,9 @@ NO LLM calls here — pure pandas/numpy arithmetic only.
 
 import json
 import os
+import re
 from pathlib import Path
-from typing import Optional
+from collections.abc import Mapping
 
 import numpy as np
 import pandas as pd
@@ -26,15 +27,34 @@ def _load_csv_dataset(dataset_dir: str) -> dict:
         stock, orders, payments, facilities, web_notes
     Values are pandas DataFrames (or a list of dicts for web_notes).
     """
+    if not dataset_dir:
+        raise FileNotFoundError(
+            "No dataset directory configured. Pass --dataset or set "
+            "STOCKWHY_DATASET to a directory containing the required CSV files."
+        )
     d = Path(dataset_dir)
-    if not d.exists():
-        raise FileNotFoundError(f"Dataset directory not found: {dataset_dir}")
+    if not d.is_dir():
+        raise FileNotFoundError(
+            f"Dataset directory not found: {d}. Pass --dataset or set "
+            "STOCKWHY_DATASET to a directory containing stock.csv, orders.csv, "
+            "payments.csv, and facilities.csv."
+        )
 
     def read_csv(name: str) -> pd.DataFrame:
         path = d / name
         if not path.exists():
-            raise FileNotFoundError(f"Expected file not found: {path}")
-        return pd.read_csv(path, dtype=str)  # load as str, coerce below
+            raise FileNotFoundError(
+                f"Required dataset file not found: {path}. Check --dataset or "
+                "STOCKWHY_DATASET; no replacement data was loaded."
+            )
+        frame = pd.read_csv(path, dtype=str)
+        missing = _REQUIRED_COLUMNS[name] - set(frame.columns)
+        if missing:
+            raise ValueError(
+                f"Dataset file {path} is missing required columns: "
+                f"{sorted(missing)}"
+            )
+        return frame
 
     stock = read_csv("stock.csv")
     orders = read_csv("orders.csv")
@@ -69,10 +89,16 @@ def _load_csv_dataset(dataset_dir: str) -> dict:
     # web_notes
     web_notes_path = d / "web_notes.json"
     if web_notes_path.exists():
-        with open(web_notes_path, "r") as f:
+        with web_notes_path.open("r", encoding="utf-8") as f:
             web_notes = json.load(f)
     else:
         web_notes = []
+    if not isinstance(web_notes, list) or any(
+        not isinstance(note, dict) for note in web_notes
+    ):
+        raise ValueError(
+            f"{web_notes_path} must contain a JSON array of note objects."
+        )
 
     return {
         "stock": stock,
@@ -113,80 +139,187 @@ def _coerce_dataset(dataset: dict) -> dict:
     return dataset
 
 
-def _zetaris_rows(response: dict) -> list:
-    """Normalize common Zetaris SQL-editor row response shapes."""
-    if not isinstance(response, dict):
+_REQUIRED_COLUMNS = {
+    "stock.csv": {
+        "id", "facility_id", "commodity", "month", "opening", "received",
+        "wastage", "consumed", "closing", "reported_stockout_days",
+    },
+    "orders.csv": {
+        "id", "facility_id", "commodity", "month", "cutoff_date", "order_date",
+        "qty_requested", "qty_delivered", "delivery_month",
+    },
+    "payments.csv": {
+        "id", "month", "county_arrears_flag", "amount_owed_kes",
+    },
+    "facilities.csv": {"facility_id", "lat", "lon"},
+}
+
+
+def _zetaris_rows(response: dict, expected_columns: list = None) -> list:
+    """Normalize Zetaris JSON rows, including positional rows from SQL Editor."""
+    if not isinstance(response, Mapping):
         raise RuntimeError("Unexpected Zetaris response: expected a JSON object")
+    if response.get("error"):
+        raise RuntimeError(f"Zetaris SQL query failed: {response['error']}")
+
     data = response.get("data")
-    if isinstance(data, list):
-        if not data:
-            return []
-        if all(isinstance(row, dict) for row in data):
-            return data
-        # Zetaris SQL-editor commonly returns positional rows in ``data``
-        # and the matching column names in ``headers``. Other deployments or
-        # endpoints may use ``columns`` / ``columnNames`` instead.
-        columns = (
-            response.get("headers")
-            or response.get("columns")
-            or response.get("columnNames")
-            or response.get("column_names")
-        )
-        if isinstance(columns, list) and all(isinstance(row, (list, tuple)) for row in data):
-            names = []
-            for column in columns:
-                if isinstance(column, dict):
-                    name = column.get("name") or column.get("label") or column.get("columnName")
-                    if name is None:
-                        raise RuntimeError(
-                            f"Zetaris returned column metadata without a name: {column!r}"
-                        )
-                    names.append(str(name))
-                else:
-                    names.append(str(column))
-            if data and any(len(row) != len(names) for row in data):
-                raise RuntimeError(
-                    "Zetaris row width does not match returned column metadata: "
-                    f"{len(names)} columns, row widths {[len(row) for row in data[:3]]}"
-                )
-            return [dict(zip(names, row)) for row in data]
-    for key in ("rows", "results"):
-        rows = response.get(key)
-        if isinstance(rows, list):
-            if not rows or all(isinstance(row, dict) for row in rows):
-                return rows
+    metadata = response
+    if isinstance(data, Mapping):
+        metadata = {**response, **data}
+        data = data.get("rows", data.get("results", data.get("data")))
     if data is None:
+        for key in ("rows", "results"):
+            if key in response:
+                data = response[key]
+                break
+    if not isinstance(data, list):
         raise RuntimeError(
-            "Zetaris SQL response did not contain a 'data' row list; "
+            "Zetaris SQL response did not contain a row list; "
             f"response keys: {list(response.keys())}"
         )
-    raise RuntimeError(
-        "Unsupported Zetaris row format; expected a list of row objects "
-        "or rows with column metadata."
+    if not data:
+        return []
+
+    def as_mapping(row):
+        if isinstance(row, Mapping):
+            return dict(row)
+        asdict = getattr(row, "_asdict", None)
+        if callable(asdict):
+            return dict(asdict())
+        return None
+
+    mapped_rows = [as_mapping(row) for row in data]
+    if all(row is not None for row in mapped_rows):
+        return mapped_rows
+    if any(row is not None for row in mapped_rows):
+        raise RuntimeError("Zetaris returned a mixture of object and positional rows.")
+
+    if not all(isinstance(row, (list, tuple)) for row in data):
+        raise RuntimeError(
+            "Unsupported Zetaris row format; expected row objects or positional "
+            "rows returned by a documented SELECT."
+        )
+
+    columns = (
+        metadata.get("headers")
+        or metadata.get("columns")
+        or metadata.get("columnNames")
+        or metadata.get("column_names")
+        or expected_columns
     )
+    if not isinstance(columns, (list, tuple)):
+        raise RuntimeError(
+            "Zetaris returned positional rows without column metadata. Query "
+            "explicit columns so the result can be mapped without losing fields."
+        )
+
+    names = []
+    for column in columns:
+        if isinstance(column, Mapping):
+            name = (
+                column.get("name")
+                or column.get("label")
+                or column.get("columnName")
+            )
+            if name is None:
+                raise RuntimeError(
+                    f"Zetaris returned column metadata without a name: {column!r}"
+                )
+            names.append(str(name))
+        else:
+            names.append(str(column))
+    if not all(names) or len(names) != len(set(names)):
+        raise RuntimeError("Zetaris returned empty or duplicate column names.")
+    if any(len(row) != len(names) for row in data):
+        raise RuntimeError(
+            "Zetaris row width does not match returned column metadata: "
+            f"{len(names)} columns, row widths {[len(row) for row in data[:3]]}"
+        )
+    return [dict(zip(names, row)) for row in data]
 
 
-def load_zetaris_dataset(dataset_dir: str) -> dict:
-    """Load all StockWhy tables from Zetaris, preserving the CSV schema."""
+def load_zetaris_dataset(
+    dataset_dir: str,
+    facility_id: str = None,
+    commodity: str = None,
+    month: str = None,
+) -> dict:
+    """Load StockWhy tables from Zetaris, optionally scoped to one investigation."""
     # Reuse the proven authentication, endpoint, and request headers.
     from scripts.check_zetaris import run_sql
 
+    schema = os.getenv("ZETARIS_SCHEMA", "STOCKWHY_PG").strip()
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", schema):
+        raise ValueError(
+            "ZETARIS_SCHEMA must be a simple SQL identifier "
+            "(letters, numbers, and underscores)."
+        )
+
+    table_columns = {
+        "stock": [
+            "id", "facility_id", "commodity", "month", "opening", "received",
+            "wastage", "consumed", "closing", "reported_stockout_days",
+        ],
+        "orders": [
+            "id", "facility_id", "commodity", "month", "cutoff_date",
+            "order_date", "qty_requested", "qty_delivered", "delivery_month",
+        ],
+        "payments": [
+            "id", "month", "county_arrears_flag", "amount_owed_kes",
+        ],
+        "facilities": ["facility_id", "lat", "lon"],
+    }
+
+    filters = {}
+    if any(value is not None for value in (facility_id, commodity, month)):
+        if not all(isinstance(value, str) and value.strip() for value in (
+            facility_id, commodity, month
+        )):
+            raise ValueError(
+                "Scoped Zetaris loading requires facility_id, commodity, and month."
+            )
+        if not re.fullmatch(r"\d{4}-\d{2}", month):
+            raise ValueError("month must use YYYY-MM format for Zetaris loading.")
+
+        cycle_months = [month] + _prev_months(month, 1)
+        stock_months = [month] + _prev_months(month, 6)
+
+        def sql_string(value):
+            return "'" + value.replace("'", "''") + "'"
+
+        month_list = ", ".join(sql_string(value) for value in cycle_months)
+        stock_month_list = ", ".join(sql_string(value) for value in stock_months)
+        filters = {
+            "stock": (
+                f"facility_id = {sql_string(facility_id)} "
+                f"AND commodity = {sql_string(commodity)} "
+                f"AND month IN ({stock_month_list})"
+            ),
+            "orders": (
+                f"commodity = {sql_string(commodity)} "
+                f"AND month IN ({month_list})"
+            ),
+        }
+
     def query_all(table: str) -> pd.DataFrame:
+        columns = table_columns[table]
+        where = f" WHERE {filters[table]}" if table in filters else ""
         rows = []
         offset = 0
         page_size = 100  # check_zetaris.run_sql applies a server-side limit of 100
         while True:
             response = run_sql(
-                f"SELECT * FROM STOCKWHY_PG.{table} LIMIT {page_size} OFFSET {offset}"
+                f"SELECT {', '.join(columns)} FROM {schema}.{table}{where} "
+                f"LIMIT {page_size} OFFSET {offset}"
             )
-            page = _zetaris_rows(response)
+            page = _zetaris_rows(response, expected_columns=columns)
             rows.extend(page)
             if len(page) < page_size:
                 break
             offset += page_size
             if offset > 1_000_000:
                 raise RuntimeError(f"Aborting Zetaris pagination for {table}: safety limit exceeded")
-        return pd.DataFrame(rows)
+        return pd.DataFrame(rows) if rows else pd.DataFrame(columns=columns)
 
     d = Path(dataset_dir)
     web_notes_path = d / "web_notes.json"
@@ -204,12 +337,7 @@ def load_zetaris_dataset(dataset_dir: str) -> dict:
         "facilities": query_all("facilities"),
         "web_notes": web_notes,
     }
-    expected = {
-        "stock": {"id", "facility_id", "commodity", "month", "opening", "received", "wastage", "consumed", "closing", "reported_stockout_days"},
-        "orders": {"id", "facility_id", "commodity", "month", "cutoff_date", "order_date", "qty_requested", "qty_delivered", "delivery_month"},
-        "payments": {"id", "month", "county_arrears_flag", "amount_owed_kes"},
-        "facilities": {"facility_id", "lat", "lon"},
-    }
+    expected = {table: set(columns) for table, columns in table_columns.items()}
     for table, required in expected.items():
         missing = required - set(dataset[table].columns)
         if missing:
@@ -221,11 +349,21 @@ def load_zetaris_dataset(dataset_dir: str) -> dict:
     return _coerce_dataset(dataset)
 
 
-def load_dataset(dataset_dir: str) -> dict:
-    """Load data from CSV by default, or Zetaris when configured."""
+def load_dataset(
+    dataset_dir: str,
+    facility_id: str = None,
+    commodity: str = None,
+    month: str = None,
+) -> dict:
+    """Load local sample data or the explicitly configured backing source."""
+    if os.getenv("SAMPLE_MODE", "false").strip().lower() == "true":
+        return _load_csv_dataset(dataset_dir)
+
     source = os.getenv("STOCKWHY_DATA_SOURCE", "csv").strip().lower()
     if source == "zetaris":
-        return load_zetaris_dataset(dataset_dir)
+        return load_zetaris_dataset(
+            dataset_dir, facility_id=facility_id, commodity=commodity, month=month
+        )
     if source != "csv":
         raise ValueError(
             "STOCKWHY_DATA_SOURCE must be either 'csv' or 'zetaris', "

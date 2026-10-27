@@ -131,8 +131,26 @@ class TestLoadDataset:
         assert isinstance(sample_dataset["web_notes"], list)
 
     def test_missing_dir_raises(self):
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(FileNotFoundError, match="STOCKWHY_DATASET"):
             load_dataset("/nonexistent/path/to/data")
+
+    def test_missing_dataset_file_is_actionable(self, tmp_path):
+        with pytest.raises(FileNotFoundError, match="stock.csv"):
+            load_dataset(str(tmp_path))
+
+    def test_missing_csv_columns_are_reported(self, tmp_path):
+        (tmp_path / "stock.csv").write_text("id,facility_id\n1,FAC-001\n")
+        with pytest.raises(ValueError, match="missing required columns"):
+            load_dataset(str(tmp_path))
+
+    def test_sample_mode_never_attempts_zetaris(self, monkeypatch):
+        monkeypatch.setenv("SAMPLE_MODE", "true")
+        monkeypatch.setenv("STOCKWHY_DATA_SOURCE", "zetaris")
+        monkeypatch.setattr(
+            "tools.data_loader._load_csv_dataset",
+            lambda path: {"source": "local sample"},
+        )
+        assert load_dataset("data/sample") == {"source": "local sample"}
 
     def test_nonempty(self, sample_dataset):
         assert len(sample_dataset["stock"]) > 0

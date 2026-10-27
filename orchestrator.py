@@ -18,6 +18,67 @@ from agents.evidence_investigator import investigate_parallel
 from agents.action_strategist import recommend_actions
 
 
+def _log_model_fields(response: dict) -> dict:
+    """Record safe provider, model, and transport metadata returned by the client."""
+    if not isinstance(response, dict):
+        return {}
+
+    if isinstance(response.get("evidence"), dict):
+        response = response["evidence"]
+
+    evaluations = response.get("evaluations")
+    if isinstance(evaluations, list):
+        requests = [
+            {
+                "hypothesis_id": item.get("theory_id"),
+                "provider": item.get("_provider"),
+                "requested_model": item.get("_requested_model"),
+                "served_model": item.get("_served_model"),
+                "explanation_source": item.get("explanation_source"),
+                "request_metadata": item.get("_request_metadata"),
+                "error_category": item.get("_request_error_category"),
+            }
+            for item in evaluations
+        ]
+        providers = sorted({
+            item["provider"] for item in requests if item["provider"]
+        })
+        models = sorted({
+            item["served_model"] or item["requested_model"]
+            for item in requests
+            if item["served_model"] or item["requested_model"]
+        })
+        return {
+            "provider": providers[0] if len(providers) == 1 else "mixed" if providers else None,
+            "providers": providers,
+            "model": models[0] if len(models) == 1 else "mixed" if models else None,
+            "llm_requests": requests,
+        }
+
+    fields = {
+        "provider": response.get("_provider"),
+        "model": response.get("_served_model") or response.get("_requested_model"),
+        "requested_model": response.get("_requested_model"),
+        "served_model": response.get("_served_model"),
+        "request_metadata": response.get("_request_metadata"),
+    }
+    return fields
+
+
+def _log_request_failure(exc: Exception) -> dict:
+    """Extract transport metadata without serializing exception or response bodies."""
+    metadata = getattr(exc, "request_metadata", None)
+    if not isinstance(metadata, dict):
+        return {}
+    return {
+        "provider": metadata.get("provider"),
+        "model": metadata.get("served_model") or metadata.get("requested_model"),
+        "requested_model": metadata.get("requested_model"),
+        "served_model": metadata.get("served_model"),
+        "request_metadata": metadata,
+    }
+
+
 class StockyWhy:
     """
     Main investigation orchestrator.
@@ -100,7 +161,7 @@ class StockyWhy:
         # -------------------------------------------------------------------
         # Step 1: Data Reader Agent
         # -------------------------------------------------------------------
-        print("[1/5] Data Reader Agent — loading and profiling data...")
+        print("[1/5] Data Reader Agent - loading and profiling data...")
         try:
             profile = read_and_profile(dataset_dir, facility_id, commodity, month)
             result["steps"]["data_reader"] = profile
@@ -115,8 +176,9 @@ class StockyWhy:
                     f"Warnings: {len(profile.get('missing_data_warnings', []))}"
                 ),
                 status="ok",
+                **_log_model_fields(profile),
             )
-            print("    ✓ Data profile complete")
+            print("    [OK] Data profile complete")
         except Exception as exc:
             log_event(
                 log_file=log_file,
@@ -126,6 +188,7 @@ class StockyWhy:
                 input_summary=f"{facility_id}/{commodity}/{month}",
                 output_summary=str(exc),
                 status="error",
+                **_log_request_failure(exc),
             )
             result["error"] = f"Data Reader failed: {exc}"
             return result
@@ -133,7 +196,7 @@ class StockyWhy:
         # -------------------------------------------------------------------
         # Step 2: Data Analyst — interpret computed evidence
         # -------------------------------------------------------------------
-        print("[2/5] Data Analyst — interpreting evidence signals...")
+        print("[2/5] Data Analyst - interpreting evidence signals...")
         try:
             computed_evidence = profile["computed_evidence"]
             analysis = analyze_evidence(computed_evidence, question)
@@ -146,8 +209,9 @@ class StockyWhy:
                 input_summary=f"7 hypothesis evidence blocks",
                 output_summary=analysis.get("analysis_summary", "")[:120],
                 status="ok",
+                **_log_model_fields(analysis),
             )
-            print("    ✓ Evidence analysis complete")
+            print("    [OK] Evidence analysis complete")
         except Exception as exc:
             log_event(
                 log_file=log_file,
@@ -157,6 +221,7 @@ class StockyWhy:
                 input_summary="computed_evidence",
                 output_summary=str(exc),
                 status="error",
+                **_log_request_failure(exc),
             )
             result["error"] = f"Data Analyst failed: {exc}"
             return result
@@ -164,7 +229,7 @@ class StockyWhy:
         # -------------------------------------------------------------------
         # Step 3: Theory Generator — 7 theories
         # -------------------------------------------------------------------
-        print("[3/5] Theory Generator — generating 7 hypothesis theories...")
+        print("[3/5] Theory Generator - generating 7 hypothesis theories...")
         try:
             theories = generate(question, analysis)
             result["steps"]["theory_generator"] = theories
@@ -178,8 +243,9 @@ class StockyWhy:
                     f"{len(theories.get('theories', []))} theories generated"
                 ),
                 status="ok",
+                **_log_model_fields(theories),
             )
-            print(f"    ✓ {len(theories.get('theories', []))} theories generated")
+            print(f"    [OK] {len(theories.get('theories', []))} theories generated")
         except ValueError as exc:
             log_event(
                 log_file=log_file,
@@ -189,6 +255,20 @@ class StockyWhy:
                 input_summary="question + analysis",
                 output_summary=str(exc),
                 status="error",
+                **_log_request_failure(exc),
+            )
+            result["error"] = f"Theory Generator failed: {exc}"
+            return result
+        except RuntimeError as exc:
+            log_event(
+                log_file=log_file,
+                run_id=run_id,
+                agent_name="theory_generator",
+                action="generate",
+                input_summary="question + analysis",
+                output_summary=str(exc),
+                status="error",
+                **_log_request_failure(exc),
             )
             result["error"] = f"Theory Generator failed: {exc}"
             return result
@@ -196,11 +276,16 @@ class StockyWhy:
         # -------------------------------------------------------------------
         # Step 4: Evidence Investigator — parallel evaluation
         # -------------------------------------------------------------------
-        print("[4/5] Evidence Investigator — evaluating theories in parallel...")
+        print("[4/5] Evidence Investigator - evaluating theories in parallel...")
         try:
             evaluations = investigate_parallel(question, theories, computed_evidence)
             result["steps"]["evidence_investigator"] = evaluations
             verdicts = [e.get("verdict", "?") for e in evaluations.get("evaluations", [])]
+            evaluation_items = evaluations.get("evaluations", [])
+            has_non_live_explanation = any(
+                item.get("explanation_source") != "meterless_nightshift"
+                for item in evaluation_items
+            )
             log_event(
                 log_file=log_file,
                 run_id=run_id,
@@ -208,9 +293,37 @@ class StockyWhy:
                 action="investigate_parallel",
                 input_summary=f"7 theories + computed_evidence",
                 output_summary=f"verdicts: {', '.join(verdicts)}",
-                status="ok",
+                status="warning" if has_non_live_explanation else "ok",
+                **_log_model_fields(evaluations),
             )
-            print(f"    ✓ Evaluations: {', '.join(verdicts)}")
+            for evaluation in evaluation_items:
+                explanation_source = evaluation.get("explanation_source")
+                is_fallback = explanation_source != "meterless_nightshift"
+                log_event(
+                    log_file=log_file,
+                    run_id=run_id,
+                    agent_name="evidence_investigator",
+                    action="investigate_hypothesis",
+                    input_summary=evaluation.get("theory_id", "unknown"),
+                    output_summary=(
+                        f"Verdict: {evaluation.get('verdict', 'inconclusive')}; "
+                        f"verdict_source: {evaluation.get('verdict_source', 'unknown')}"
+                    ),
+                    status="warning" if is_fallback else "ok",
+                    hypothesis_id=evaluation.get("theory_id"),
+                    explanation_source=explanation_source,
+                    verdict_source=evaluation.get("verdict_source"),
+                    provider=evaluation.get("_provider"),
+                    model=(
+                        evaluation.get("_served_model")
+                        or evaluation.get("_requested_model")
+                    ),
+                    requested_model=evaluation.get("_requested_model"),
+                    served_model=evaluation.get("_served_model"),
+                    request_metadata=evaluation.get("_request_metadata"),
+                    error_category=evaluation.get("_request_error_category"),
+                )
+            print(f"    [OK] Evaluations: {', '.join(verdicts)}")
         except Exception as exc:
             log_event(
                 log_file=log_file,
@@ -220,6 +333,7 @@ class StockyWhy:
                 input_summary="theories + evidence",
                 output_summary=str(exc),
                 status="error",
+                **_log_request_failure(exc),
             )
             result["error"] = f"Evidence Investigator failed: {exc}"
             return result
@@ -227,7 +341,7 @@ class StockyWhy:
         # -------------------------------------------------------------------
         # Step 5: Action Strategist — rank causes + draft actions
         # -------------------------------------------------------------------
-        print("[5/5] Action Strategist — ranking causes and drafting actions...")
+        print("[5/5] Action Strategist - ranking causes and drafting actions...")
         try:
             actions = recommend_actions(question, evaluations)
             result["steps"]["action_strategist"] = actions
@@ -245,8 +359,9 @@ class StockyWhy:
                     f"{len(actions.get('actions', []))} actions proposed."
                 ),
                 status="ok",
+                **_log_model_fields(actions),
             )
-            print(f"    ✓ {len(actions.get('actions', []))} actions proposed")
+            print(f"    [OK] {len(actions.get('actions', []))} actions proposed")
         except Exception as exc:
             log_event(
                 log_file=log_file,
@@ -256,6 +371,7 @@ class StockyWhy:
                 input_summary="evaluations",
                 output_summary=str(exc),
                 status="error",
+                **_log_request_failure(exc),
             )
             result["error"] = f"Action Strategist failed: {exc}"
             return result
@@ -279,7 +395,7 @@ class StockyWhy:
             status="ok",
         )
 
-        print(f"\n✓ Investigation complete. Log: logs/{log_file}")
+        print(f"\n[OK] Investigation complete. Log: logs/{log_file}")
         return result
 
     def _pharmacist_review_step(self, result: dict) -> dict:
@@ -292,8 +408,8 @@ class StockyWhy:
             return result
 
         print("\n" + "="*60)
-        print("  PHARMACIST REVIEW — Proposed Actions")
-        print("  ⚠️  No action will execute without your approval.")
+        print("  PHARMACIST REVIEW - Proposed Actions")
+        print("  WARNING: No action will execute without your approval.")
         print("="*60)
         print(
             "\n  Medical disclaimer: This system provides decision-support "
@@ -313,7 +429,7 @@ class StockyWhy:
             print(f"  Timeframe: {action.get('timeframe', '')}")
             print(f"  Evidence: {action.get('evidence_basis', '')}")
             print(f"  Caveats : {action.get('risks_and_caveats', '')}")
-            print(f"  ⚠️  pharmacist_review_required: True")
+            print("  pharmacist_review_required: True")
 
             while True:
                 choice = input(
@@ -322,26 +438,26 @@ class StockyWhy:
 
                 if choice in ("a", "accept"):
                     approved.append(action)
-                    print("  → Accepted.")
+                    print("  Accepted.")
                     break
                 elif choice in ("e", "edit"):
                     note = input("  Enter your amendment note: ").strip()
                     action["pharmacist_amendment"] = note
                     approved.append(action)
-                    print("  → Accepted with amendment.")
+                    print("  Accepted with amendment.")
                     break
                 elif choice in ("r", "reject"):
                     reason = input("  Rejection reason (optional): ").strip()
                     action["rejection_reason"] = reason
                     rejected.append(action)
-                    print("  → Rejected.")
+                    print("  Rejected.")
                     break
                 elif choice in ("s", "skip"):
                     # Accept all remaining without prompting
                     approved.append(action)
                     for remaining in actions[actions.index(action) + 1:]:
                         approved.append(remaining)
-                    print("  → Skipping remaining reviews. All remaining accepted.")
+                    print("  Skipping remaining reviews. All remaining accepted.")
                     result["approved_actions"] = approved
                     result["rejected_actions"] = rejected
                     return result

@@ -57,6 +57,8 @@ def log_event(
         "output_summary": output_summary,
         "model": model,
         "confidence": confidence,
+        "target_agent": None,
+        "retry_count": 0,
         "status": status,
     }
     record.update(kwargs)

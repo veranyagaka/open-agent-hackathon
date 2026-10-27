@@ -27,8 +27,10 @@ def run_sql(sql: str) -> dict:
 
     if missing:
         raise RuntimeError(
-            "Missing required .env settings: " + ", ".join(missing)
+            "Missing required Zetaris settings: " + ", ".join(missing)
         )
+    if not base_url.startswith(("http://", "https://")):
+        raise RuntimeError("ZETARIS_REST_URL must start with http:// or https://")
 
     payload = {
         "queryId": str(uuid.uuid4()),
@@ -51,17 +53,20 @@ def run_sql(sql: str) -> dict:
 
     try:
         with urllib.request.urlopen(request, timeout=45) as response:
-            return json.loads(response.read().decode("utf-8"))
+            result = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        # Do not print request headers or credentials.
-        body = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(
-            f"Zetaris returned HTTP {exc.code}: {body[:500]}"
+            f"Zetaris returned HTTP {exc.code}. Check the REST URL, API key, "
+            "organisation ID, and query permissions."
         ) from None
     except urllib.error.URLError as exc:
         raise RuntimeError(
-            f"Could not reach Zetaris: {exc.reason}"
+            "Could not reach Zetaris. Check that the service is running and "
+            "ZETARIS_REST_URL is correct."
         ) from None
+    if not isinstance(result, dict):
+        raise RuntimeError("Zetaris returned a non-object JSON response.")
+    return result
 
 
 def main():

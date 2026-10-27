@@ -75,6 +75,8 @@ class TestLogger:
         assert obj["status"] == "ok"
         assert obj["model"] == "test-model"
         assert obj["confidence"] == pytest.approx(0.8)
+        assert obj["target_agent"] is None
+        assert obj["retry_count"] == 0
         assert "timestamp" in obj
 
     def test_timestamp_iso_format(self, tmp_path, monkeypatch):
